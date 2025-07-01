@@ -1,14 +1,23 @@
+import AnimatedComingSoon from '@/components/comingSoon'
+import { BuyerDashboardHeader } from '@/components/common/HeaderVarients'
 import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 const records = () => {
     return (
-        <View>
-            <Text>records</Text>
+        <View style={styles.container}>
+            <BuyerDashboardHeader title="Records" />
+
+            <AnimatedComingSoon />
         </View>
     )
 }
 
 export default records
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#F8FAFC", // Light gray background
+    },
+})

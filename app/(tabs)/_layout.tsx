@@ -1,8 +1,32 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
+import DairyLoadingScreen from "@/components/Loading";
+import { useAuth } from "@/context/AuthContext";
 import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
+import { useEffect } from "react";
 
 export default function Layout() {
+
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (user?.role === "Buyer") {
+      router.replace("/(buyer)");
+    } else if (user?.role === "Admin") {
+      router.replace("/(admin)");
+    }
+    else if (user?.role !== "Farmer") {
+      router.replace("/+not-found");
+    }
+  }, [user, isLoading]);
+
+  if (isLoading) {
+    return <DairyLoadingScreen loading loadingText={`Verifying ${user?.role} access...`} />;
+  }
+
   const screens = [
     {
       name: "index",

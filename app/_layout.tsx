@@ -48,6 +48,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" options={{ animation: "none" }} />
           <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+          <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
+          <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
           <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
         </Stack>
         <Toast />

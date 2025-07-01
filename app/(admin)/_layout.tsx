@@ -1,9 +1,27 @@
-import { CustomDrawer } from "@/components/common/CustomDrawer"
-import { FontAwesome, Ionicons } from "@expo/vector-icons"
-import { Drawer } from "expo-router/drawer"
-import { StatusBar } from "expo-status-bar"
+import { CustomDrawer } from "@/components/common/CustomDrawer";
+import DairyLoadingScreen from "@/components/Loading";
+import { useAuth } from "@/context/AuthContext";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { Drawer } from "expo-router/drawer";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 
 export default function Layout() {
+
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (user?.role !== "Admin") {
+      router.replace("/+not-found");
+    }
+  }, [user, isLoading]);
+
+  if (isLoading || user?.role !== "Admin") {
+    return <DairyLoadingScreen loading loadingText="Verifying Farmer access..." />;
+  }
   const screens = [
     {
       name: "index",

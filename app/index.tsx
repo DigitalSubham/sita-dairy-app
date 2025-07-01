@@ -3,42 +3,23 @@ import { useAuth } from "@/context/AuthContext";
 import { Redirect } from "expo-router";
 import React from "react";
 
-export default function HomeScreen() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+export default function Index() {
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <DairyLoadingScreen
-        loading={isLoading}
-        loadingText="Syncing your farm data..."
-      />
-    );
+    return <DairyLoadingScreen loading loadingText="Checking authentication..." />;
   }
-
-  if (!isAuthenticated || !user) {
-    return <Redirect href="/(auth)/login" />;
+  if (!user) {
+    return <Redirect href="/login" />;
   }
-
-  // default to login just in case
-  let redirectHref: "/(auth)/login" | "/(admin)" | "/(tabs)" | "/(buyer)" =
-    "/(auth)/login";
 
   switch (user.role) {
     case "Admin":
-      redirectHref = "/(admin)";
-      break;
-
-    case "Buyer":
-      redirectHref = "/(buyer)";
-      break;
-
+      return <Redirect href="/(admin)" />;
     case "Farmer":
-      redirectHref = "/(tabs)";
-      break;
+      return <Redirect href="/(tabs)" />;
+    case "Buyer":
+    default:
+      return <Redirect href="/(buyer)" />; // Farmer tabs at root
   }
-
-  return <Redirect href={redirectHref} />;
 }
-
-
-// 9990872418

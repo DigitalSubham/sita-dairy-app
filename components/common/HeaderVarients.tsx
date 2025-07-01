@@ -25,7 +25,7 @@ interface ProfileProps {
 }
 
 interface ProductsHeaderProps {
-    addNewProduct: () => void;
+    addNewProduct?: () => void;
 }
 
 interface FarmerDashboardProps {
@@ -57,19 +57,41 @@ export const DashboardHeader = () => {
     )
 }
 
-export const ProductsHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct }) => {
+interface BuyerProps {
+    title: string;
+}
+
+export const BuyerDashboardHeader: React.FC<BuyerProps> = ({ title }) => {
     const actions: HeaderAction[] = [
         {
-            icon: "add-circle-outline",
-            onPress: () => addNewProduct(),
+            icon: "notifications-outline",
+            onPress: () => console.log("Notifications pressed"),
         },
-
     ]
 
     return (
         <CustomHeader
-            title="Product Management"
+            title={title}
+            // subtitle='Manage your dairy operations'
             actions={actions}
+        />
+    )
+}
+
+
+export const ProductsHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct }) => {
+    // const actions: HeaderAction[] = [
+    //     {
+    //         icon: "add-circle-outline",
+    //         onPress: () => addNewProduct(),
+    //     },
+
+    // ]
+
+    return (
+        <CustomHeader
+            title="Product Management"
+        // actions={actions}
         />
     )
 }

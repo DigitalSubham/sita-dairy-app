@@ -35,7 +35,7 @@ export default function Layout() {
             ),
         },
         {
-            name: "settings",
+            name: "Settings",
             title: "Settings",
             icon: (size: number, color: string) => (
                 <Ionicons name="settings-outline" size={size} color={color} />
