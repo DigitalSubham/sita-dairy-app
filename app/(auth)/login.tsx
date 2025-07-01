@@ -1,0 +1,362 @@
+import { Feather, FontAwesome } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { Link, useRouter } from "expo-router";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Keyboard,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useAuth } from "../../context/AuthContext";
+
+export default function Login() {
+  const [mobile, setMobile] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
+  const router = useRouter();
+  const passwordRef = useRef<TextInput>(null);
+
+
+  const handleLogin = async () => {
+    let trimmedMobile = mobile.trim();
+    const trimmedPassword = password.trim();
+
+    // Remove +91 and all spaces
+    if (trimmedMobile.startsWith("+91")) {
+      trimmedMobile = trimmedMobile.replace("+91", "");
+    }
+    trimmedMobile = trimmedMobile.replace(/\s+/g, "");
+
+    const phoneRegex = /^\d{10}$/; // expecting only 10-digit number now
+
+    if (!trimmedMobile || !trimmedPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (!phoneRegex.test(trimmedMobile)) {
+      setError("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await signIn(trimmedMobile, trimmedPassword);
+      if (response.success) {
+        if (response.user.role === "Admin") {
+          router.replace("/(admin)");
+        } else {
+          router.replace("/(tabs)");
+        }
+      } else {
+        setError(response.message || "Failed to login");
+      }
+    } catch (err) {
+      setError("Invalid mobile or password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+    // If the keyboard is open, don't dismiss it
+    if (Platform.OS !== "ios") {
+      Keyboard.dismiss();
+    }
+  };
+
+  return (
+    <LinearGradient colors={["#e6f0ff", "#f0f9ff"]} style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.logoContainer}>
+          <View style={styles.logoCircle}>
+            <Feather name="droplet" size={60} color="#0ea5e9" />
+          </View>
+          <Text style={styles.logoText}>Sita Dairy</Text>
+          <Text style={styles.logoSubtext}>Management System</Text>
+        </View>
+
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Login Account</Text>
+          <Text style={styles.subtitle}>Join our dairy community</Text>
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <View style={styles.inputContainer}>
+            <FontAwesome
+              name="phone"
+              size={20}
+              color="#38bdf8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Mobile Number"
+              placeholderTextColor="#93c5fd"
+              value={mobile}
+              onChangeText={setMobile}
+              autoCapitalize="none"
+              keyboardType="number-pad"
+              editable={!isLoading}
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <FontAwesome
+              name="key"
+              size={20}
+              color="#38bdf8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              ref={passwordRef}
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#93c5fd"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              keyboardType="number-pad"
+              editable={!isLoading}
+              onSubmitEditing={() => handleLogin()}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={togglePasswordVisibility}
+            >
+              {showPassword ? (
+                <FontAwesome name="eye" size={20} color="#666" />
+              ) : (
+                <FontAwesome name="eye-slash" size={20} color="#666" />
+              )}
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            disabled={isLoading}
+            style={styles.signupButton}
+            onPress={handleLogin}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.signupButtonText}>Login Sita Dairy</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Create new account? </Text>
+            <Link href="/(auth)/signup" asChild>
+              <TouchableOpacity>
+                <Text style={styles.loginLink}>Sign Up</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        </View>
+
+        <View style={styles.footerContainer}>
+          <Text style={styles.footerText}>
+            © 2025 Sita Dairy Management System
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Milk bottle decorations */}
+      <View style={styles.milkBottleLeft}>
+        <View style={styles.bottleNeck} />
+        <View style={styles.bottleBody} />
+      </View>
+
+      <View style={styles.milkBottleRight}>
+        <View style={styles.bottleNeck} />
+        <View style={styles.bottleBody} />
+      </View>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#e6f0ff",
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginTop: 60,
+    marginBottom: 30,
+  },
+  logoCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+    borderWidth: 4,
+    borderColor: "white",
+  },
+  logoText: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#0c4a6e",
+    marginTop: 12,
+  },
+  logoSubtext: {
+    fontSize: 16,
+    color: "#0284c7",
+    fontWeight: "500",
+  },
+  formContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#0c4a6e",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#0284c7",
+    marginBottom: 24,
+  },
+  errorText: {
+    color: "#ef4444",
+    backgroundColor: "#fee2e2",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#fca5a5",
+    overflow: "hidden",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f9ff",
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 55,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  eyeIcon: {
+    padding: 5,
+  },
+  input: {
+    flex: 1,
+    height: "100%",
+    fontSize: 16,
+    color: "#0c4a6e",
+  },
+  signupButton: {
+    backgroundColor: "#0ea5e9",
+    borderRadius: 12,
+    height: 55,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 16,
+    shadowColor: "#0ea5e9",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  signupButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  loginContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 16,
+  },
+  loginText: {
+    color: "#0c4a6e",
+    fontSize: 15,
+  },
+  loginLink: {
+    color: "#0ea5e9",
+    fontSize: 15,
+    fontWeight: "bold",
+  },
+  footerContainer: {
+    marginTop: 30,
+    alignItems: "center",
+  },
+  footerText: {
+    color: "#0284c7",
+    fontSize: 12,
+  },
+  milkBottleLeft: {
+    position: "absolute",
+    bottom: 0,
+    left: 20,
+    opacity: 0.2,
+    alignItems: "center",
+  },
+  milkBottleRight: {
+    position: "absolute",
+    bottom: 0,
+    right: 20,
+    opacity: 0.2,
+    alignItems: "center",
+  },
+  bottleNeck: {
+    width: 15,
+    height: 20,
+    backgroundColor: "white",
+    borderTopLeftRadius: 7.5,
+    borderTopRightRadius: 7.5,
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+  },
+  bottleBody: {
+    width: 40,
+    height: 60,
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+  },
+});

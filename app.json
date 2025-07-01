@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Sita Dairy",
+    "slug": "sita_dairy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "sitadairy",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": ["INTERNET", "READ_EXTERNAL_STORAGE"],
+      "edgeToEdgeEnabled": true,
+      "package": "com.digitalsubham.sita_dairy"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "https://z6ztgnnyqi.execute-api.ap-south-1.amazonaws.com/dev/api/v1",
+      "router": {},
+      "eas": {
+        "projectId": "0b36d8dd-d239-409c-ad8a-f0ed553f55f0"
+      }
+    }
+  }
+}
