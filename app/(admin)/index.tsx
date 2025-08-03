@@ -199,7 +199,7 @@ const AdminDashboard = () => {
         {/* Dashboard Cards */}
         <View style={styles.cardsSection}>
           <BorderedDashboardCard
-            title="Total Farmers"
+            title="Total Users"
             value={dashboardData?.totalCustomers || 0}
             icon={<FontAwesome name="users" size={24} color="#FFFFFF" />}
             color="#1976D2"

@@ -1,11 +1,11 @@
-import { FontAwesome, Ionicons } from "@expo/vector-icons"
+import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import type React from "react"
 import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 export interface HeaderAction {
-  icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap
-  iconFamily?: "Ionicons" | "FontAwesome"
+  icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap | keyof typeof AntDesign.glyphMap
+  iconFamily?: "Ionicons" | "FontAwesome" | "AntDesign"
   onPress: () => void
   label?: string
 }
@@ -50,6 +50,9 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
   const renderIcon = (iconName: string, iconFamily = "Ionicons", size = 24) => {
     if (iconFamily === "FontAwesome") {
       return <FontAwesome name={iconName as any} size={size} color={textColor} />
+    }
+    if (iconFamily === "AntDesign") {
+      return <AntDesign name={iconName as any} size={size} color={textColor} />
     }
     return <Ionicons name={iconName as any} size={size} color={textColor} />
   }

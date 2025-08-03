@@ -9,6 +9,9 @@ type User = {
     mobile: string;
     collectionCenter: string;
     profilePic: string;
+    milkRate?: string;
+    morningMilk?: string;
+    eveningMilk?: string;
 };
 
 type UserModalProps = {
@@ -19,15 +22,16 @@ type UserModalProps = {
     setSelectedUser: (user: User) => void;
     updateFormData: (field: string, value: string) => void;
     weightRef: React.RefObject<any>;
+    title: string;
 };
 
-const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSelector, filteredUser, selectedUser, setSelectedUser, updateFormData, weightRef }) => {
+const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSelector, filteredUser, selectedUser, setSelectedUser, updateFormData, weightRef, title }) => {
     return (
         <Modal visible={showUserSelector} animationType="slide" transparent>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Select Farmer - {filteredUser.length}</Text>
+                        <Text style={styles.modalTitle}>Select {title} - {filteredUser.length}</Text>
                         <TouchableOpacity onPress={() => setShowUserSelector(false)}>
                             <Feather name="x" size={24} color="#64748b" />
                         </TouchableOpacity>
@@ -41,6 +45,10 @@ const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSele
                                 onPress={() => {
                                     setSelectedUser(item)
                                     updateFormData("userId", item._id)
+                                    if (title === "Buyer" && item.milkRate && item.morningMilk && item.eveningMilk) {
+                                        updateFormData("rate", item.milkRate)
+                                        updateFormData("weight", new Date().getHours() < 12 ? item.morningMilk : item.eveningMilk)
+                                    }
                                     setShowUserSelector(false)
                                     // Focus weight after slight delay to allow modal close
                                     setTimeout(() => {

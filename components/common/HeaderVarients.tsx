@@ -1,23 +1,39 @@
+import { CustomerRole } from '@/hooks/useCustomer'
+import { onExportPDF } from '@/utils/pdf'
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import React, { useState } from 'react'
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInDown } from 'react-native-reanimated'
+import { MilkEntry } from '../admin/milkRecords/milkBuyRecords'
 import { CustomHeader, type HeaderAction } from "./CustomHeader"
 
-type CustomerRole = "User" | "Farmer" | "Buyer" | "All"
+type ExtendedCustomerRole = CustomerRole | "All";
+
+
 interface UsersHeaderProps {
-    onRoleFilter?: (role: CustomerRole) => void
+    onRoleFilter?: (role: CustomerRole | "All") => void
     onSearch?: (searchText: string) => void
+    selectedRole?: CustomerRole | "All"
+    setCreateUserModalVisible?: (visible: boolean) => void
+    createUserModalVisible?: boolean
+}
+
+
+type RearrangeHeaderProps = {
+    onRoleFilter?: (role: CustomerRole) => void
+    setIsEditMode: (isEditMode: boolean) => void
+    isEditMode?: boolean,
     selectedRole?: CustomerRole
-    setCreateUserModalVisible: (visible: boolean) => void
-    createUserModalVisible: boolean
+    handleSaveOrder: () => void
+    handleResetOrder: () => void
 }
 
 // Milk Entry Header with date
 type MilkEntryHeaderProps = {
     entryType: string;
     setEntryType: (type: string) => void;
+    entryData?: MilkEntry[]; // Optional, if you want to pass data for export
 };
 interface ProfileProps {
     isEditing: boolean;
@@ -25,7 +41,7 @@ interface ProfileProps {
 }
 
 interface ProductsHeaderProps {
-    addNewProduct?: () => void;
+    addNewProduct: () => void;
 }
 
 interface FarmerDashboardProps {
@@ -59,9 +75,10 @@ export const DashboardHeader = () => {
 
 interface BuyerProps {
     title: string;
+    desc: string;
 }
 
-export const BuyerDashboardHeader: React.FC<BuyerProps> = ({ title }) => {
+export const BuyerDashboardHeader: React.FC<BuyerProps> = ({ title, desc }) => {
     const actions: HeaderAction[] = [
         {
             icon: "notifications-outline",
@@ -72,7 +89,7 @@ export const BuyerDashboardHeader: React.FC<BuyerProps> = ({ title }) => {
     return (
         <CustomHeader
             title={title}
-            // subtitle='Manage your dairy operations'
+            subtitle={desc}
             actions={actions}
         />
     )
@@ -80,18 +97,18 @@ export const BuyerDashboardHeader: React.FC<BuyerProps> = ({ title }) => {
 
 
 export const ProductsHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct }) => {
-    // const actions: HeaderAction[] = [
-    //     {
-    //         icon: "add-circle-outline",
-    //         onPress: () => addNewProduct(),
-    //     },
+    const actions: HeaderAction[] = [
+        {
+            icon: "add-circle-outline",
+            onPress: () => addNewProduct(),
+        },
 
-    // ]
+    ]
 
     return (
         <CustomHeader
             title="Product Management"
-        // actions={actions}
+            actions={actions}
         />
     )
 }
@@ -109,8 +126,13 @@ export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProp
 }
 
 // Records Header with filter options
-export const RecordsHeader = ({ entryType, setEntryType }: MilkEntryHeaderProps) => {
+export const RecordsHeader = ({ entryType, setEntryType, entryData }: MilkEntryHeaderProps) => {
     const actions: HeaderAction[] = [
+        {
+            icon: "pdffile1",
+            iconFamily: "AntDesign",
+            onPress: () => { void (async () => { await onExportPDF(entryData || []) })() }, // Pass entryData if available
+        },
         {
             icon: "swap-vertical-outline",
             onPress: () => entryType === "Milk Buy" ? setEntryType("Milk Sale") : setEntryType("Milk Buy"),
@@ -173,15 +195,17 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
         navigation.dispatch(DrawerActions.openDrawer())
     }
 
-    const roles: { key: CustomerRole; label: string; icon: string }[] = [
+    const roles: { key: ExtendedCustomerRole; label: string; icon: string }[] = [
         { key: "All", label: "All Users", icon: "people" },
         { key: "Farmer", label: "Farmers", icon: "agriculture" },
         { key: "Buyer", label: "Buyers", icon: "shopping-cart" },
         { key: "User", label: "Users", icon: "person" },
     ]
 
-    const handleRoleSelect = (role: CustomerRole) => {
-        onRoleFilter?.(role)
+    const handleRoleSelect = (role: ExtendedCustomerRole) => {
+        if (role !== "All") {
+            onRoleFilter?.(role)
+        }
         setShowFilters(false)
     }
 
@@ -212,7 +236,7 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
                 <View style={styles.actionsContainer}>
                     <TouchableOpacity
                         style={[styles.actionButton, createUserModalVisible && styles.actionButtonActive]}
-                        onPress={() => setCreateUserModalVisible(true)}
+                        onPress={() => setCreateUserModalVisible?.(true)}
                         activeOpacity={0.7}
                     >
                         <Feather name="plus" size={20} color={showSearch ? "#3b82f6" : "#64748b"} />
@@ -291,6 +315,120 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
     )
 }
 
+export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
+    onRoleFilter,
+    setIsEditMode,
+    selectedRole,
+    handleSaveOrder,
+    handleResetOrder,
+    isEditMode
+}) => {
+    const [showFilters, setShowFilters] = useState(false)
+    const navigation = useNavigation()
+
+    const handleMenuPress = () => {
+        navigation.dispatch(DrawerActions.openDrawer())
+    }
+
+    const roles: { key: CustomerRole; label: string; icon: string }[] = [
+        { key: "Farmer", label: "Farmers", icon: "agriculture" },
+        { key: "Buyer", label: "Buyers", icon: "shopping-cart" },
+    ]
+
+    const handleRoleSelect = (role: CustomerRole) => {
+        onRoleFilter?.(role)
+        setShowFilters(false)
+    }
+
+
+
+
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity style={styles.iconButton} onPress={handleMenuPress} activeOpacity={0.7}>
+                    <Ionicons name="menu" size={24} color={"#111827"} />
+                </TouchableOpacity>
+                <View style={styles.titleSection}>
+                    <Text style={styles.title}>Rearrange Users</Text>
+                    <Text style={styles.subtitle}>
+                        {`Filtered by ${selectedRole}`}
+                    </Text>
+                </View>
+
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, isEditMode && styles.actionButtonActive]}
+                        onPress={() => setIsEditMode(true)}
+                        activeOpacity={0.7}
+                    >
+                        <Feather name="edit" size={20} color={isEditMode ? "#3b82f6" : "#64748b"} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionButton, showFilters && styles.actionButtonActive]}
+                        onPress={() => setShowFilters(!showFilters)}
+                        activeOpacity={0.7}
+                    >
+                        <MaterialIcons name="filter-list" size={20} color={showFilters ? "#3b82f6" : "#64748b"} />
+                        {<View style={styles.filterIndicator} />}
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {isEditMode && (
+                <Animated.View entering={FadeInDown.duration(300)} style={styles.searchContainer}>
+                    <View style={styles.editActions}>
+                        <TouchableOpacity style={styles.saveButton} onPress={handleSaveOrder}>
+                            <Ionicons name="checkmark-outline" size={20} color="#fff" />
+                            <Text style={styles.buttonText}>Save</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditMode(false)}>
+                            <Ionicons name="close-outline" size={20} color="#666" />
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.resetButton} onPress={handleResetOrder}>
+                            <Ionicons name="refresh-outline" size={20} color="#ff6b6b" />
+                            <Text style={styles.resetButtonText}>Reset</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            )}
+
+            {showFilters && (
+                <Animated.View entering={FadeInDown.duration(300)} style={styles.filtersContainer}>
+                    <Text style={styles.filtersTitle}>Filter by Role</Text>
+                    <View style={styles.roleButtons}>
+                        {roles.map((role) => (
+                            <TouchableOpacity
+                                key={role.key}
+                                style={[
+                                    styles.roleButton,
+                                    selectedRole === role.key && styles.roleButtonSelected
+                                ]}
+                                onPress={() => handleRoleSelect(role.key)}
+                                activeOpacity={0.7}
+                            >
+                                <MaterialIcons
+                                    name={role.icon as any}
+                                    size={16}
+                                    color={selectedRole === role.key ? "#ffffff" : "#64748b"}
+                                />
+                                <Text style={[
+                                    styles.roleButtonText,
+                                    selectedRole === role.key && styles.roleButtonTextSelected
+                                ]}>
+                                    {role.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </Animated.View>
+            )}
+        </View>
+    )
+}
 
 // farmer side
 
@@ -341,20 +479,20 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingVertical: 10,
         paddingTop: 50, // Account for status bar
     },
     titleSection: {
         flex: 1,
     },
     title: {
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: "700",
         color: "#1e293b",
         marginBottom: 2,
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: 12,
         color: "#64748b",
         fontWeight: "500",
     },
@@ -447,5 +585,51 @@ const styles = StyleSheet.create({
     roleButtonTextSelected: {
         color: "#ffffff",
         fontWeight: "600",
+    },
+
+    editActions: {
+        flexDirection: "row",
+        gap: 12,
+    },
+    saveButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#28a745",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    cancelButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#e9ecef",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    resetButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#fff",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#ff6b6b",
+    },
+    buttonText: {
+        color: "#fff",
+        fontWeight: "600",
+        marginLeft: 8,
+    },
+    cancelButtonText: {
+        color: "#666",
+        fontWeight: "600",
+        marginLeft: 8,
+    },
+    resetButtonText: {
+        color: "#ff6b6b",
+        fontWeight: "600",
+        marginLeft: 8,
     },
 })

@@ -2,9 +2,9 @@ import { api } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useState } from "react";
 
-type CustomerRole = "User" | "Farmer" | "Buyer";
+export type CustomerRole = "User" | "Farmer" | "Buyer";
 
-type Customer = {
+export type Customer = {
   _id: string;
   id: string;
   name: string;
@@ -16,6 +16,10 @@ type Customer = {
   collectionCenter: string;
   createdAt: string;
   role: CustomerRole;
+  morningMilk?: string;
+  eveningMilk?: string;
+  milkRate?: string;
+  positionNo: number;
 };
 
 export default function useCustomers({ role }: { role?: CustomerRole } = {}) {

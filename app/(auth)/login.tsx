@@ -1,9 +1,12 @@
-import { Feather, FontAwesome } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
+
+
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   Platform,
   ScrollView,
@@ -83,7 +86,10 @@ export default function Login() {
       >
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
-            <Feather name="droplet" size={60} color="#0ea5e9" />
+            <Image
+              source={require('../../assets/images/adaptive-icon.png')}
+              style={{ width: 200, height: 200 }}
+            />
           </View>
           <Text style={styles.logoText}>Sita Dairy</Text>
           <Text style={styles.logoSubtext}>Management System</Text>

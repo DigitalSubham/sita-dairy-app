@@ -6,8 +6,7 @@ import { StyleSheet, View } from 'react-native'
 const records = () => {
     return (
         <View style={styles.container}>
-            <BuyerDashboardHeader title="Records" />
-
+            <BuyerDashboardHeader title="Subcription" desc="Subscrbed to products" />
             <AnimatedComingSoon />
         </View>
     )

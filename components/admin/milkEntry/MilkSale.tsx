@@ -29,6 +29,9 @@ interface User {
     mobile: string
     collectionCenter: string
     profilePic: string
+    milkRate?: string;
+    morningMilk?: string;
+    eveningMilk?: string;
 }
 
 interface FormData {
@@ -206,7 +209,7 @@ export default function MilkSaleEntry() {
     }
 
     const existingUserIds = todayEntries.map(entry => entry.byUser._id);
-    const filteredUser = customers.filter(customer => !existingUserIds.includes(customer._id))
+    const filteredUser = customers.filter(customer => !existingUserIds.includes(customer._id)).sort((a, b) => a.positionNo - b.positionNo);
 
 
     // Render entry options modal
@@ -269,6 +272,9 @@ export default function MilkSaleEntry() {
                             onPress={() => {
                                 const newShift = formData.shift === "Morning" ? "Evening" : "Morning"
                                 updateFormData("shift", newShift)
+                                if (selectedUser && selectedUser.morningMilk && selectedUser.eveningMilk) {
+                                    updateFormData("weight", formData.shift === "Morning" ? selectedUser.eveningMilk : selectedUser.morningMilk)
+                                }
                             }}
                         >
                             <Text style={styles.compactFieldText}>
@@ -394,7 +400,7 @@ export default function MilkSaleEntry() {
                 setIsLoadingEntries={setIsLoadingEntries}
             />
 
-            {<UserModal showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
+            {<UserModal title="Buyer" showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
 
             {renderEntryOptionsModal()}
         </>

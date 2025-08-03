@@ -11,9 +11,10 @@ export default function Layout() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
+
   useEffect(() => {
     if (isLoading) return;
-    if (user?.role === "Buyer") {
+    if (user?.role === "Buyer" || user?.role === "User") {
       router.replace("/(buyer)");
     } else if (user?.role === "Admin") {
       router.replace("/(admin)");

@@ -1,5 +1,5 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
-import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Drawer } from "expo-router/drawer";
 import { StatusBar } from "expo-status-bar";
 
@@ -7,24 +7,16 @@ export default function Layout() {
     const screens = [
         {
             name: "index",
-            title: "Dashboard",
+            title: "Products",
             icon: (size: number, color: string) => (
                 <Ionicons name="home-outline" size={size} color={color} />
             ),
         },
         {
             name: "records",
-            title: "Milk Records",
+            title: "Milk Subcription",
             icon: (size: number, color: string) => (
                 <Feather name="bar-chart-2" size={20} color={color} />
-            ),
-        },
-
-        {
-            name: "products",
-            title: "Our Products",
-            icon: (size: number, color: string) => (
-                <FontAwesome name="product-hunt" size={20} color={color} />
             ),
         },
         {

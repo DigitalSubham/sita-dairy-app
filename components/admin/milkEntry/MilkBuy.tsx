@@ -253,7 +253,13 @@ export default function MilkBuyEntry() {
     const existingUserIds: string[] = Array.isArray(todayEntries) && todayEntries.length > 0
         ? todayEntries.map(entry => entry?.byUser?._id)
         : [];
-    const filteredUser = customers.filter(customer => !existingUserIds.includes(customer._id))
+
+
+    const filteredUser = customers
+        .filter(c => !existingUserIds.includes(c._id))
+        .sort((a, b) => a.positionNo - b.positionNo);
+
+
 
     // Render entry options modal
     const renderEntryOptionsModal = () => (
@@ -453,7 +459,7 @@ export default function MilkBuyEntry() {
                 setIsLoadingEntries={setIsLoadingEntries}
             />
 
-            {<UserModal showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
+            {<UserModal title="Farmer" showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
             {renderEntryOptionsModal()}
         </>
     )

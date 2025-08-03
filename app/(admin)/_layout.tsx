@@ -49,6 +49,11 @@ export default function Layout() {
       icon: (size: number, color: string) => <Ionicons name="people-outline" size={size} color={color} />,
     },
     {
+      name: "rearrange",
+      title: "Rearrange Users",
+      icon: (size: number, color: string) => <Ionicons name="reorder-three-sharp" size={size} color={color} />,
+    },
+    {
       name: "products",
       title: "Products",
       icon: (size: number, color: string) => <FontAwesome name="product-hunt" size={size} color={color} />,

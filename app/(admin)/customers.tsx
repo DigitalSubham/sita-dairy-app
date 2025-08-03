@@ -17,7 +17,7 @@ import Animated, { FadeInDown } from "react-native-reanimated"
 // Define Customer type with role
 type CustomerRole = "User" | "Farmer" | "Buyer"
 
-type Customer = {
+export type Customer = {
   _id: string
   id: string
   name: string
@@ -29,9 +29,14 @@ type Customer = {
   collectionCenter: string
   createdAt: string
   role: CustomerRole
+  morningMilk?: string
+  eveningMilk?: string
+  milkRate?: string
+
 }
 
 // Import your components and hooks
+import BuyerRateConfigModal from "@/components/admin/users/BuyerRateConfigModal"
 import CreateUserModal from "@/components/admin/users/CreateUserModal"
 import RoleCheckBox from "@/components/admin/users/RoleCheckBox"
 import { UsersHeader } from "@/components/common/HeaderVarients"
@@ -46,6 +51,7 @@ const ImprovedCustomersList: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<CustomerRole | "All">("All")
   const [searchText, setSearchText] = useState("")
   const [createUserModalVisible, setCreateUserModalVisible] = useState(false)
+  const [buyerRateModalVisible, setBuyerRateModalVisible] = useState<Customer | null>(null)
 
   // Use the hook with role filter
   const { customers, loading, refreshing, refresh, token } = useCustomers({
@@ -234,60 +240,63 @@ const ImprovedCustomersList: React.FC = () => {
   }: {
     item: Customer
     index: number
-  }) => (
-    <Animated.View entering={FadeInDown.delay(index * 100).duration(600)} style={styles.customerCard}>
-      <View style={styles.cardContent}>
-        {/* Customer Info Section */}
-        <View style={styles.customerInfoSection}>
-          <View style={styles.leftSection}>
-            <View style={styles.avatarContainer}>
-              <Image source={{ uri: item.profilePic }} style={styles.avatar} />
-              {item.isVerified && (
-                <View style={styles.verifiedBadge}>
-                  <MaterialIcons name="verified" size={14} color="#4CAF50" />
-                </View>
-              )}
-            </View>
-          </View>
+  }) => {
 
-          <View style={styles.middleSection}>
-            <Text style={styles.customerName} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text style={styles.customerId}>ID: {item.id}</Text>
-            <View style={styles.infoRow}>
-              <MaterialIcons name="phone" size={14} color="#64748b" />
-              <Text style={styles.infoText}>{item.mobile}</Text>
+    return (
+      <Animated.View entering={FadeInDown.delay(index * 100).duration(600)} style={styles.customerCard}>
+        <View style={styles.cardContent}>
+          {/* Customer Info Section */}
+          <View style={styles.customerInfoSection}>
+            <View style={styles.leftSection}>
+              <View style={styles.avatarContainer}>
+                <Image source={{ uri: item.profilePic }} style={styles.avatar} />
+                {item.isVerified && (
+                  <View style={styles.verifiedBadge}>
+                    <MaterialIcons name="verified" size={14} color="#4CAF50" />
+                  </View>
+                )}
+              </View>
             </View>
-            <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="cow" size={14} color="#64748b" />
-              <Text style={styles.infoText} numberOfLines={1}>
-                {item.dailryName}
+
+            <View style={styles.middleSection}>
+              <Text style={styles.customerName} numberOfLines={1}>
+                {item.name}
               </Text>
+              <Text style={styles.customerId}>ID: {item.id}</Text>
+              <View style={styles.infoRow}>
+                <MaterialIcons name="phone" size={14} color="#64748b" />
+                <Text style={styles.infoText}>{item.mobile}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="cow" size={14} color="#64748b" />
+                <Text style={styles.infoText} numberOfLines={1}>
+                  {item.dailryName}
+                </Text>
+              </View>
+            </View>
+
+            {item.role === "Buyer" && <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() => setBuyerRateModalVisible(item)}
+              activeOpacity={0.7}
+            >
+              <Feather name="edit" size={18} color="#3b82f6" />
+            </TouchableOpacity>}
+          </View>
+
+          {/* Role Selection Section */}
+          <View style={styles.roleSection}>
+            <Text style={styles.roleSectionTitle}>Role Assignment</Text>
+            <View style={styles.roleCheckboxes}>
+              {renderRoleCheckbox(item, "User", "User")}
+              {renderRoleCheckbox(item, "Farmer", "Farmer")}
+              {renderRoleCheckbox(item, "Buyer", "Buyer")}
             </View>
           </View>
-
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => Alert.alert("Coming Soon", "Customer details feature is under development.")}
-            activeOpacity={0.7}
-          >
-            <Feather name="eye" size={18} color="#3b82f6" />
-          </TouchableOpacity>
         </View>
-
-        {/* Role Selection Section */}
-        <View style={styles.roleSection}>
-          <Text style={styles.roleSectionTitle}>Role Assignment</Text>
-          <View style={styles.roleCheckboxes}>
-            {renderRoleCheckbox(item, "User", "User")}
-            {renderRoleCheckbox(item, "Farmer", "Farmer")}
-            {renderRoleCheckbox(item, "Buyer", "Buyer")}
-          </View>
-        </View>
-      </View>
-    </Animated.View>
-  )
+      </Animated.View>
+    )
+  }
 
   if (loading) {
     return <DairyLoadingScreen loading={loading} loadingText="Syncing your Customer data..." />
@@ -367,6 +376,11 @@ const ImprovedCustomersList: React.FC = () => {
         visible={createUserModalVisible}
         onClose={() => setCreateUserModalVisible(false)}
         onUserCreated={() => refresh()}
+      />
+      <BuyerRateConfigModal
+        visible={buyerRateModalVisible}
+        onClose={() => setBuyerRateModalVisible(null)}
+        onBuyerSet={() => refresh()}
       />
     </View>
   )

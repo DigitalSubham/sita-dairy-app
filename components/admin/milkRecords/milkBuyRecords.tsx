@@ -2,6 +2,7 @@ import RenderDeleteModal from "@/components/common/DeleteModal";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import useCustomers from "@/hooks/useCustomer";
+import { setRecordData } from "@/store/recordSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
@@ -23,6 +24,7 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Toast from "react-native-toast-message";
+import { useDispatch } from "react-redux";
 
 const { width } = Dimensions.get("window");
 
@@ -35,7 +37,7 @@ interface User {
     profilePic?: string;
 }
 
-interface MilkEntry {
+export interface MilkEntry {
     _id: string;
     byUser: {
         _id: string;
@@ -94,6 +96,7 @@ export default function MilkBuyRecords() {
     const [selectedItem, setSelectedItem] = useState<string>("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const dispatch = useDispatch();
 
     // Initialize with today's date
     useEffect(() => {
@@ -132,6 +135,7 @@ export default function MilkBuyRecords() {
         });
 
         setFilteredEntries(filtered);
+
     }, [searchQuery, allEntries]);
 
     // Fetch entries with filters
@@ -164,6 +168,7 @@ export default function MilkBuyRecords() {
             const data = await response.json();
             setAllEntries(data.data || []);
             setFilteredEntries(data.data || []);
+            dispatch(setRecordData(data.data)); // Update Redux store with filtered data
         } catch (error) {
             Alert.alert("Error", "Failed to fetch entries");
         } finally {
@@ -789,7 +794,7 @@ export default function MilkBuyRecords() {
                 </View>
             </Modal>
 
-            {selectedItem && (
+            {!!selectedItem && (
                 <RenderDeleteModal
                     text="entry"
                     showDeleteModal={showDeleteModal}

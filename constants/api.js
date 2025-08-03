@@ -6,6 +6,7 @@ export const api = {
   login: `${BASE_URL}/user/login`,
   signup: `${BASE_URL}/user/create`,
   dashboard: `${BASE_URL}/user/dashboard`,
+  changePosition: `${BASE_URL}/user/change-position`,
   milkEntry: `${BASE_URL}/milk/create`,
   milkSales: `${BASE_URL}/milk/sell`,
   getUser: `${BASE_URL}/user/getSingleCustomerDetail`,
@@ -16,6 +17,9 @@ export const api = {
   deleteAccount: `${BASE_URL}/user/delete-account`,
   changeRole: `${BASE_URL}/user/change-user-role`,
 
-  //
-  products: `${BASE_URL}/milk/products`,
+  // products
+  getProducts: `${BASE_URL}/product/all`,
+  createProduct: `${BASE_URL}/product/create`,
+  updateProduct: `${BASE_URL}/product/update`,
+  deleteProduct: `${BASE_URL}/product/delete`,
 };

@@ -4,6 +4,7 @@ import { Link, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -101,7 +102,10 @@ export default function Signup() {
       >
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
-            <Feather name="droplet" size={60} color="#0ea5e9" />
+            <Image
+              source={require('../../assets/images/adaptive-icon.png')}
+              style={{ width: 200, height: 200 }}
+            />
           </View>
           <Text style={styles.logoText}>Sita Dairy</Text>
           <Text style={styles.logoSubtext}>Management System</Text>
