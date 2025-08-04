@@ -1,13 +1,14 @@
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import type React from "react"
-import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 export interface HeaderAction {
   icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap | keyof typeof AntDesign.glyphMap
   iconFamily?: "Ionicons" | "FontAwesome" | "AntDesign"
   onPress: () => void
   label?: string
+  isSpinner?: boolean
 }
 
 export interface CustomHeaderProps {
@@ -47,15 +48,27 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
     navigation.goBack()
   }
 
-  const renderIcon = (iconName: string, iconFamily = "Ionicons", size = 24) => {
+
+  const renderIcon = (
+    iconName: string,
+    iconFamily = "Ionicons",
+    isSpinner = false,
+    size = 24,
+    textColor = "#000" // fallback in case textColor isn't in scope
+  ) => {
+    if (isSpinner) {
+      return <ActivityIndicator size="small" color={textColor} />;
+    }
+
     if (iconFamily === "FontAwesome") {
-      return <FontAwesome name={iconName as any} size={size} color={textColor} />
+      return <FontAwesome name={iconName as any} size={size} color={textColor} />;
     }
     if (iconFamily === "AntDesign") {
-      return <AntDesign name={iconName as any} size={size} color={textColor} />
+      return <AntDesign name={iconName as any} size={size} color={textColor} />;
     }
-    return <Ionicons name={iconName as any} size={size} color={textColor} />
-  }
+    return <Ionicons name={iconName as any} size={size} color={textColor} />;
+  };
+
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
@@ -109,7 +122,7 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
                   onPress={action.onPress}
                   activeOpacity={0.7}
                 >
-                  {renderIcon(action.icon, action.iconFamily)}
+                  {renderIcon(action.icon, action.iconFamily, action.isSpinner)}
                 </TouchableOpacity>
               ))}
             </View>

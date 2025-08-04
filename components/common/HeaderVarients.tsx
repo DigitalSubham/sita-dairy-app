@@ -115,6 +115,7 @@ export const ProductsHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct })
 
 
 export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProps) => {
+
     const actions: HeaderAction[] = [
         {
             icon: "swap-vertical-outline",
@@ -127,12 +128,29 @@ export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProp
 
 // Records Header with filter options
 export const RecordsHeader = ({ entryType, setEntryType, entryData }: MilkEntryHeaderProps) => {
+    const [loading, setLoading] = useState(false);
     const actions: HeaderAction[] = [
-        {
-            icon: "pdffile1",
-            iconFamily: "AntDesign",
-            onPress: () => { void (async () => { await onExportPDF(entryData || []) })() }, // Pass entryData if available
-        },
+        loading
+            ? {
+                icon: "loading1",
+                isSpinner: true,
+                onPress: () => { },
+            }
+            : {
+                icon: "pdffile1",
+                iconFamily: "AntDesign",
+                onPress: () => {
+                    void (async () => {
+                        setLoading(true);
+                        try {
+                            await onExportPDF(entryData || []);
+                        } finally {
+                            setLoading(false);
+                        }
+                    })()
+                },
+            }
+        ,
         {
             icon: "swap-vertical-outline",
             onPress: () => entryType === "Milk Buy" ? setEntryType("Milk Sale") : setEntryType("Milk Buy"),

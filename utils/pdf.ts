@@ -15,22 +15,12 @@ export function generateMilkEntriesHTML2(
     return sum + (Number(e.weight) || 0) * (Number(e.rate) || 0);
   }, 0);
 
-  // Group entries by date for better organization
-  //   const groupedEntries = entries.reduce((groups, entry) => {
-  //     const date = new Date(entry.date).toLocaleDateString();
-  //     if (!groups[date]) {
-  //       groups[date] = [];
-  //     }
-  //     groups[date].push(entry);
-  //     return groups;
-  //   }, {} as Record<string, MilkEntry[]>);
-
   const tableRows = entries
     .map((entry, index) => {
       const total = (
         (Number(entry.weight) || 0) * (Number(entry.rate) || 0)
       ).toFixed(2);
-      const dateStr = new Date(entry.date).toLocaleDateString();
+      const dateStr = new Date(entry.date).toLocaleDateString("en-GB");
 
       return `
       <tr class="${entry.shift.toLowerCase()}-shift">
@@ -320,10 +310,10 @@ export function generateMilkEntriesHTML2(
                         Math.min(
                           ...entries.map((e) => new Date(e.date).getTime())
                         )
-                      ).toLocaleDateString()} - 
+                      ).toLocaleDateString("en-GB")} - 
                    ${new Date(
                      Math.max(...entries.map((e) => new Date(e.date).getTime()))
-                   ).toLocaleDateString()}`
+                   ).toLocaleDateString("en-GB")}`
                     : "N/A"
                 }
             </span>
@@ -393,7 +383,7 @@ export function generateMilkEntriesHTML(
       const total = ((Number(e.weight) || 0) * (Number(e.rate) || 0)).toFixed(
         2
       );
-      const dateStr = new Date(e.date).toLocaleDateString();
+      const dateStr = new Date(e.date).toLocaleDateString("en-GB");
       const shiftColor = e.shift === "Morning" ? "#E3FCEF" : "#FFF4E5";
       return `
       <div class="entry-card" style="background:${shiftColor}">

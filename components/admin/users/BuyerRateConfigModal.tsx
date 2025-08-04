@@ -47,13 +47,6 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({ visible, onClose, onBu
             milkRate: "",
         };
 
-        if (!buyerRateConfig.morningMilk.trim()) {
-            newErrors.morningMilk = "Shift is required";
-        }
-
-        if (!buyerRateConfig.eveningMilk.trim()) {
-            newErrors.eveningMilk = "Milk Type is required";
-        }
 
         if (!buyerRateConfig.milkRate || isNaN(Number(buyerRateConfig.milkRate)) || Number(buyerRateConfig.milkRate) <= 0) {
             newErrors.milkRate = "Rate per litre must be a positive number";
@@ -86,7 +79,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({ visible, onClose, onBu
                     },
                     body: JSON.stringify(requestBody),
                 });
-                console.log("first response", response, requestBody, parsedToken);
+
                 const data = await response.json();
                 if (data.success) {
                     onClose();
@@ -180,9 +173,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({ visible, onClose, onBu
                                     keyboardType="default"
                                     autoCapitalize="words"
                                 />
-                                {errors.morningMilk ? (
-                                    <Text style={styles.errorText}>{errors.morningMilk}</Text>
-                                ) : null}
+
                             </View>
 
                             <View style={styles.inputContainer}>
@@ -203,9 +194,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({ visible, onClose, onBu
                                     keyboardType="default"
                                     autoCapitalize="words"
                                 />
-                                {errors.eveningMilk ? (
-                                    <Text style={styles.errorText}>{errors.eveningMilk}</Text>
-                                ) : null}
+
                             </View>
 
 

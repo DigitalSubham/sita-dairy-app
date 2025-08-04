@@ -86,6 +86,7 @@ export default function MilkSaleEntry() {
         milkType: "Cow",
     })
 
+
     // Helper function to update form data
     const updateFormData = (field: string, value: string) => {
         setFormData((prev) => ({
@@ -209,7 +210,15 @@ export default function MilkSaleEntry() {
     }
 
     const existingUserIds = todayEntries.map(entry => entry.byUser._id);
-    const filteredUser = customers.filter(customer => !existingUserIds.includes(customer._id)).sort((a, b) => a.positionNo - b.positionNo);
+    const filteredUser = customers
+        .filter(c => {
+            const normalizedShift = formData.shift.toLowerCase();
+            if (normalizedShift === "morning") return c.morningMilk;
+            if (normalizedShift === "evening") return c.eveningMilk;
+            return false;
+        })
+        .filter(c => !existingUserIds.includes(c._id))
+        .sort((a, b) => a.positionNo - b.positionNo);
 
 
     // Render entry options modal
