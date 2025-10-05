@@ -394,7 +394,7 @@ export default function SellerDashboard() {
             style={[styles.floatingSupportInner, supportButtonStyle]}
           >
             <AntDesign
-              name="message1"
+              name="message"
               size={24}
               color="#fff"
               strokeWidth={2.5}

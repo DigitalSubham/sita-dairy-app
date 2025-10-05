@@ -1,7 +1,7 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
 import DairyLoadingScreen from "@/components/Loading";
 import { useAuth } from "@/context/AuthContext";
-import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Feather, FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { useEffect } from "react";
@@ -37,6 +37,16 @@ export default function Layout() {
       ),
     },
     {
+      name: "payment",
+      title: "Payments",
+      icon: (size: number, color: string) => <FontAwesome name="rupee" size={size} color={color} />,
+    },
+    {
+      name: "products",
+      title: "Products",
+      icon: (size: number, color: string) => <FontAwesome name="product-hunt" size={size} color={color} />,
+    },
+    {
       name: "records",
       title: "Milk Records",
       icon: (size: number, color: string) => (
@@ -47,7 +57,7 @@ export default function Layout() {
       name: "viewRates",
       title: "Milk Rates",
       icon: (size: number, color: string) => (
-        <FontAwesome name="rupee" size={20} color={color} />
+        <MaterialIcons name="show-chart" size={20} color={color} />
       ),
     },
     {

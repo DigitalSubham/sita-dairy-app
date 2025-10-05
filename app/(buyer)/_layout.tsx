@@ -1,7 +1,6 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { Drawer } from "expo-router/drawer";
-import { StatusBar } from "expo-status-bar";
 
 export default function Layout() {
     const screens = [
@@ -11,6 +10,11 @@ export default function Layout() {
             icon: (size: number, color: string) => (
                 <Ionicons name="home-outline" size={size} color={color} />
             ),
+        },
+        {
+            name: "payment",
+            title: "Payments",
+            icon: (size: number, color: string) => <FontAwesome name="rupee" size={size} color={color} />,
         },
         {
             name: "records",
@@ -36,36 +40,33 @@ export default function Layout() {
     ];
 
     return (
-        <>
-            <StatusBar style="dark" />
-            <Drawer
-                drawerContent={(props) => <CustomDrawer {...props} />}
-                screenOptions={{
-                    headerShown: false,
-                    drawerActiveBackgroundColor: "#e0e7ff", // Light blue highlight
-                    drawerActiveTintColor: "#1e3a8a", // Dark blue text
-                    drawerInactiveTintColor: "#374151", // Dark gray
-                    drawerLabelStyle: {
-                        marginLeft: 0,
-                        fontSize: 15,
-                    },
-                }}
-            >
-                {screens.map(({ name, title, icon }) => (
-                    <Drawer.Screen
-                        key={name}
-                        name={name}
-                        options={{
-                            title,
-                            drawerIcon: icon
-                                ? ({ size, color }: { size: number; color: string }) =>
-                                    icon(size, color)
-                                : undefined,
-                        }}
-                    />
-                ))}
-            </Drawer>
-        </>
+        <Drawer
+            drawerContent={(props) => <CustomDrawer {...props} />}
+            screenOptions={{
+                headerShown: false,
+                drawerActiveBackgroundColor: "#e0e7ff", // Light blue highlight
+                drawerActiveTintColor: "#1e3a8a", // Dark blue text
+                drawerInactiveTintColor: "#374151", // Dark gray
+                drawerLabelStyle: {
+                    marginLeft: 0,
+                    fontSize: 15,
+                },
+            }}
+        >
+            {screens.map(({ name, title, icon }) => (
+                <Drawer.Screen
+                    key={name}
+                    name={name}
+                    options={{
+                        title,
+                        drawerIcon: icon
+                            ? ({ size, color }: { size: number; color: string }) =>
+                                icon(size, color)
+                            : undefined,
+                    }}
+                />
+            ))}
+        </Drawer>
     );
 }
 

@@ -2,7 +2,7 @@ import { api } from "@/constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useState } from "react";
 
-export type CustomerRole = "User" | "Farmer" | "Buyer";
+export type CustomerRole = "User" | "Farmer" | "Buyer" | "Customer";
 
 export type Customer = {
   _id: string;

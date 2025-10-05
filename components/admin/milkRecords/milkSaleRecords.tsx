@@ -603,7 +603,7 @@ export default function MilkSaleRecords() {
             )}
 
             {/* User Selection Modal */}
-            <Modal visible={showUserModal} transparent animationType="fade">
+            <Modal visible={showUserModal} transparent animationType="fade" statusBarTranslucent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
@@ -659,7 +659,7 @@ export default function MilkSaleRecords() {
             </Modal>
 
             {/* Date Selection Modal with Calendar */}
-            <Modal visible={showDateModal} transparent animationType="fade">
+            <Modal visible={showDateModal} transparent animationType="fade" statusBarTranslucent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarModalContent}>
                         <View style={styles.modalHeader}>
@@ -691,7 +691,7 @@ export default function MilkSaleRecords() {
             </Modal>
 
             {/* Date Range Modal with Calendar */}
-            <Modal visible={showDateRangeModal} transparent animationType="fade">
+            <Modal visible={showDateRangeModal} transparent animationType="fade" statusBarTranslucent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarModalContent}>
                         <View style={styles.modalHeader}>
@@ -764,7 +764,7 @@ export default function MilkSaleRecords() {
             </Modal>
 
             {/* Shift Selection Modal */}
-            <Modal visible={showShiftModal} transparent animationType="fade">
+            <Modal visible={showShiftModal} transparent animationType="fade" statusBarTranslucent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>

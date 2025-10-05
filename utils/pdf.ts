@@ -16,6 +16,8 @@ export function generateMilkEntriesHTML2(
   }, 0);
 
   const tableRows = entries
+    .slice() // create a shallow copy so original is not mutated
+    .reverse()
     .map((entry, index) => {
       const total = (
         (Number(entry.weight) || 0) * (Number(entry.rate) || 0)

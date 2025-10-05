@@ -21,13 +21,13 @@ type UserModalProps = {
     selectedUser: User | null;
     setSelectedUser: (user: User) => void;
     updateFormData: (field: string, value: string) => void;
-    weightRef: React.RefObject<any>;
+    weightRef?: React.RefObject<any>;
     title: string;
 };
 
 const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSelector, filteredUser, selectedUser, setSelectedUser, updateFormData, weightRef, title }) => {
     return (
-        <Modal visible={showUserSelector} animationType="slide" transparent>
+        <Modal visible={showUserSelector} animationType="slide" transparent statusBarTranslucent={true}>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
@@ -51,9 +51,12 @@ const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSele
                                     }
                                     setShowUserSelector(false)
                                     // Focus weight after slight delay to allow modal close
-                                    setTimeout(() => {
-                                        weightRef.current?.focus();
-                                    }, 300);
+                                    if (weightRef?.current) {
+                                        // Focus weight after slight delay to allow modal close
+                                        setTimeout(() => {
+                                            weightRef.current.focus()
+                                        }, 300)
+                                    }
                                 }}
                             >
                                 <View style={styles.userOptionContent}>

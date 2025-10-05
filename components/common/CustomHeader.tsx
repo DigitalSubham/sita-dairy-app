@@ -1,11 +1,11 @@
-import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
+import { AntDesign, FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons"
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import type React from "react"
 import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
 export interface HeaderAction {
-  icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap | keyof typeof AntDesign.glyphMap
-  iconFamily?: "Ionicons" | "FontAwesome" | "AntDesign"
+  icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap | keyof typeof AntDesign.glyphMap | keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap
+  iconFamily?: "Ionicons" | "FontAwesome" | "AntDesign" | "MaterialIcons"
   onPress: () => void
   label?: string
   isSpinner?: boolean
@@ -66,16 +66,15 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
     if (iconFamily === "AntDesign") {
       return <AntDesign name={iconName as any} size={size} color={textColor} />;
     }
+    if (iconFamily === "MaterialIcons") {
+      return <MaterialIcons name={iconName as any} size={size} color={textColor} />;
+    }
     return <Ionicons name={iconName as any} size={size} color={textColor} />;
   };
 
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-      <StatusBar
-        barStyle={statusBarStyle === "dark" ? "dark-content" : "light-content"}
-        backgroundColor={backgroundColor}
-      />
       <View style={[styles.header, { backgroundColor }]}>
         {/* Left Section */}
         <View style={styles.leftSection}>

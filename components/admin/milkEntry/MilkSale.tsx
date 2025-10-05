@@ -223,7 +223,7 @@ export default function MilkSaleEntry() {
 
     // Render entry options modal
     const renderEntryOptionsModal = () => (
-        <Modal visible={showOptionsModal} animationType="fade" transparent>
+        <Modal visible={showOptionsModal} animationType="fade" transparent statusBarTranslucent={true}>
             <View style={styles.modalOverlay}>
                 <View style={styles.optionsModalContent}>
                     <Text style={styles.optionsModalTitle}>Entry Options</Text>

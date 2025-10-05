@@ -4,7 +4,6 @@ import { useAuth } from "@/context/AuthContext";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
-import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 
 export default function Layout() {
@@ -27,6 +26,11 @@ export default function Layout() {
       name: "index",
       title: "Dashboard",
       icon: (size: number, color: string) => <Ionicons name="home-outline" size={size} color={color} />,
+    },
+    {
+      name: "payments",
+      title: "Payments",
+      icon: (size: number, color: string) => <FontAwesome name="rupee" size={size} color={color} />,
     },
     {
       name: "milkEntry",
@@ -71,34 +75,30 @@ export default function Layout() {
   ]
 
   return (
-    <>
-      <StatusBar style="dark" />
-
-      <Drawer
-        drawerContent={(props) => <CustomDrawer {...props} />}
-        screenOptions={{
-          // Hide the default header since we're using custom headers
-          headerShown: false,
-          drawerActiveBackgroundColor: "#e0e7ff",
-          drawerActiveTintColor: "#1e3a8a",
-          drawerInactiveTintColor: "#374151",
-          drawerLabelStyle: {
-            marginLeft: 0,
-            fontSize: 15,
-          },
-        }}
-      >
-        {screens.map(({ name, title, icon }) => (
-          <Drawer.Screen
-            key={name}
-            name={name}
-            options={{
-              title,
-              drawerIcon: icon ? ({ size, color }: { size: number; color: string }) => icon(size, color) : undefined,
-            }}
-          />
-        ))}
-      </Drawer>
-    </>
+    <Drawer
+      drawerContent={(props) => <CustomDrawer {...props} />}
+      screenOptions={{
+        // Hide the default header since we're using custom headers
+        headerShown: false,
+        drawerActiveBackgroundColor: "#e0e7ff",
+        drawerActiveTintColor: "#1e3a8a",
+        drawerInactiveTintColor: "#374151",
+        drawerLabelStyle: {
+          marginLeft: 0,
+          fontSize: 15,
+        },
+      }}
+    >
+      {screens.map(({ name, title, icon }) => (
+        <Drawer.Screen
+          key={name}
+          name={name}
+          options={{
+            title,
+            drawerIcon: icon ? ({ size, color }: { size: number; color: string }) => icon(size, color) : undefined,
+          }}
+        />
+      ))}
+    </Drawer>
   )
 }

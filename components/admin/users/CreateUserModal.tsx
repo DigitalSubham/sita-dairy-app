@@ -47,22 +47,47 @@ const CreateUserModal: React.FC<UserModalProps> = ({
             role: "",
         };
 
+        // --- NAME ---
         if (!userData.name.trim()) {
             newErrors.name = "Name is required";
         }
 
+        // --- MOBILE ---
         if (!userData.mobile.trim()) {
             newErrors.mobile = "Mobile number is required";
-        } else if (!/^\d{10}$/.test(userData.mobile.replace(/\D/g, ''))) {
-            newErrors.mobile = "Please enter a valid 10-digit mobile number";
+        } else {
+            // Clean mobile (remove spaces, dashes, +91, etc.)
+            let cleanedMobile = userData.mobile.replace(/\D/g, ""); // keep only digits
+
+            // If number starts with 91 and is 12 digits → remove country code
+            if (cleanedMobile.startsWith("91") && cleanedMobile.length === 12) {
+                cleanedMobile = cleanedMobile.slice(2);
+            }
+
+            // Regex: 10 digits, must start with 6–9
+            const mobileRegex = /^[6-9]\d{9}$/;
+
+            if (!mobileRegex.test(cleanedMobile)) {
+                if (cleanedMobile.length !== 10) {
+                    newErrors.mobile = "Mobile number must be exactly 10 digits";
+                } else if (!/^[6-9]/.test(cleanedMobile)) {
+                    newErrors.mobile =
+                        "Mobile number must start with 6, 7, 8, or 9";
+                } else {
+                    newErrors.mobile = "Please enter a valid Indian mobile number";
+                }
+            }
         }
 
+        // --- ROLE ---
         if (!userData.role) {
             newErrors.role = "Please select a role";
         }
 
         setErrors(newErrors);
-        return !Object.values(newErrors).some(error => error !== "");
+
+        // Return true only if no errors
+        return !Object.values(newErrors).some((error) => error !== "");
     };
 
     const handleCreateUser = async () => {
@@ -123,7 +148,7 @@ const CreateUserModal: React.FC<UserModalProps> = ({
             visible={visible}
             animationType="slide"
             transparent
-            statusBarTranslucent
+            statusBarTranslucent={true}
         >
             <KeyboardAvoidingView
                 style={styles.container}

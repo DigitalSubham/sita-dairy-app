@@ -2,6 +2,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import store from "@/store/store";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
@@ -45,6 +46,7 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <AuthProvider>
+        <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" options={{ animation: "none" }} />
           <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />

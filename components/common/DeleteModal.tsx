@@ -28,6 +28,7 @@ const RenderDeleteModal = ({
 }: RenderDeleteModalProps) => (
   <Modal
     visible={showDeleteModal}
+    statusBarTranslucent={true}
     transparent
     animationType="fade"
     onRequestClose={() => setShowDeleteModal(false)}

@@ -132,7 +132,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({ visible, onClose, onBu
             visible={!!visible}
             animationType="slide"
             transparent
-            statusBarTranslucent
+            statusBarTranslucent={true}
         >
             <KeyboardAvoidingView
                 style={styles.container}

@@ -275,7 +275,7 @@ const ImprovedCustomersList: React.FC = () => {
               </View>
             </View>
 
-            {item.role === "Buyer" && <TouchableOpacity
+            {<TouchableOpacity
               style={styles.detailsButton}
               onPress={() => setBuyerRateModalVisible(item)}
               activeOpacity={0.7}

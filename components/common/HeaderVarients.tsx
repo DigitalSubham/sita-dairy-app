@@ -112,6 +112,22 @@ export const ProductsHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct })
         />
     )
 }
+export const PaymentHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct }) => {
+    const actions: HeaderAction[] = [
+        {
+            icon: "add-circle-outline",
+            onPress: () => addNewProduct(),
+        },
+
+    ]
+
+    return (
+        <CustomHeader
+            title="Payments"
+            actions={actions}
+        />
+    )
+}
 
 
 export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProps) => {
@@ -132,13 +148,13 @@ export const RecordsHeader = ({ entryType, setEntryType, entryData }: MilkEntryH
     const actions: HeaderAction[] = [
         loading
             ? {
-                icon: "loading1",
+                icon: "loading",
                 isSpinner: true,
                 onPress: () => { },
             }
             : {
-                icon: "pdffile1",
-                iconFamily: "AntDesign",
+                icon: "picture-as-pdf",
+                iconFamily: "MaterialIcons",
                 onPress: () => {
                     void (async () => {
                         setLoading(true);

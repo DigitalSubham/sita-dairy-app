@@ -29,7 +29,12 @@ export default function Signup() {
 
     // Trim inputs
     const trimmedName = name.trim();
-    let trimmedMobile = mobile.trim();
+    let trimmedMobile = mobile.replace(/\D/g, ""); // remove all non-digits
+
+    // Handle country code (+91 or 91XXXXXXXXXX)
+    if (trimmedMobile.startsWith("91") && trimmedMobile.length === 12) {
+      trimmedMobile = trimmedMobile.slice(2);
+    }
 
     // Format mobile number (remove +91 prefix and spaces)
     if (trimmedMobile.startsWith("+91")) {
@@ -39,7 +44,8 @@ export default function Signup() {
 
     // Validation regex
     const nameRegex = /^[a-zA-Z\s]+$/;
-    const mobileRegex = /^\d{10}$/;
+    const mobileRegex = /^[6-9]\d{9}$/; // strict Indian mobile number
+
 
     // Field presence check
     if (
@@ -56,9 +62,14 @@ export default function Signup() {
       return;
     }
 
-
     if (!mobileRegex.test(trimmedMobile)) {
-      setError("Please enter a valid 10-digit mobile number");
+      if (trimmedMobile.length !== 10) {
+        setError("Mobile number must be exactly 10 digits");
+      } else if (!/^[6-9]/.test(trimmedMobile)) {
+        setError("Mobile number must start with 6, 7, 8, or 9");
+      } else {
+        setError("Please enter a valid Indian mobile number");
+      }
       return;
     }
 

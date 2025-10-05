@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 
-const BASE_URL = Constants.expoConfig.extra.apiUrl;
+const BASE_URL = Constants?.expoConfig?.extra?.apiUrl ?? "";
 
 export const api = {
   login: `${BASE_URL}/user/login`,
@@ -22,4 +22,9 @@ export const api = {
   createProduct: `${BASE_URL}/product/create`,
   updateProduct: `${BASE_URL}/product/update`,
   deleteProduct: `${BASE_URL}/product/delete`,
+
+  // payments
+  createPayment: `${BASE_URL}/payment/add-payment`,
+  getPaymentsReport: `${BASE_URL}/payment/payment-report`,
+  resetPayments: `${BASE_URL}/payment/reset-payment`,
 };
