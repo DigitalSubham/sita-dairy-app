@@ -1,7 +1,8 @@
 import { CustomHeader } from '@/components/common/CustomHeader';
 import { api } from '@/constants/api';
-import { Entypo, Feather } from '@expo/vector-icons';
+import { Entypo, Feather, FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
@@ -152,6 +153,8 @@ const WalletModal: React.FC = () => {
     message: '',
     type: 'info',
   });
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
 
   const showAlert = (
     title: string,
@@ -184,7 +187,7 @@ const WalletModal: React.FC = () => {
           },
           body: JSON.stringify({
             code: "Paid",
-            date: "2025-10-02", // fetch all records
+            date: date, // fetch all records
           }),
         }
       );
@@ -223,7 +226,7 @@ const WalletModal: React.FC = () => {
     if (token) {
       fetchData();
     }
-  }, [token]);
+  }, [token, date]);
 
   useFocusEffect(
     useCallback(() => {
@@ -258,6 +261,7 @@ const WalletModal: React.FC = () => {
           }
         >
           <Feather name='alert-circle' size={48} color="#9CA3AF" />
+
           <Text style={styles.emptyStateText}>No transactions found</Text>
         </ScrollView>
       );
@@ -291,6 +295,7 @@ const WalletModal: React.FC = () => {
                 <Feather name='trending-up' size={20} color="#34C759" />
               </View>
               <View style={styles.transactionContent}>
+                <Text style={{ color: "white" }}>Recieved</Text>
                 <Text style={styles.transactionDate}>
                   {format(transaction.date, 'MMM d, yyyy')}
                 </Text>
@@ -325,6 +330,14 @@ const WalletModal: React.FC = () => {
       }),
     ]).start();
   };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false)
+    if (selectedDate) {
+      const dateString = format(selectedDate, "yyyy-MM-dd")
+      setDate(dateString)
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -365,11 +378,25 @@ const WalletModal: React.FC = () => {
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
-        <Text style={styles.sectionTitle}>Transaction History</Text>
+        <View style={styles.transSection}>
+          <Text style={styles.sectionTitle}>Transaction History</Text>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.compactField}>
+            <FontAwesome name="calendar" size={14} color="#0284c7" />
+            <Text style={styles.compactFieldText}>{format(new Date(date), "dd/MM")}</Text>
+          </TouchableOpacity>
+        </View>
         {renderTransactionList()}
       </ScrollView>
 
-
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date(date)}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+          maximumDate={new Date()}
+        />
+      )}
       <CustomAlert
         visible={alertVisible}
         title={alertConfig.title}
@@ -414,6 +441,9 @@ interface Styles {
   alertMessage: TextStyle;
   alertButton: ViewStyle;
   alertButtonText: TextStyle;
+  compactFieldText: TextStyle;
+  compactField: ViewStyle;
+  transSection: ViewStyle;
 }
 
 const styles = StyleSheet.create<Styles>({
@@ -494,7 +524,6 @@ const styles = StyleSheet.create<Styles>({
     fontWeight: '700',
     fontSize: 20,
     color: '#000',
-    marginBottom: 16,
     letterSpacing: 0.5,
   },
   transactionList: {
@@ -632,8 +661,23 @@ const styles = StyleSheet.create<Styles>({
     fontWeight: '700',
     fontSize: 16,
   },
-  // Withdrawal Modal Styles
-
+  compactField: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+    gap: 6,
+  },
+  compactFieldText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#0c4a6e",
+  },
+  transSection: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }
 
 });
 

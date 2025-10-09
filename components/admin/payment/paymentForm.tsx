@@ -102,7 +102,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                 const requestBody = {
                     userId: formData.userId,
                     date: formData.date,
-                    role: formData.role === "Farmer" ? "Paid" : "Recieve",
+                    code: formData.role === "Farmer" ? "Paid" : "Recieve",
                     amount: formData.amount,
                 }
                 const response = await fetch(api.createPayment, {
@@ -168,9 +168,9 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
     }
     const getButtonText = () => {
         if (isLoading) {
-            return formData.role === "Customer" ? "Receiving..." : "Adding...";
+            return formData.role === "Customer" ? "Receiving..." : "Sending...";
         }
-        return formData.role === "Customer" ? "Receive Payment" : "Add Payment";
+        return formData.role === "Customer" ? "Receive" : "Send";
     };
 
     return (

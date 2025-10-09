@@ -30,12 +30,13 @@ type PaymentMethod = 'cash' | 'online';
 interface PaymentRequest {
   _id: string;
   toUser: User;
+  fromUser: User;
   userId: string;
   name: string;
   profilePic: string;
   amount: number;
   date: string;
-  paymentType: 'Paid' | 'Recieved';
+  paymentType: 'Paid' | 'Recieve';
   transactionId?: string;
   paymentMethod?: PaymentMethod;
 }
@@ -188,10 +189,10 @@ export default function PaymentRequestsScreen(): React.ReactElement {
   const renderPaymentRequest: ListRenderItem<PaymentRequest> = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Image source={{ uri: item.toUser.profilePic }} style={styles.profilePic} />
+        <Image source={{ uri: activeTab === "Paid" ? item.toUser.profilePic : item.fromUser.profilePic }} style={styles.profilePic} />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{item.toUser.name}</Text>
-          <Text style={styles.userId}>ID: {item?.toUser?.id}</Text>
+          <Text style={styles.userName}>{activeTab === "Paid" ? item.toUser.name : item.fromUser.name}</Text>
+          <Text style={styles.userId}>ID: {activeTab === "Paid" ? item?.toUser?.id : item?.fromUser?.id}</Text>
           <Text style={styles.upiId}>DATE: {format(item?.date, "dd-MM-yyyy")}</Text>
         </View>
         <View style={styles.amountContainer}>
@@ -206,7 +207,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
             style={[
               styles.statusIndicator,
               item?.paymentType === 'Paid' && styles.approvedStatus,
-              item?.paymentType === 'Recieved' && styles.pendingStatus,
+              item?.paymentType === 'Recieve' && styles.pendingStatus,
             ]}
           />
           <Text style={styles.statusText}>
@@ -254,11 +255,11 @@ export default function PaymentRequestsScreen(): React.ReactElement {
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={styles.loaderText}>Loading payment requests...</Text>
+          <Text style={styles.loaderText}>Loading payments...</Text>
         </View>
       ) : paymentRequests?.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No payment requests found</Text>
+          <Text style={styles.emptyText}>No payments found</Text>
         </View>
       ) : (
         <FlatList
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#10b981',
   },
   pendingStatus: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#0b8cf5ff',
   },
   rejectedStatus: {
     backgroundColor: '#ef4444',
