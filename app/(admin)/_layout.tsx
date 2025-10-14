@@ -1,7 +1,7 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
+import Icon from "@/components/common/Icon";
 import DairyLoadingScreen from "@/components/Loading";
 import { useAuth } from "@/context/AuthContext";
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { useEffect } from "react";
@@ -21,56 +21,58 @@ export default function Layout() {
   if (isLoading || user?.role !== "Admin") {
     return <DairyLoadingScreen loading loadingText="Verifying Farmer access..." />;
   }
+
+
   const screens = [
     {
       name: "index",
       title: "Dashboard",
-      icon: (size: number, color: string) => <Ionicons name="home-outline" size={size} color={color} />,
+      icon: Icon("home")
     },
     {
       name: "payments",
       title: "Payments",
-      icon: (size: number, color: string) => <FontAwesome name="rupee" size={size} color={color} />,
+      icon: Icon("wallet")
     },
     {
       name: "milkEntry",
       title: "Milk Entry",
-      icon: (size: number, color: string) => <Ionicons name="create-outline" size={size} color={color} />,
+      icon: Icon("entry")
     },
     {
       name: "rateChartScreen",
       title: "Rate Chart",
-      icon: (size: number, color: string) => <FontAwesome name="bar-chart-o" size={size} color={color} />,
+      icon: Icon("up-arrow"),
     },
     {
       name: "record",
       title: "All Records",
-      icon: (size: number, color: string) => <FontAwesome name="table" size={size} color={color} />,
+      icon: Icon("ledger"),
     },
     {
       name: "customers",
       title: "Users",
-      icon: (size: number, color: string) => <Ionicons name="people-outline" size={size} color={color} />,
+      icon: Icon("users"),
     },
     {
       name: "rearrange",
       title: "Rearrange Users",
-      icon: (size: number, color: string) => <Ionicons name="reorder-three-sharp" size={size} color={color} />,
+      icon: Icon("rearrange"),
     },
     {
       name: "products",
       title: "Products",
-      icon: (size: number, color: string) => <FontAwesome name="product-hunt" size={size} color={color} />,
+      icon: Icon("products"),
     },
     {
       name: "profile",
       title: "Profile",
-      icon: (size: number, color: string) => <Ionicons name="person-circle-outline" size={size} color={color} />,
+      icon: Icon("user"),
     },
     {
       name: "settings",
       title: "Settings",
-      icon: (size: number, color: string) => <Ionicons name="settings-outline" size={size} color={color} />,
+      icon: Icon("settings"),
     },
   ]
 

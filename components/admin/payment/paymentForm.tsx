@@ -1,10 +1,9 @@
-import UserModal from '@/components/common/UserModal';
-import { api } from '@/constants/api';
-import useCustomers, { CustomerRole } from '@/hooks/useCustomer';
-import { Feather, FontAwesome } from '@expo/vector-icons';
+import { api } from "@/constants/api";
+import { CustomerRole } from "@/hooks/useCustomer";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { format } from 'date-fns';
-import React, { useState } from 'react';
+import { format } from "date-fns";
+import React, { useState } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -14,79 +13,91 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
-import RoleCheckBox from '../users/RoleCheckBox';
-
+import RoleCheckBox from "../users/RoleCheckBox";
 
 type paymentFormProps = {
     showPaymentMethodModal: boolean;
     setShowPaymentMethodModal: (show: boolean) => void;
-    fetchPaymentRequests: (status: 'Paid' | 'Recieve') => Promise<void>
-}
+    fetchPaymentRequests: (status: "Paid" | "Recieve") => Promise<void>;
+    formData: FormData;
+    setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+    token: string;
+    setShowUserSelector: (show: boolean) => void;
+    selectedUser: User | null;
+    setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
+};
 interface FormData {
-    userId: string
-    amount: string
-    date: string
-    role: CustomerRole
+    userId: string;
+    amount: string;
+    date: string;
+    role: CustomerRole;
 }
 interface User {
-    _id: string
-    id: string
-    name: string
-    mobile: string
-    collectionCenter: string
-    profilePic: string
+    _id: string;
+    id: string;
+    name: string;
+    mobile: string;
+    collectionCenter: string;
+    profilePic: string;
 }
 
-const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setShowPaymentMethodModal, fetchPaymentRequests }) => {
+const PaymentForm: React.FC<paymentFormProps> = ({
+    showPaymentMethodModal,
+    setShowPaymentMethodModal,
+    fetchPaymentRequests,
+    formData,
+    setFormData,
+    token,
+    setShowUserSelector,
+    selectedUser,
+    setSelectedUser,
+}) => {
     const [errors, setErrors] = React.useState({
         user: "",
         amount: "",
         role: "",
         date: "",
-        api: ""
+        api: "",
     });
     const [isLoading, setIsLoading] = React.useState(false);
-    const [showUserSelector, setShowUserSelector] = useState(false)
-    const [selectedUser, setSelectedUser] = useState<User | null>(null)
-    const [formData, setFormData] = useState<FormData>({
-        userId: "",
-        date: format(new Date(), "yyyy-MM-dd"),
-        role: "Farmer",
-        amount: "",
-    })
-    const { customers, token } = useCustomers({ role: formData.role === "Customer" ? "Buyer" : "Farmer" });
-    const [showDatePicker, setShowDatePicker] = useState(false)
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
     const validateForm = (): boolean => {
-        const newErrors: { amount: string; user: string, role: string, date: string, api: "" } = {
+        const newErrors: {
+            amount: string;
+            user: string;
+            role: string;
+            date: string;
+            api: "";
+        } = {
             amount: "",
             user: "",
             role: "",
             date: "",
-            api: ""
+            api: "",
         };
         let isValid = true;
 
         // Validate amount
         const amountNum = Number.parseInt(formData.amount, 10);
         if (!formData.amount || isNaN(amountNum)) {
-            newErrors.amount = 'Please enter a valid amount';
+            newErrors.amount = "Please enter a valid amount";
             isValid = false;
         }
 
         // Validate UPI ID
         if (!formData.role) {
-            newErrors.role = 'Please Choose role';
+            newErrors.role = "Please Choose role";
             isValid = false;
         }
         if (!formData.userId) {
-            newErrors.user = 'Please Choose User';
+            newErrors.user = "Please Choose User";
             isValid = false;
         }
         if (!formData.role) {
-            newErrors.role = 'Please Choose Date';
+            newErrors.role = "Please Choose Date";
             isValid = false;
         }
 
@@ -98,13 +109,12 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
         if (validateForm()) {
             setIsLoading(true);
             try {
-
                 const requestBody = {
                     userId: formData.userId,
                     date: formData.date,
                     code: formData.role === "Farmer" ? "Paid" : "Recieve",
                     amount: formData.amount,
-                }
+                };
                 const response = await fetch(api.createPayment, {
                     method: "POST",
                     headers: {
@@ -117,29 +127,37 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                 if (data.success) {
                     fetchPaymentRequests(formData.role === "Farmer" ? "Paid" : "Recieve");
                     handleClose();
-
                 } else {
                     setErrors({ ...errors, api: "Failed to add user" });
                 }
             } catch (err: any) {
                 setErrors({
-                    ...errors, api:
-                        err?.message
-                            ? `Failed to create account: ${err.message}`
-                            : "Failed to create account"
+                    ...errors,
+                    api: err?.message
+                        ? `Failed to create account: ${err.message}`
+                        : "Failed to create account",
                 });
             } finally {
                 setIsLoading(false);
                 // Reset form
-                setFormData({ userId: "", amount: "", role: "Farmer", date: format(new Date(), "yyyy-MM-dd") });
+                setFormData({
+                    userId: "",
+                    amount: "",
+                    role: "Farmer",
+                    date: format(new Date(), "yyyy-MM-dd"),
+                });
                 setErrors({ user: "", amount: "", role: "", date: "", api: "" });
             }
         }
     };
 
-
     const handleClose = () => {
-        setFormData({ userId: "", amount: "", role: "Farmer", date: format(new Date(), "yyyy-MM-dd"), });
+        setFormData({
+            userId: "",
+            amount: "",
+            role: "Farmer",
+            date: format(new Date(), "yyyy-MM-dd"),
+        });
         setErrors({ user: "", amount: "", role: "", date: "", api: "" });
         setShowPaymentMethodModal(false);
         setSelectedUser(null);
@@ -147,25 +165,21 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
 
     const handleRoleSelect = (role: CustomerRole) => {
         setFormData({ ...formData, role });
+        setSelectedUser(null);
         if (errors.role) {
             setErrors({ ...errors, role: "" });
         }
     };
 
-    const updateFormData = (field: string, value: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: value,
-        }))
-    }
+
     // Handle date picker change
     const onDateChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(false)
+        setShowDatePicker(false);
         if (selectedDate) {
-            const dateString = format(selectedDate, "yyyy-MM-dd")
+            const dateString = format(selectedDate, "yyyy-MM-dd");
             setFormData({ ...formData, date: dateString });
         }
-    }
+    };
     const getButtonText = () => {
         if (isLoading) {
             return formData.role === "Customer" ? "Receiving..." : "Sending...";
@@ -198,15 +212,22 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                                     <Feather name="x" size={24} color="#64748b" />
                                 </TouchableOpacity>
                             </View>
-                            {!!errors.api && <Text style={styles.errorText}>{errors.api}</Text>}
+                            {!!errors.api && (
+                                <Text style={styles.errorText}>{errors.api}</Text>
+                            )}
 
                             <View style={styles.formContainer}>
                                 {/* Name Input */}
                                 <View style={styles.inputContainer}>
                                     <Text style={styles.inputLabel}>Select Date</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.compactField}>
+                                    <TouchableOpacity
+                                        onPress={() => setShowDatePicker(true)}
+                                        style={styles.compactField}
+                                    >
                                         <FontAwesome name="calendar" size={14} color="#0284c7" />
-                                        <Text style={styles.compactFieldText}>{format(new Date(formData.date), "dd/MM/yyyy")}</Text>
+                                        <Text style={styles.compactFieldText}>
+                                            {format(new Date(formData.date), "dd/MM/yyyy")}
+                                        </Text>
                                     </TouchableOpacity>
                                     {errors.date ? (
                                         <Text style={styles.errorText}>{errors.date}</Text>
@@ -238,9 +259,16 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                                 {/* amount Input */}
                                 <View style={styles.inputContainer}>
                                     <Text style={styles.inputLabel}>Select user</Text>
-                                    <TouchableOpacity style={styles.userSelector} onPress={() => setShowUserSelector(true)}>
+                                    <TouchableOpacity
+                                        style={styles.userSelector}
+                                        onPress={() => setShowUserSelector(true)}
+                                    >
                                         <FontAwesome name="user" size={16} color="#0ea5e9" />
-                                        <Text style={styles.userSelectorText}>{selectedUser ? selectedUser.name : `Select ${formData.role}`}</Text>
+                                        <Text style={styles.userSelectorText}>
+                                            {selectedUser
+                                                ? selectedUser.name
+                                                : `Select ${formData.role}`}
+                                        </Text>
                                         <Feather name="chevron-down" size={16} color="#64748b" />
                                     </TouchableOpacity>
                                     {errors.user ? (
@@ -255,7 +283,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                                         placeholder="Amount"
                                         style={[
                                             styles.textInput,
-                                            errors.amount ? styles.inputError : null
+                                            errors.amount ? styles.inputError : null,
                                         ]}
                                         value={formData.amount}
                                         onChangeText={(text) => {
@@ -271,9 +299,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                                         <Text style={styles.errorText}>{errors.amount}</Text>
                                     ) : null}
                                 </View>
-
                             </View>
-
 
                             {/* Footer with buttons */}
                             <View style={styles.modalFooter}>
@@ -287,7 +313,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                                 <TouchableOpacity
                                     style={[
                                         styles.createButton,
-                                        isLoading && styles.loadingButton
+                                        isLoading && styles.loadingButton,
                                     ]}
                                     onPress={handleAdd}
                                     disabled={isLoading}
@@ -300,10 +326,12 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                                                 style={styles.loader}
                                             />
                                         )}
-                                        <Text style={[
-                                            styles.createButtonText,
-                                            isLoading && styles.loadingButtonText
-                                        ]}>
+                                        <Text
+                                            style={[
+                                                styles.createButtonText,
+                                                isLoading && styles.loadingButtonText,
+                                            ]}
+                                        >
                                             {getButtonText()}
                                         </Text>
                                     </View>
@@ -314,7 +342,6 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                 </KeyboardAvoidingView>
             </Modal>
 
-
             {showDatePicker && (
                 <DateTimePicker
                     value={new Date(formData.date)}
@@ -324,14 +351,11 @@ const PaymentForm: React.FC<paymentFormProps> = ({ showPaymentMethodModal, setSh
                     maximumDate={new Date()}
                 />
             )}
-
-            {<UserModal title={formData.role} showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={customers} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} />}
-
         </View>
-    )
-}
+    );
+};
 
-export default PaymentForm
+export default PaymentForm;
 
 const styles = StyleSheet.create({
     container: {
@@ -417,7 +441,6 @@ const styles = StyleSheet.create({
     roleContainer: {
         flexDirection: "row",
         justifyContent: "space-between",
-
     },
     modalFooter: {
         flexDirection: "row",
@@ -487,50 +510,50 @@ const styles = StyleSheet.create({
     },
 
     modalDetails: {
-        backgroundColor: '#374151',
+        backgroundColor: "#374151",
         borderRadius: 8,
         padding: 12,
         marginBottom: 16,
-        position: 'relative',
+        position: "relative",
     },
     modalDetailText: {
         fontSize: 14,
-        color: '#d1d5db',
+        color: "#d1d5db",
         marginBottom: 6,
     },
     modalDetailLabel: {
-        fontWeight: 'bold',
-        color: '#ffffff',
+        fontWeight: "bold",
+        color: "#ffffff",
     },
     paymentMethodText: {
         fontSize: 16,
-        color: '#d1d5db',
+        color: "#d1d5db",
         marginBottom: 16,
         marginTop: 8,
-        textAlign: 'left',
+        textAlign: "left",
     },
     paymentMethodButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        justifyContent: "space-between",
         gap: 12,
     },
     paymentMethodButton: {
         flex: 1,
         paddingVertical: 16,
         borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
     },
     cashButton: {
-        backgroundColor: '#10b981',
+        backgroundColor: "#10b981",
     },
     onlineButton: {
-        backgroundColor: '#6366f1',
+        backgroundColor: "#6366f1",
     },
     paymentMethodButtonText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#ffffff',
+        fontWeight: "600",
+        color: "#ffffff",
     },
     userSelector: {
         flexDirection: "row",
@@ -554,18 +577,18 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 12,
         borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     modalActions: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        justifyContent: "space-between",
     },
     modalButtonText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#ffffff',
+        fontWeight: "600",
+        color: "#ffffff",
     },
     compactField: {
         flexDirection: "row",
@@ -583,5 +606,4 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#0c4a6e",
     },
-
-})
+});

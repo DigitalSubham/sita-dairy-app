@@ -164,7 +164,7 @@ export const BorderedDashboardCard: React.FC<DashboardCardProps> = ({
         <Text style={styles.borderedTitle}>{title}</Text>
 
       </View>
-      <View style={[styles.borderedIconContainer, { backgroundColor: color }]}>
+      <View style={[styles.borderedIconContainer]}>
         {icon}
       </View>
     </TouchableOpacity>

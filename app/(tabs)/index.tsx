@@ -1,14 +1,12 @@
 import { FarmerDashboardHeader } from "@/components/common/HeaderVarients";
+import Icon from "@/components/common/Icon";
 import Summary from "@/components/customer/Summary";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import { RootState } from "@/store/store";
 import {
   AntDesign,
-  Feather,
-  FontAwesome,
-  MaterialCommunityIcons,
-  MaterialIcons,
+  MaterialCommunityIcons
 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format, parseISO } from "date-fns";
@@ -159,14 +157,10 @@ export default function SellerDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
+      case "Morning":
         return "#f59e0b";
-      case "approved":
+      case "Evening":
         return "#3b82f6";
-      case "paid":
-        return "#10b981";
-      case "completed":
-        return "#10b981";
       default:
         return "#6b7280";
     }
@@ -322,10 +316,10 @@ export default function SellerDashboard() {
               <View
                 style={[
                   styles.quickActionIcon,
-                  { backgroundColor: "rgba(59, 130, 246, 0.1)" },
+
                 ]}
               >
-                <MaterialIcons name="inventory" size={22} color="#3b82f6" />
+                {Icon("products")(40, "#3b82f6")}
               </View>
               <Text style={styles.quickActionText}>Products</Text>
             </TouchableOpacity>
@@ -337,27 +331,27 @@ export default function SellerDashboard() {
               <View
                 style={[
                   styles.quickActionIcon,
-                  { backgroundColor: "rgba(245, 158, 11, 0.1)" },
+
                 ]}
               >
-                <FontAwesome name="list-alt" size={24} color="#f59e0b" />
+                {Icon("up-arrow")(40, "#3b82f6")}
               </View>
               <Text style={styles.quickActionText}>View Rates</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.quickActionItem}
-              onPress={() => router.push("/profile")}
+              onPress={() => router.push("/payment")}
             >
               <View
                 style={[
                   styles.quickActionIcon,
-                  { backgroundColor: "rgba(16, 185, 129, 0.1)" },
+
                 ]}
               >
-                <FontAwesome name="user" size={24} color="#10b981" />
+                {Icon("wallet")(40, "#3b82f6")}
               </View>
-              <Text style={styles.quickActionText}>Profile</Text>
+              <Text style={styles.quickActionText}>Payment</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -367,10 +361,10 @@ export default function SellerDashboard() {
               <View
                 style={[
                   styles.quickActionIcon,
-                  { backgroundColor: "rgba(139, 92, 246, 0.1)" },
+
                 ]}
               >
-                <Feather name="bar-chart-2" size={24} color="#8b5cf6" />
+                {Icon("ledger")(40, "#3b82f6")}
               </View>
               <Text style={styles.quickActionText}>Records</Text>
             </TouchableOpacity>

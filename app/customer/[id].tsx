@@ -1,18 +1,16 @@
-"use client";
-
+import { CustomHeader } from "@/components/common/CustomHeader";
+import DairyLoadingScreen from "@/components/Loading";
+import { api } from "@/constants/api";
 import {
-  Feather,
   MaterialCommunityIcons,
-  MaterialIcons,
+  MaterialIcons
 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
-import * as Clip from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
   Image,
   Linking,
   RefreshControl,
@@ -23,137 +21,52 @@ import {
   View
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import Toast from "react-native-toast-message";
-
-const { width } = Dimensions.get("window");
-
-// Define interfaces for TypeScript based on the provided data format
-interface Coupon {
-  __v: number;
-  _id: string;
-  couponCode: string;
-  isUsed: boolean;
-  couponAmount: number;
-  createdAt: string;
-  updatedAt: string;
-  usedByUser?: string;
-}
-
-interface Payment {
-  __v: number;
-  _id: string;
-  amount: number;
-  byUser: string;
-  createdAt: string;
-  updatedAt: string;
-  status: string;
-  paymentMethod?: string;
-  upiId?: string;
-  transactionId?: string;
-}
 
 interface User {
-  __v: number;
+  id: number;
   _id: string;
   name: string;
-  email: string;
+  fatherName: string;
   role: string;
-  totalWalletAmount: number;
+  walletAmount: number;
   totalWithdrawnAmount: number;
   isVerified: boolean;
   userVerificationOtpExpiry: string;
   createdAt: string;
   updatedAt: string;
   profilePic: string;
-  phone: string;
+  mobile: string;
   address: string;
 }
 
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  user: User;
-
-  paymentsWithdrawn: Payment[];
-  rejectedPayment: Payment[];
-}
-
 export default function CustomerDetailsScreen() {
-  const isSmallScreen = width < 360;
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
   const [userData, setUserData] = useState<User | null>(null);
-  const [paymentsWithdrawn, setPaymentsWithdrawn] = useState<Payment[]>([]);
-  const [rejectedPayments, setRejectedPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("overview");
-
-  // Mock data for demonstration
-  const mockUserData: User = {
-    __v: 0,
-    _id: "64f8a1b2c3d4e5f6a7b8c9d0",
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@email.com",
-    role: "Farmer",
-    totalWalletAmount: 15750,
-    totalWithdrawnAmount: 8500,
-    isVerified: true,
-    userVerificationOtpExpiry: "2024-01-15T10:30:00Z",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-01-25T14:20:00Z",
-    profilePic: "https://randomuser.me/api/portraits/men/32.jpg",
-    phone: "+91 9876543210",
-    address: "Village Rampur, District Meerut, UP 250001",
-  };
-
-  const mockCoupons: Coupon[] = [
-    {
-      __v: 0,
-      _id: "coup1",
-      couponCode: "MILK500",
-      isUsed: false,
-      couponAmount: 500,
-      createdAt: "2024-01-20T10:30:00Z",
-      updatedAt: "2024-01-20T10:30:00Z",
-    },
-    {
-      __v: 0,
-      _id: "coup2",
-      couponCode: "DAIRY250",
-      isUsed: true,
-      couponAmount: 250,
-      createdAt: "2024-01-15T10:30:00Z",
-      updatedAt: "2024-01-18T10:30:00Z",
-    },
-  ];
-
-  const mockPayments: Payment[] = [
-    {
-      __v: 0,
-      _id: "pay1",
-      amount: 2500,
-      byUser: "64f8a1b2c3d4e5f6a7b8c9d0",
-      createdAt: "2024-01-22T10:30:00Z",
-      updatedAt: "2024-01-22T10:30:00Z",
-      status: "completed",
-      paymentMethod: "upi",
-      upiId: "rajesh@paytm",
-      transactionId: "TXN123456789",
-    },
-  ];
 
   const fetchUserData = useCallback(async () => {
+    const storedToken = await AsyncStorage.getItem("token");
+    const token = storedToken ? JSON.parse(storedToken) : "";
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch(`${api.getUser}?userId=${id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      setUserData(mockUserData);
-      setPaymentsWithdrawn(mockPayments);
-      setRejectedPayments([]);
+      const responseData = await response.json();
+      if (responseData.success) {
+        setUserData(responseData.user);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
       setUserData(null);
@@ -173,25 +86,22 @@ export default function CustomerDetailsScreen() {
   }, [fetchUserData]);
 
   const handleCall = () => {
-    if (userData?.phone) {
-      const phoneNumber = userData.phone.replace(/\s+/g, "");
-      Linking.openURL(`tel:${phoneNumber}`);
+    if (userData?.mobile) {
+      const mobileNumber = userData.mobile.replace(/\s+/g, "");
+      Linking.openURL(`tel:${mobileNumber}`);
     }
   };
 
   const handleMessage = () => {
-    if (userData?.phone) {
-      const phoneNumber = userData.phone.replace(/\s+/g, "");
-      Linking.openURL(`sms:${phoneNumber}`);
+    if (userData?.mobile) {
+      const mobileNumber = userData.mobile.replace(/\s+/g, "");
+      Linking.openURL(`sms:${mobileNumber}`);
     }
   };
 
   if (loading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading customer details...</Text>
-      </View>
+      <DairyLoadingScreen loading loadingText="loading Customer..." />
     );
   }
 
@@ -215,226 +125,13 @@ export default function CustomerDetailsScreen() {
     return format(new Date(dateString), "MMM dd, yyyy");
   };
 
-  const handleCopy = async (code: string, id: string) => {
-    await Clip.setStringAsync(code);
-    setCopiedIndex(id);
-    Toast.show({
-      type: "success",
-      text1: "Code copied to clipboard",
-    });
-
-    setTimeout(() => {
-      setCopiedIndex(null);
-    }, 2000);
-  };
-
-  const renderOverview = () => (
-    <View style={styles.overviewContainer}>
-      {/* Quick Stats */}
-      <Animated.View entering={FadeInUp.delay(200)} style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: "#dbeafe" }]}>
-            <MaterialCommunityIcons name="cow" size={24} color="#3b82f6" />
-          </View>
-          <Text style={styles.statValue}>245L</Text>
-          <Text style={styles.statLabel}>Total Milk</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: "#dcfce7" }]}>
-            <MaterialIcons name="trending-up" size={24} color="#16a34a" />
-          </View>
-          <Text style={styles.statValue}>4.2%</Text>
-          <Text style={styles.statLabel}>Avg Fat</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: "#fef3c7" }]}>
-            <MaterialCommunityIcons
-              name="chart-line"
-              size={24}
-              color="#d97706"
-            />
-          </View>
-          <Text style={styles.statValue}>8.5%</Text>
-          <Text style={styles.statLabel}>Avg SNF</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: "#ede9fe" }]}>
-            <MaterialIcons name="payments" size={24} color="#8b5cf6" />
-          </View>
-          <Text style={styles.statValue}>₹45</Text>
-          <Text style={styles.statLabel}>Avg Rate</Text>
-        </View>
-      </Animated.View>
-
-      {/* Recent Activity */}
-      <Animated.View entering={FadeInUp.delay(400)} style={styles.activityCard}>
-        <Text style={styles.activityTitle}>Recent Activity</Text>
-        <View style={styles.activityItem}>
-          <View style={[styles.activityIcon, { backgroundColor: "#dcfce7" }]}>
-            <MaterialCommunityIcons name="cow" size={16} color="#16a34a" />
-          </View>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>Morning milk collection</Text>
-            <Text style={styles.activityTime}>18.5L • 2 hours ago</Text>
-          </View>
-        </View>
-
-        <View style={styles.activityItem}>
-          <View style={[styles.activityIcon, { backgroundColor: "#dbeafe" }]}>
-            <MaterialIcons name="payment" size={16} color="#3b82f6" />
-          </View>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>Payment received</Text>
-            <Text style={styles.activityTime}>₹2,500 • Yesterday</Text>
-          </View>
-        </View>
-
-        <View style={styles.activityItem}>
-          <View style={[styles.activityIcon, { backgroundColor: "#fef3c7" }]}>
-            <MaterialCommunityIcons
-              name="quality-high"
-              size={16}
-              color="#d97706"
-            />
-          </View>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>Quality test completed</Text>
-            <Text style={styles.activityTime}>
-              Fat: 4.3% • SNF: 8.8% • 2 days ago
-            </Text>
-          </View>
-        </View>
-      </Animated.View>
-    </View>
-  );
-
-  const renderPayments = () => {
-    if (paymentsWithdrawn && paymentsWithdrawn.length > 0) {
-      return (
-        <View style={styles.paymentsList}>
-          {paymentsWithdrawn.map((payment, index) => (
-            <Animated.View
-              key={payment._id}
-              entering={FadeInDown.delay(index * 100)}
-              style={styles.paymentItem}
-            >
-              <View style={styles.paymentCard}>
-                <View style={styles.paymentHeader}>
-                  <View
-                    style={[
-                      styles.paymentIconContainer,
-                      { backgroundColor: "#dcfce7" },
-                    ]}
-                  >
-                    <Feather name="arrow-up" size={20} color="#16a34a" />
-                  </View>
-                  <View style={styles.paymentDetailsContainer}>
-                    <Text style={styles.paymentTitle}>Payment Received</Text>
-                    <Text style={styles.paymentDate}>
-                      {formatDate(payment.createdAt)}
-                    </Text>
-                  </View>
-                  <View style={styles.paymentAmountContainer}>
-                    <Text style={styles.paymentAmountPrefix}>₹</Text>
-                    <Text style={styles.paymentAmount}>{payment.amount}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.paymentDivider} />
-
-                <View style={styles.paymentBody}>
-                  <View style={styles.paymentInfoRow}>
-                    <View style={styles.paymentInfoItem}>
-                      <Text style={styles.paymentInfoLabel}>Status</Text>
-                      <View
-                        style={[
-                          styles.paymentStatusBadge,
-                          { backgroundColor: "#dcfce7" },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.paymentStatusText,
-                            { color: "#16a34a" },
-                          ]}
-                        >
-                          {payment.status.toUpperCase()}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {payment.paymentMethod && (
-                      <View style={styles.paymentInfoItem}>
-                        <Text style={styles.paymentInfoLabel}>Method</Text>
-                        <Text style={styles.paymentInfoValue}>
-                          {payment.paymentMethod.toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {payment.upiId && (
-                    <View style={styles.paymentInfoRow}>
-                      <View style={styles.paymentInfoItem}>
-                        <Text style={styles.paymentInfoLabel}>UPI ID</Text>
-                        <Text style={styles.paymentInfoValue}>
-                          {payment.upiId}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {payment.transactionId && (
-                    <View style={styles.paymentInfoRow}>
-                      <View style={styles.paymentInfoItem}>
-                        <Text style={styles.paymentInfoLabel}>
-                          Transaction ID
-                        </Text>
-                        <Text style={styles.paymentInfoValue}>
-                          {payment.transactionId}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </Animated.View>
-          ))}
-        </View>
-      );
-    } else {
-      return (
-        <View style={styles.emptyStateContainer}>
-          <MaterialCommunityIcons
-            name="cash-remove"
-            size={48}
-            color="#9ca3af"
-          />
-          <Text style={styles.emptyStateText}>No payments found</Text>
-        </View>
-      );
-    }
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return renderOverview();
-      case "payments":
-        return renderPayments();
-      default:
-        return renderOverview();
-    }
-  };
 
   return (
+
     <View style={styles.safeArea}>
+      <CustomHeader title="Customer Details" showBackButton showMenuButton={false} />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -470,8 +167,8 @@ export default function CustomerDetailsScreen() {
 
             <View style={styles.profileInfo}>
               <Text style={styles.name}>{userData.name}</Text>
-              <Text style={styles.email}>{userData.email}</Text>
-              <Text style={styles.phone}>{userData.phone}</Text>
+              <Text style={styles.fatherName}>{userData.fatherName}</Text>
+              <Text style={styles.mobile}>{userData.mobile}</Text>
 
               <View style={styles.badgeContainer}>
                 <View style={styles.roleBadge}>
@@ -540,7 +237,7 @@ export default function CustomerDetailsScreen() {
               />
               <Text style={styles.walletLabel}>Balance</Text>
               <Text style={styles.walletAmountSmall}>
-                ₹{userData.totalWalletAmount}
+                ₹{Math.floor(userData.walletAmount).toFixed(2)}
               </Text>
             </LinearGradient>
           </View>
@@ -557,7 +254,7 @@ export default function CustomerDetailsScreen() {
                 size={24}
                 color="#fff"
               />
-              <Text style={styles.walletLabel}>Withdrawn</Text>
+              <Text style={styles.walletLabel}>{userData.role === "Farmer" ? "Withdrawn" : "Paid"}</Text>
               <Text style={styles.walletAmountSmall}>
                 ₹{userData.totalWithdrawnAmount}
               </Text>
@@ -579,7 +276,7 @@ export default function CustomerDetailsScreen() {
               <Text style={styles.infoLabel}>Customer ID</Text>
             </View>
             <Text style={styles.infoValue}>
-              {userData._id.substring(0, 8)}...
+              {userData.id}
             </Text>
           </View>
 
@@ -619,70 +316,86 @@ export default function CustomerDetailsScreen() {
             </Text>
           </View>
         </Animated.View>
-
-        {/* Tab Navigation */}
-        <Animated.View
-          entering={FadeInUp.delay(500)}
-          style={styles.tabContainer}
-        >
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "overview" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("overview")}
-          >
-            <MaterialIcons
-              name="dashboard"
-              size={18}
-              color={activeTab === "overview" ? "#3b82f6" : "#6b7280"}
-            />
-            {!isSmallScreen && (
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  activeTab === "overview" && styles.activeTabButtonText,
-                ]}
-              >
-                Overview
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "payments" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("payments")}
-          >
-            <MaterialCommunityIcons
-              name="cash-multiple"
-              size={18}
-              color={activeTab === "payments" ? "#3b82f6" : "#6b7280"}
-            />
-            {!isSmallScreen && (
-              <Text
-                style={[
-                  styles.tabButtonText,
-                  activeTab === "payments" && styles.activeTabButtonText,
-                ]}
-              >
-                Payments
-              </Text>
-            )}
-            <View style={styles.tabBadge}>
-              <Text style={styles.tabBadgeText}>
-                {paymentsWithdrawn.length}
-              </Text>
+        <View style={styles.overviewContainer}>
+          {/* Quick Stats */}
+          <Animated.View entering={FadeInUp.delay(200)} style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: "#dbeafe" }]}>
+                <MaterialCommunityIcons name="cow" size={24} color="#3b82f6" />
+              </View>
+              <Text style={styles.statValue}>245L</Text>
+              <Text style={styles.statLabel}>Total Milk</Text>
             </View>
-          </TouchableOpacity>
-        </Animated.View>
 
-        {/* Tab Content */}
-        <Animated.View entering={FadeInUp.delay(600)} style={styles.section}>
-          {renderTabContent()}
-        </Animated.View>
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: "#dcfce7" }]}>
+                <MaterialIcons name="trending-up" size={24} color="#16a34a" />
+              </View>
+              <Text style={styles.statValue}>4.2%</Text>
+              <Text style={styles.statLabel}>Avg Fat</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: "#fef3c7" }]}>
+                <MaterialCommunityIcons
+                  name="chart-line"
+                  size={24}
+                  color="#d97706"
+                />
+              </View>
+              <Text style={styles.statValue}>8.5%</Text>
+              <Text style={styles.statLabel}>Avg SNF</Text>
+            </View>
+
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: "#ede9fe" }]}>
+                <MaterialIcons name="payments" size={24} color="#8b5cf6" />
+              </View>
+              <Text style={styles.statValue}>₹45</Text>
+              <Text style={styles.statLabel}>Avg Rate</Text>
+            </View>
+          </Animated.View>
+
+          {/* Recent Activity */}
+          <Animated.View entering={FadeInUp.delay(400)} style={styles.activityCard}>
+            <Text style={styles.activityTitle}>Recent Activity</Text>
+            <View style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: "#dcfce7" }]}>
+                <MaterialCommunityIcons name="cow" size={16} color="#16a34a" />
+              </View>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>Morning milk collection</Text>
+                <Text style={styles.activityTime}>18.5L • 2 hours ago</Text>
+              </View>
+            </View>
+
+            <View style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: "#dbeafe" }]}>
+                <MaterialIcons name="payment" size={16} color="#3b82f6" />
+              </View>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>Payment received</Text>
+                <Text style={styles.activityTime}>₹2,500 • Yesterday</Text>
+              </View>
+            </View>
+
+            <View style={styles.activityItem}>
+              <View style={[styles.activityIcon, { backgroundColor: "#fef3c7" }]}>
+                <MaterialCommunityIcons
+                  name="quality-high"
+                  size={16}
+                  color="#d97706"
+                />
+              </View>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>Quality test completed</Text>
+                <Text style={styles.activityTime}>
+                  Fat: 4.3% • SNF: 8.8% • 2 days ago
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -696,9 +409,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
-  },
-  contentContainer: {
-    paddingVertical: 50,
   },
   loaderContainer: {
     flex: 1,
@@ -798,12 +508,12 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     marginBottom: 4,
   },
-  email: {
+  fatherName: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
     marginBottom: 4,
   },
-  phone: {
+  mobile: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
     marginBottom: 10,

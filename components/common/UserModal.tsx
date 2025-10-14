@@ -19,7 +19,7 @@ type UserModalProps = {
     setShowUserSelector: (show: boolean) => void;
     filteredUser: User[];
     selectedUser: User | null;
-    setSelectedUser: (user: User) => void;
+    setSelectedUser: (user: User | null) => void;
     updateFormData: (field: string, value: string) => void;
     weightRef?: React.RefObject<any>;
     title: string;
@@ -32,7 +32,10 @@ const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSele
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Select {title} - {filteredUser.length}</Text>
-                        <TouchableOpacity onPress={() => setShowUserSelector(false)}>
+                        <TouchableOpacity onPress={() => {
+                            setShowUserSelector(false)
+                            setSelectedUser(null)
+                        }}>
                             <Feather name="x" size={24} color="#64748b" />
                         </TouchableOpacity>
                     </View>

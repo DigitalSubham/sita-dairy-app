@@ -1,11 +1,9 @@
 import TransactionItem from "@/components/admin/dashboard/EntryCard";
 import { BorderedDashboardCard } from "@/components/admin/DashboardCard";
 import { DashboardHeader } from "@/components/common/HeaderVarients";
+import Icon from "@/components/common/Icon";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
-import { FontAwesome6, Ionicons } from "@expo/vector-icons";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { ReactNode, useCallback, useState } from "react";
@@ -160,7 +158,7 @@ const AdminDashboard = () => {
         onPress={onPress}
         activeOpacity={0.8}
       >
-        <View style={[styles.quickActionIcon, { backgroundColor: color }]}>
+        <View style={[styles.quickActionIcon]}>
           {icon}
         </View>
         <Text style={styles.quickActionText}>{title}</Text>
@@ -201,7 +199,7 @@ const AdminDashboard = () => {
           <BorderedDashboardCard
             title="Total Users"
             value={dashboardData?.totalCustomers || 0}
-            icon={<FontAwesome name="users" size={24} color="#FFFFFF" />}
+            icon={Icon("users")(50, "#FFFFFF")}
             color="#1976D2"
             delay={100}
             onPress={() => router.push("/(admin)/customers")}
@@ -209,9 +207,7 @@ const AdminDashboard = () => {
           <BorderedDashboardCard
             title="Today's Collection"
             value={`${dashboardData?.totalTodaysMilk || 0} L`}
-            icon={
-              <FontAwesome6 name="bottle-water" size={24} color="#FFFFFF" />
-            }
+            icon={Icon("collection")(50, "#FFFFFF")}
             color="#2E7D32"
             delay={200}
             onPress={() => router.push("/(admin)/record")}
@@ -219,9 +215,7 @@ const AdminDashboard = () => {
           <BorderedDashboardCard
             title="Months's Collection"
             value={`${dashboardData?.totalMonthlyMilk || 0} L`}
-            icon={
-              <FontAwesome6 name="bottle-water" size={24} color="#FFFFFF" />
-            }
+            icon={Icon("collection")(50, "#FFFFFF")}
             color="#7B1FA2"
             delay={300}
             onPress={() => router.push("/(admin)/record")}
@@ -234,32 +228,28 @@ const AdminDashboard = () => {
           <View style={styles.quickActionsGrid}>
             <QuickActionButton
               title="All Users"
-              icon={<Ionicons name="people-outline" size={22} color={"#FFFFFF"} />}
+              icon={Icon("users")(40, "#FFFFFF")}
               color="#1976D2"
               delay={0}
               onPress={() => router.push("/(admin)/customers")}
             />
             <QuickActionButton
               title="Milk Entry"
-              icon={
-                <FontAwesome6 name="bottle-water" size={22} color="#FFFFFF" />
-              }
+              icon={Icon("entry")(40, "#FFFFFF")}
               color="#2E7D32"
               delay={100}
               onPress={() => router.push("/(admin)/milkEntry")}
             />
             <QuickActionButton
-              title="Profile"
-              icon={<FontAwesome name="user" size={22} color="#FFFFFF" />}
+              title="Payments"
+              icon={Icon("wallet")(40, "#FFFFFF")}
               color="#F57C00"
               delay={200}
-              onPress={() => router.push("/(admin)/profile")}
+              onPress={() => router.push("/(admin)/payments")}
             />
             <QuickActionButton
               title="Reports"
-              icon={
-                <MaterialIcons name="analytics" size={22} color="#FFFFFF" />
-              }
+              icon={Icon("ledger")(40, "#FFFFFF")}
               color="#7B1FA2"
               delay={300}
               onPress={() => router.push("/(admin)/record")}

@@ -43,7 +43,7 @@ import { UsersHeader } from "@/components/common/HeaderVarients"
 import DairyLoadingScreen from "@/components/Loading"
 import { api } from "@/constants/api"
 import useCustomers from "@/hooks/useCustomer"
-import { useFocusEffect } from "expo-router"
+import { useFocusEffect, useRouter } from "expo-router"
 import Toast from "react-native-toast-message"
 
 const ImprovedCustomersList: React.FC = () => {
@@ -62,6 +62,7 @@ const ImprovedCustomersList: React.FC = () => {
   const [modifiedCustomers, setModifiedCustomers] = useState<{ [key: string]: CustomerRole }>({})
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const router = useRouter();
 
   // Filter customers based on search text
   const filteredCustomers = useMemo(() => {
@@ -275,13 +276,22 @@ const ImprovedCustomersList: React.FC = () => {
               </View>
             </View>
 
-            {<TouchableOpacity
-              style={styles.detailsButton}
-              onPress={() => setBuyerRateModalVisible(item)}
-              activeOpacity={0.7}
-            >
-              <Feather name="edit" size={18} color="#3b82f6" />
-            </TouchableOpacity>}
+            <View style={{ gap: 8 }}>
+              {<TouchableOpacity
+                style={styles.detailsButton}
+                onPress={() => setBuyerRateModalVisible(item)}
+                activeOpacity={0.7}
+              >
+                <Feather name="edit" size={18} color="#3b82f6" />
+              </TouchableOpacity>}
+              {<TouchableOpacity
+                style={styles.detailsButton}
+                onPress={() => router.push(`/customer/${item._id}`)}
+                activeOpacity={0.7}
+              >
+                <Feather name="eye" size={18} color="#54f63bff" />
+              </TouchableOpacity>}
+            </View>
           </View>
 
           {/* Role Selection Section */}

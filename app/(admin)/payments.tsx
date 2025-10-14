@@ -1,15 +1,16 @@
-import PaymentForm from '@/components/admin/payment/paymentForm';
-import { PaymentHeader } from '@/components/common/HeaderVarients';
-import { api } from '@/constants/api';
-import { FontAwesome } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import PaymentForm from "@/components/admin/payment/paymentForm";
+import FilterChip from "@/components/common/Chips";
+import { PaymentHeader } from "@/components/common/HeaderVarients";
+import UserModal from "@/components/common/UserModal";
+import DairyLoadingScreen from "@/components/Loading";
+import { api } from "@/constants/api";
+import useCustomers, { CustomerRole } from "@/hooks/useCustomer";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { format } from 'date-fns';
-import { useLocalSearchParams } from 'expo-router';
-import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { format } from "date-fns";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -19,13 +20,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
-} from 'react-native';
-
+  View,
+} from "react-native";
 
 // Types
-type PaymentStatus = 'Paid' | 'Recieve';
-type PaymentMethod = 'cash' | 'online';
+type PaymentStatus = "Paid" | "Recieve";
+type PaymentMethod = "cash" | "online";
 
 interface PaymentRequest {
   _id: string;
@@ -36,25 +36,18 @@ interface PaymentRequest {
   profilePic: string;
   amount: number;
   date: string;
-  paymentType: 'Paid' | 'Recieve';
+  paymentType: "Paid" | "Recieve";
   transactionId?: string;
   paymentMethod?: PaymentMethod;
 }
 
 interface User {
-  _id: string
-  id: string
-  name: string
-  mobile: string
-  collectionCenter: string
-  profilePic: string
-}
-
-interface FormData {
-  userId: string
-  amount: string
-  date: string
-
+  _id: string;
+  id: string;
+  name: string;
+  mobile: string;
+  collectionCenter: string;
+  profilePic: string;
 }
 
 interface TabButtonProps {
@@ -65,63 +58,90 @@ interface TabButtonProps {
   disabled: boolean;
 }
 
+interface FormData {
+  userId: string;
+  amount: string;
+  date: string;
+  role: CustomerRole;
+}
+
 export default function PaymentRequestsScreen(): React.ReactElement {
   const { defaultTab } = useLocalSearchParams();
-  const [activeTab, setActiveTab] = useState<PaymentStatus>('Paid');
+  const [activeTab, setActiveTab] = useState<PaymentStatus>("Paid");
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [showPaymentMethodModal, setShowPaymentMethodModal] =
     useState<boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
-  const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string>("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [formData, setFormData] = useState<FormData>({
+    userId: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    role: "Farmer",
+    amount: "",
+  });
+  const derivedRole: CustomerRole =
+    formData.role === "Customer" || activeTab === "Recieve"
+      ? "Buyer"
+      : "Farmer";
 
-  useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const storedToken = await AsyncStorage.getItem("token");
-        setToken(storedToken ? JSON.parse(storedToken) : "");
-      } catch {
-        setError("Failed to load auth token");
-        setLoading(false);
-      }
-    };
-    fetchToken();
-  }, []);
+  const { customers, token } = useCustomers({
+    role: derivedRole
+  });
+  const [showUserSelector, setShowUserSelector] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const updateFormData = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   // Fetch payment requests based on active tab
   useEffect(() => {
-    if (token && date && activeTab) {
+    if (date && activeTab) {
       fetchPaymentRequests(activeTab);
     }
-  }, [activeTab, token, date]);
-
+  }, [activeTab, date, selectedUser]);
 
   useEffect(() => {
-    if (typeof defaultTab === 'string') {
-      if (['Paid', 'Recieve'].includes(defaultTab)) {
+    if (typeof defaultTab === "string") {
+      if (["Paid", "Recieve"].includes(defaultTab)) {
         setActiveTab(defaultTab as PaymentStatus);
       }
     }
   }, [defaultTab]);
 
-  const fetchPaymentRequests = async (status: PaymentStatus): Promise<void> => {
+  useFocusEffect(
+    useCallback(() => {
+      // reset filters
+      setDate(format(new Date(), "yyyy-MM-dd"));
+      setSelectedUser(null);
+      fetchPaymentRequests(activeTab);
+    }, [])
+  );
+
+
+  const fetchPaymentRequests = useCallback(async (status: PaymentStatus): Promise<void> => {
+    if (showPaymentMethodModal) return; // Prevent fetching when modal is open
     if (!token) return;
     setLoading(true);
     try {
+      const payload: { code: PaymentStatus; date: string; userId?: string } = {
+        code: status,
+        date: date, // fetch all records
+        userId: selectedUser ? selectedUser._id : undefined,
+      };
 
       const response = await fetch(api.getPaymentsReport, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          code: status,
-          date: date, // fetch all records
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (data.success) {
@@ -130,13 +150,13 @@ export default function PaymentRequestsScreen(): React.ReactElement {
         setPaymentRequests([]);
       }
     } catch (error) {
-      console.error('Error fetching payment requests:', error);
-      Alert.alert('Error', 'Failed to load payment requests');
+      console.error("Error fetching payment requests:", error);
+      Alert.alert("Error", "Failed to load payment requests");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [token, date, selectedUser, showPaymentMethodModal]);
 
   const TabButton: React.FC<TabButtonProps> = ({
     tabName,
@@ -179,21 +199,35 @@ export default function PaymentRequestsScreen(): React.ReactElement {
 
   // Handle date picker change
   const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false)
+    setShowDatePicker(false);
     if (selectedDate) {
-      const dateString = format(selectedDate, "yyyy-MM-dd")
-      setDate(dateString)
+      const dateString = format(selectedDate, "yyyy-MM-dd");
+      setDate(dateString);
     }
-  }
+  };
 
   const renderPaymentRequest: ListRenderItem<PaymentRequest> = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Image source={{ uri: activeTab === "Paid" ? item.toUser.profilePic : item.fromUser.profilePic }} style={styles.profilePic} />
+        <Image
+          source={{
+            uri:
+              activeTab === "Paid"
+                ? item.toUser.profilePic
+                : item.fromUser.profilePic,
+          }}
+          style={styles.profilePic}
+        />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{activeTab === "Paid" ? item.toUser.name : item.fromUser.name}</Text>
-          <Text style={styles.userId}>ID: {activeTab === "Paid" ? item?.toUser?.id : item?.fromUser?.id}</Text>
-          <Text style={styles.upiId}>DATE: {format(item?.date, "dd-MM-yyyy")}</Text>
+          <Text style={styles.userName}>
+            {activeTab === "Paid" ? item.toUser.name : item.fromUser.name}
+          </Text>
+          <Text style={styles.userId}>
+            ID: {activeTab === "Paid" ? item?.toUser?.id : item?.fromUser?.id}
+          </Text>
+          <Text style={styles.upiId}>
+            DATE: {format(new Date(item?.date), "dd-MM-yyyy")}
+          </Text>
         </View>
         <View style={styles.amountContainer}>
           <Text style={styles.amountLabel}>Amount</Text>
@@ -206,12 +240,13 @@ export default function PaymentRequestsScreen(): React.ReactElement {
           <View
             style={[
               styles.statusIndicator,
-              item?.paymentType === 'Paid' && styles.approvedStatus,
-              item?.paymentType === 'Recieve' && styles.pendingStatus,
+              item?.paymentType === "Paid" && styles.approvedStatus,
+              item?.paymentType === "Recieve" && styles.pendingStatus,
             ]}
           />
           <Text style={styles.statusText}>
-            {item.paymentType.charAt(0).toUpperCase() + item.paymentType.slice(1)}
+            {item.paymentType.charAt(0).toUpperCase() +
+              item.paymentType.slice(1)}
           </Text>
           {item?.transactionId && (
             <Text style={styles.transactionId}>TXN: {item?.transactionId}</Text>
@@ -234,29 +269,34 @@ export default function PaymentRequestsScreen(): React.ReactElement {
     fetchPaymentRequests(activeTab);
   }, [token, activeTab]);
 
-
-
   return (
     <SafeAreaView style={styles.container}>
       <PaymentHeader
-        addNewProduct={() => { setShowPaymentMethodModal(true); }}
+        addNewProduct={() => {
+          setShowPaymentMethodModal(true);
+          setFormData((prev) => ({ ...prev, role: activeTab === "Recieve" ? "Customer" : "Farmer" }));
+        }}
       />
-
       <View style={styles.tabContainer}>
-        {renderTabButton('Paid', 'Paid')}
-        {renderTabButton('Recieve', 'Recieved')}
-        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.compactField}>
-          <FontAwesome name="calendar" size={14} color="#0284c7" />
-          <Text style={styles.compactFieldText}>{format(new Date(date), "dd/MM")}</Text>
-        </TouchableOpacity>
+        {renderTabButton("Paid", "Paid")}
+        {renderTabButton("Recieve", "Recieved")}
+        <FilterChip
+          title={selectedUser ? selectedUser.name.split(" ")[0] ?? "User" : activeTab === "Recieve" ? "Buyer" : "Farmer"}
+          isActive={!!selectedUser}
+          onPress={() => setShowUserSelector(true)}
+          icon="person"
+        />
+        <FilterChip
+          title={date ? format(new Date(date), "dd MMM") : "Date"}
+          isActive={!!date}
+          onPress={() => {
+            setShowDatePicker(true);
+          }}
+          icon="today"
+        />
       </View>
-
-
       {loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={styles.loaderText}>Loading payments...</Text>
-        </View>
+        <DairyLoadingScreen loading loadingText="Loading payments..." />
       ) : paymentRequests?.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No payments found</Text>
@@ -273,15 +313,24 @@ export default function PaymentRequestsScreen(): React.ReactElement {
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor="#ffffff"
-              colors={['#007AFF']}
+              colors={["#007AFF"]}
             />
           }
         />
       )}
-
       {/* Payment Method Selection Modal */}
+      <PaymentForm
+        showPaymentMethodModal={showPaymentMethodModal}
+        setShowPaymentMethodModal={setShowPaymentMethodModal}
+        fetchPaymentRequests={fetchPaymentRequests}
+        token={token}
+        formData={formData}
+        setFormData={setFormData}
+        selectedUser={selectedUser}
+        setSelectedUser={setSelectedUser}
+        setShowUserSelector={setShowUserSelector}
 
-      <PaymentForm showPaymentMethodModal={showPaymentMethodModal} setShowPaymentMethodModal={setShowPaymentMethodModal} fetchPaymentRequests={fetchPaymentRequests} />
+      />
       {showDatePicker && (
         <DateTimePicker
           value={new Date(date)}
@@ -291,6 +340,17 @@ export default function PaymentRequestsScreen(): React.ReactElement {
           maximumDate={new Date()}
         />
       )}
+      {
+        <UserModal
+          title={formData.role || (activeTab === "Recieve" ? "Buyer" : "Farmer")}
+          showUserSelector={showUserSelector}
+          setShowUserSelector={setShowUserSelector}
+          filteredUser={customers}
+          selectedUser={selectedUser}
+          setSelectedUser={setSelectedUser}
+          updateFormData={updateFormData}
+        />
+      }
     </SafeAreaView>
   );
 }
@@ -298,58 +358,58 @@ export default function PaymentRequestsScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: '#d9dee6ff',
+    backgroundColor: "#d9dee6ff",
   },
   tabButton: {
     flex: 1,
     paddingVertical: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: 4,
     borderRadius: 8,
-    backgroundColor: '#374151',
+    backgroundColor: "#374151",
   },
   activeTabButton: {
-    backgroundColor: '#6366f1',
+    backgroundColor: "#6366f1",
   },
   tabButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#d1d5db',
+    fontWeight: "600",
+    color: "#d1d5db",
   },
   activeTabButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
   listContainer: {
     padding: 16,
   },
   card: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     borderRadius: 12,
     marginBottom: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   profilePic: {
@@ -363,45 +423,45 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontWeight: "bold",
+    color: "#ffffff",
     marginBottom: 2,
   },
   userId: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginBottom: 2,
   },
   upiId: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
   amountContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   amountLabel: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginBottom: 2,
   },
   amount: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontWeight: "bold",
+    color: "#ffffff",
   },
   cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#374151',
+    borderTopColor: "#374151",
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   statusIndicator: {
     width: 10,
@@ -410,30 +470,30 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   approvedStatus: {
-    backgroundColor: '#10b981',
+    backgroundColor: "#10b981",
   },
   pendingStatus: {
-    backgroundColor: '#0b8cf5ff',
+    backgroundColor: "#0b8cf5ff",
   },
   rejectedStatus: {
-    backgroundColor: '#ef4444',
+    backgroundColor: "#ef4444",
   },
   statusText: {
     fontSize: 14,
-    color: '#d1d5db',
+    color: "#d1d5db",
     marginRight: 8,
   },
   transactionId: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#9ca3af",
     marginRight: 8,
   },
   paymentMethod: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   actionButton: {
     paddingVertical: 6,
@@ -442,50 +502,33 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   approveButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: "#10b981",
   },
   rejectButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: "#ef4444",
   },
   actionButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
   },
   loaderContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loaderText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#d1d5db',
+    color: "#d1d5db",
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyText: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
-  compactField: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#bae6fd",
-    gap: 6,
-  },
-  compactFieldText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0c4a6e",
-  },
-
 });

@@ -1,5 +1,5 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
-import { Feather, FontAwesome, Ionicons } from "@expo/vector-icons";
+import Icon from "@/components/common/Icon";
 import { Drawer } from "expo-router/drawer";
 
 export default function Layout() {
@@ -7,35 +7,27 @@ export default function Layout() {
         {
             name: "index",
             title: "Products",
-            icon: (size: number, color: string) => (
-                <Ionicons name="home-outline" size={size} color={color} />
-            ),
+            icon: Icon("user"),
         },
         {
             name: "payment",
             title: "Payments",
-            icon: (size: number, color: string) => <FontAwesome name="rupee" size={size} color={color} />,
+            icon: Icon("user"),
         },
         {
             name: "records",
             title: "Milk Subcription",
-            icon: (size: number, color: string) => (
-                <Feather name="bar-chart-2" size={20} color={color} />
-            ),
+            icon: Icon("user"),
         },
         {
             name: "profile",
             title: "Profile",
-            icon: (size: number, color: string) => (
-                <Ionicons name="person-circle-outline" size={size} color={color} />
-            ),
+            icon: Icon("user"),
         },
         {
             name: "Settings",
             title: "Settings",
-            icon: (size: number, color: string) => (
-                <Ionicons name="settings-outline" size={size} color={color} />
-            ),
+            icon: Icon("user"),
         },
     ];
 

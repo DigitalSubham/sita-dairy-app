@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
-    width: "48%",
+    width: "49%",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#64748b",
     marginBottom: 4,
   },

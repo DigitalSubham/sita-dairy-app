@@ -143,6 +143,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
 const WalletModal: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [alertVisible, setAlertVisible] = useState<boolean>(false);
@@ -193,6 +194,7 @@ const WalletModal: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         setTransactions(data.data);
+        setTotalAmount(data.totalAmount || 0);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -365,7 +367,7 @@ const WalletModal: React.FC = () => {
                 <View>
                   <Text style={styles.balanceLabel}>Total Money Earned</Text>
                   <Text style={styles.balanceAmount}>
-                    1000000
+                    {totalAmount.toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.walletIconContainer}>
