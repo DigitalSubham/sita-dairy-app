@@ -1,18 +1,9 @@
+import { User } from '@/constants/types';
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type User = {
-    _id: string;
-    id: string;
-    name: string;
-    mobile: string;
-    collectionCenter: string;
-    profilePic: string;
-    milkRate?: string;
-    morningMilk?: string;
-    eveningMilk?: string;
-};
+
 
 type UserModalProps = {
     showUserSelector: boolean;

@@ -1,4 +1,4 @@
-import { CustomerRole } from '@/hooks/useCustomer'
+import { CustomerRole } from '@/constants/types'
 import { onExportPDF } from '@/utils/pdf'
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { DrawerActions, useNavigation } from "@react-navigation/native"
@@ -56,22 +56,32 @@ interface RateChartHeaderProps {
 }
 
 // Dashboard Header with stats
-export const DashboardHeader = () => {
+export const DashboardHeader = ({
+    setLanguageModal,
+    title,
+    subtitle
+}: {
+    setLanguageModal: React.Dispatch<React.SetStateAction<boolean>>;
+    title: string
+    subtitle: string
+}) => {
     const actions: HeaderAction[] = [
         {
-            icon: "notifications-outline",
-            onPress: () => console.log("Notifications pressed"),
+            icon: "language",
+            iconFamily: "image",
+            onPress: () => setLanguageModal(true),
         },
-    ]
+    ];
 
     return (
         <CustomHeader
-            title="Admin Dashboard"
-            subtitle='Manage your dairy operations'
+            title={title}
+            subtitle={subtitle}
             actions={actions}
         />
-    )
-}
+    );
+};
+
 
 interface BuyerProps {
     title: string;

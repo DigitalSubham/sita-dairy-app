@@ -1,4 +1,5 @@
 import { api } from "@/constants/api";
+import { Customer } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { Alert } from "react-native";
@@ -114,3 +115,11 @@ export const fetchTodayEntries = async (
     setLoading(false);
   }
 };
+
+export const sortByPosition = (list: Customer[]) =>
+  [...list].sort((a, b) => {
+    if (a.positionNo === undefined && b.positionNo === undefined) return 0;
+    if (a.positionNo === undefined) return 1;
+    if (b.positionNo === undefined) return -1;
+    return a.positionNo - b.positionNo;
+  });

@@ -1,26 +1,7 @@
 import { api } from "@/constants/api";
+import { Customer, CustomerRole } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useState } from "react";
-
-export type CustomerRole = "User" | "Farmer" | "Buyer" | "Customer";
-
-export type Customer = {
-  _id: string;
-  id: string;
-  name: string;
-  profilePic: string;
-  isVerified: boolean;
-  mobile: string;
-  fatherName: string;
-  dailryName: string;
-  collectionCenter: string;
-  createdAt: string;
-  role: CustomerRole;
-  morningMilk?: string;
-  eveningMilk?: string;
-  milkRate?: string;
-  positionNo: number;
-};
 
 export default function useCustomers({ role }: { role?: CustomerRole } = {}) {
   const [customers, setCustomers] = useState<Customer[]>([]);

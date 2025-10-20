@@ -1,5 +1,6 @@
 import { BuyerDashboardHeader } from "@/components/common/HeaderVarients";
 import { api } from "@/constants/api";
+import { Product } from "@/constants/types";
 import { AntDesign, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,15 +23,6 @@ import Animated, {
     Layout
 } from 'react-native-reanimated';
 
-interface Product {
-    _id: string;
-    title: string;
-    price: number;
-    description: string;
-    thumbnail: string;
-    points: number;
-    isFeatured: boolean;
-}
 
 export default function ProductsScreen() {
     const [token, setToken] = useState<string>("");
@@ -209,15 +201,6 @@ export default function ProductsScreen() {
                         <Text style={styles.productTitle} numberOfLines={1}>
                             {item.title}
                         </Text>
-                        {/* <View style={styles.ratingContainer}>
-                <FontAwesome
-                  name="star"
-                  size={14}
-                  color="#FFD700"
-                  fill="#FFD700"
-                />
-                <Text style={styles.ratingText}>{item.points}</Text>
-              </View> */}
                     </View>
 
                     <Text style={styles.productDescription} numberOfLines={2}>

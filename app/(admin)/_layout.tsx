@@ -5,11 +5,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Layout() {
 
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (isLoading) return;
@@ -26,52 +28,52 @@ export default function Layout() {
   const screens = [
     {
       name: "index",
-      title: "Dashboard",
+      title: t("navigation.dashboard"),
       icon: Icon("home")
     },
     {
       name: "payments",
-      title: "Payments",
+      title: t("navigation.payments"),
       icon: Icon("wallet")
     },
     {
       name: "milkEntry",
-      title: "Milk Entry",
+      title: t("navigation.milk_entry"),
       icon: Icon("entry")
     },
     {
       name: "rateChartScreen",
-      title: "Rate Chart",
+      title: t("navigation.rate_chart"),
       icon: Icon("up-arrow"),
     },
     {
       name: "record",
-      title: "All Records",
+      title: t("navigation.all_records"),
       icon: Icon("ledger"),
     },
     {
       name: "customers",
-      title: "Users",
+      title: t("navigation.users"),
       icon: Icon("users"),
     },
     {
       name: "rearrange",
-      title: "Rearrange Users",
+      title: t("navigation.rearrange_users"),
       icon: Icon("rearrange"),
     },
     {
       name: "products",
-      title: "Products",
+      title: t("navigation.products"),
       icon: Icon("products"),
     },
     {
       name: "profile",
-      title: "Profile",
+      title: t("navigation.profile"),
       icon: Icon("user"),
     },
     {
       name: "settings",
-      title: "Settings",
+      title: t("navigation.settings"),
       icon: Icon("settings"),
     },
   ]

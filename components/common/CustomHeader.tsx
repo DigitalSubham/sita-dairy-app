@@ -2,10 +2,11 @@ import { AntDesign, FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-ic
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import type React from "react"
 import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import Icon from "./Icon"
 
 export interface HeaderAction {
-  icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap | keyof typeof AntDesign.glyphMap | keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap
-  iconFamily?: "Ionicons" | "FontAwesome" | "AntDesign" | "MaterialIcons"
+  icon: keyof typeof Ionicons.glyphMap | keyof typeof FontAwesome.glyphMap | keyof typeof AntDesign.glyphMap | keyof typeof MaterialIcons.glyphMap
+  iconFamily?: "Ionicons" | "FontAwesome" | "AntDesign" | "MaterialIcons" | "image"
   onPress: () => void
   label?: string
   isSpinner?: boolean
@@ -59,7 +60,9 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
     if (isSpinner) {
       return <ActivityIndicator size="small" color={textColor} />;
     }
-
+    if (iconFamily === "image") {
+      return Icon(iconName as any)(24, textColor);
+    }
     if (iconFamily === "FontAwesome") {
       return <FontAwesome name={iconName as any} size={size} color={textColor} />;
     }

@@ -1,16 +1,15 @@
+import AuthTemplate from "@/components/auth/AuthTemplate";
 import { Feather, FontAwesome } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Image,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
@@ -22,6 +21,7 @@ export default function Signup() {
   const { signUp } = useAuth();
   const router = useRouter();
   const mobileRef = useRef<TextInput>(null);
+  const { t } = useTranslation();
 
   const handleSignup = async () => {
     // Reset error state
@@ -52,23 +52,23 @@ export default function Signup() {
       !trimmedName ||
       !trimmedMobile
     ) {
-      setError("Please fill in all fields");
+      setError(t("validation.all_fields_required"));
       return;
     }
 
     // Field validations
     if (!nameRegex.test(trimmedName)) {
-      setError("Name should contain only letters and spaces");
+      setError(t("validation.name"));
       return;
     }
 
     if (!mobileRegex.test(trimmedMobile)) {
       if (trimmedMobile.length !== 10) {
-        setError("Mobile number must be exactly 10 digits");
+        setError(t("validation.mobile"));
       } else if (!/^[6-9]/.test(trimmedMobile)) {
-        setError("Mobile number must start with 6, 7, 8, or 9");
+        setError(t("validation.mobile_range"));
       } else {
-        setError("Please enter a valid Indian mobile number");
+        setError(t("validation.mobile_indian"));
       }
       return;
     }
@@ -90,15 +90,15 @@ export default function Signup() {
           router.replace("/(tabs)");
         }
       } else {
-        setError(response.message || "Failed to create account");
+        setError(response.message || t("err.create_account"));
       }
     } catch (err: any) {
       // Optionally log the error for debugging
       // console.error("Signup error:", err);
       setError(
         err?.message
-          ? `Failed to create account: ${err.message}`
-          : "Failed to create account"
+          ? `${t("err.create_account")}: ${err.message}`
+          : t("err.create_account")
       );
     } finally {
       setIsLoading(false);
@@ -106,155 +106,79 @@ export default function Signup() {
   };
 
   return (
-    <LinearGradient colors={["#e6f0ff", "#f0f9ff"]} style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-            <Image
-              source={require('../../assets/images/adaptive-icon.png')}
-              style={{ width: 200, height: 200 }}
-            />
-          </View>
-          <Text style={styles.logoText}>Sita Dairy</Text>
-          <Text style={styles.logoSubtext}>Management System</Text>
+    <AuthTemplate>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>{t("auth.create_account")}</Text>
+        <Text style={styles.subtitle}>{t("auth.join_our_dairy_community")}</Text>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <View style={styles.inputContainer}>
+          <Feather
+            name="user"
+            size={20}
+            color="#38bdf8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t("common.full_name")}
+            placeholderTextColor="#93c5fd"
+            value={name}
+            onChangeText={setName}
+            editable={!isLoading}
+            returnKeyType="next"
+            onSubmitEditing={() => mobileRef.current?.focus()}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome
+            name="phone"
+            size={20}
+            color="#38bdf8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            ref={mobileRef}
+            style={styles.input}
+            placeholder={t("common.mobile_number")}
+            placeholderTextColor="#93c5fd"
+            value={mobile}
+            onChangeText={setMobile}
+            autoCapitalize="none"
+            keyboardType="number-pad"
+            editable={!isLoading}
+            onSubmitEditing={() => handleSignup()}
+          />
         </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join our dairy community</Text>
+        <TouchableOpacity
+          disabled={isLoading}
+          style={styles.signupButton}
+          onPress={handleSignup}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.signupButtonText}>{t("auth.join_sita_dairy")}</Text>
+          )}
+        </TouchableOpacity>
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
-
-          <View style={styles.inputContainer}>
-            <Feather
-              name="user"
-              size={20}
-              color="#38bdf8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#93c5fd"
-              value={name}
-              onChangeText={setName}
-              editable={!isLoading}
-              returnKeyType="next"
-              onSubmitEditing={() => mobileRef.current?.focus()}
-            />
-          </View>
-
-
-
-
-          <View style={styles.inputContainer}>
-            <FontAwesome
-              name="phone"
-              size={20}
-              color="#38bdf8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              ref={mobileRef}
-              style={styles.input}
-              placeholder="Mobile Number"
-              placeholderTextColor="#93c5fd"
-              value={mobile}
-              onChangeText={setMobile}
-              autoCapitalize="none"
-              keyboardType="number-pad"
-              editable={!isLoading}
-              onSubmitEditing={() => handleSignup()}
-            />
-          </View>
-
-          <TouchableOpacity
-            disabled={isLoading}
-            style={styles.signupButton}
-            onPress={handleSignup}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.signupButtonText}>Join Sita Dairy</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.loginLink}>Sign In</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>{t("auth.already_have_account")}? </Text>
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity>
+              <Text style={styles.loginLink}>{t("auth.sign_in")}</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
-
-        <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>
-            © 2025 Sita Dairy Management System
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Milk bottle decorations */}
-      <View style={styles.milkBottleLeft}>
-        <View style={styles.bottleNeck} />
-        <View style={styles.bottleBody} />
       </View>
-
-      <View style={styles.milkBottleRight}>
-        <View style={styles.bottleNeck} />
-        <View style={styles.bottleBody} />
-      </View>
-    </LinearGradient>
+    </AuthTemplate>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#e6f0ff",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginTop: 60,
-    marginBottom: 30,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
-    borderWidth: 4,
-    borderColor: "white",
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#0c4a6e",
-    marginTop: 12,
-  },
-  logoSubtext: {
-    fontSize: 16,
-    color: "#0284c7",
-    fontWeight: "500",
-  },
+
   formContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.85)",
     borderRadius: 24,
@@ -341,44 +265,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "bold",
   },
-  footerContainer: {
-    marginTop: 30,
-    alignItems: "center",
-  },
-  footerText: {
-    color: "#0284c7",
-    fontSize: 12,
-  },
-  milkBottleLeft: {
-    position: "absolute",
-    bottom: 0,
-    left: 20,
-    opacity: 0.2,
-    alignItems: "center",
-  },
-  milkBottleRight: {
-    position: "absolute",
-    bottom: 0,
-    right: 20,
-    opacity: 0.2,
-    alignItems: "center",
-  },
-  bottleNeck: {
-    width: 15,
-    height: 20,
-    backgroundColor: "white",
-    borderTopLeftRadius: 7.5,
-    borderTopRightRadius: 7.5,
-    borderWidth: 1,
-    borderColor: "#bae6fd",
-  },
-  bottleBody: {
-    width: 40,
-    height: 60,
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: "#bae6fd",
-  },
+
 });

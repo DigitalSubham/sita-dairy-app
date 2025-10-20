@@ -1,19 +1,7 @@
+import { UserState } from "@/constants/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface UserState {
-  _id?: string;
-  id?: string;
-  name?: string;
-  mobile?: string;
-  collectionCenter?: string;
-  dailryName?: string;
-  fatherName?: string;
-  role?: string;
-  isVerified?: boolean;
-  profilePic?: string;
-  createdAt?: string;
-  address: string;
-}
+
 
 const initialState: UserState = {
   _id: "",

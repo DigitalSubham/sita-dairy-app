@@ -1,3 +1,4 @@
+import { CustomerRole } from '@/constants/types'
 import { MaterialIcons } from '@expo/vector-icons'
 import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
@@ -7,7 +8,7 @@ type RoleCheckBoxProps = {
     handleRoleChange: () => void
     isSelected: boolean
     isModified: boolean
-    canRemoveModification?: boolean | "User" | "Farmer" | "Buyer"
+    canRemoveModification?: boolean | CustomerRole
     label: string
 }
 const RoleCheckBox: React.FC<RoleCheckBoxProps> = ({ handleRoleChange, isSelected, isModified, canRemoveModification, label }) => {

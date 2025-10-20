@@ -4,7 +4,8 @@ import { PaymentHeader } from "@/components/common/HeaderVarients";
 import UserModal from "@/components/common/UserModal";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
-import useCustomers, { CustomerRole } from "@/hooks/useCustomer";
+import { CustomerRole, FormData, PaymentRequest, PaymentStatus, PaymentType, TabButtonProps, User } from "@/constants/types";
+import useCustomers from "@/hooks/useCustomer";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -23,51 +24,12 @@ import {
   View,
 } from "react-native";
 
-// Types
-type PaymentStatus = "Paid" | "Recieve";
-type PaymentMethod = "cash" | "online";
 
-interface PaymentRequest {
-  _id: string;
-  toUser: User;
-  fromUser: User;
-  userId: string;
-  name: string;
-  profilePic: string;
-  amount: number;
-  date: string;
-  paymentType: "Paid" | "Recieve";
-  transactionId?: string;
-  paymentMethod?: PaymentMethod;
-}
 
-interface User {
-  _id: string;
-  id: string;
-  name: string;
-  mobile: string;
-  collectionCenter: string;
-  profilePic: string;
-}
-
-interface TabButtonProps {
-  tabName: PaymentStatus;
-  label: string;
-  activeTab: PaymentStatus;
-  onPress: (tabName: PaymentStatus) => void;
-  disabled: boolean;
-}
-
-interface FormData {
-  userId: string;
-  amount: string;
-  date: string;
-  role: CustomerRole;
-}
 
 export default function PaymentRequestsScreen(): React.ReactElement {
   const { defaultTab } = useLocalSearchParams();
-  const [activeTab, setActiveTab] = useState<PaymentStatus>("Paid");
+  const [activeTab, setActiveTab] = useState<PaymentStatus>(PaymentType.Paid);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [showPaymentMethodModal, setShowPaymentMethodModal] =
@@ -82,7 +44,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
     amount: "",
   });
   const derivedRole: CustomerRole =
-    formData.role === "Customer" || activeTab === "Recieve"
+    formData.role === "Customer" || activeTab === PaymentType.Receive
       ? "Buyer"
       : "Farmer";
 
@@ -241,7 +203,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
             style={[
               styles.statusIndicator,
               item?.paymentType === "Paid" && styles.approvedStatus,
-              item?.paymentType === "Recieve" && styles.pendingStatus,
+              item?.paymentType === PaymentType.Receive && styles.pendingStatus,
             ]}
           />
           <Text style={styles.statusText}>
@@ -274,14 +236,14 @@ export default function PaymentRequestsScreen(): React.ReactElement {
       <PaymentHeader
         addNewProduct={() => {
           setShowPaymentMethodModal(true);
-          setFormData((prev) => ({ ...prev, role: activeTab === "Recieve" ? "Customer" : "Farmer" }));
+          setFormData((prev) => ({ ...prev, role: activeTab === PaymentType.Receive ? "Customer" : "Farmer" }));
         }}
       />
       <View style={styles.tabContainer}>
-        {renderTabButton("Paid", "Paid")}
-        {renderTabButton("Recieve", "Recieved")}
+        {renderTabButton(PaymentType.Paid, "Paid")}
+        {renderTabButton(PaymentType.Receive, "Recieved")}
         <FilterChip
-          title={selectedUser ? selectedUser.name.split(" ")[0] ?? "User" : activeTab === "Recieve" ? "Buyer" : "Farmer"}
+          title={selectedUser ? selectedUser.name.split(" ")[0] ?? "User" : activeTab === PaymentType.Receive ? "Buyer" : "Farmer"}
           isActive={!!selectedUser}
           onPress={() => setShowUserSelector(true)}
           icon="person"
@@ -342,7 +304,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
       )}
       {
         <UserModal
-          title={formData.role || (activeTab === "Recieve" ? "Buyer" : "Farmer")}
+          title={formData.role || (activeTab === PaymentType.Receive ? "Buyer" : "Farmer")}
           showUserSelector={showUserSelector}
           setShowUserSelector={setShowUserSelector}
           filteredUser={customers}

@@ -1,5 +1,6 @@
 import { api } from "@/constants/api";
-import { CustomerRole } from "@/hooks/useCustomer";
+import { CustomerRole, FormData, PaymentStatus, PaymentType } from "@/constants/types";
+
 import { Feather, FontAwesome } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
@@ -20,7 +21,7 @@ import RoleCheckBox from "../users/RoleCheckBox";
 type paymentFormProps = {
     showPaymentMethodModal: boolean;
     setShowPaymentMethodModal: (show: boolean) => void;
-    fetchPaymentRequests: (status: "Paid" | "Recieve") => Promise<void>;
+    fetchPaymentRequests: (status: PaymentStatus) => Promise<void>;
     formData: FormData;
     setFormData: React.Dispatch<React.SetStateAction<FormData>>;
     token: string;
@@ -28,12 +29,7 @@ type paymentFormProps = {
     selectedUser: User | null;
     setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
-interface FormData {
-    userId: string;
-    amount: string;
-    date: string;
-    role: CustomerRole;
-}
+
 interface User {
     _id: string;
     id: string;
@@ -82,7 +78,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
 
         // Validate amount
         const amountNum = Number.parseInt(formData.amount, 10);
-        if (!formData.amount || isNaN(amountNum)) {
+        if (!formData.amount || Number.isNaN(amountNum)) {
             newErrors.amount = "Please enter a valid amount";
             isValid = false;
         }
@@ -125,7 +121,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
                 });
                 const data = await response.json();
                 if (data.success) {
-                    fetchPaymentRequests(formData.role === "Farmer" ? "Paid" : "Recieve");
+                    fetchPaymentRequests(formData.role === "Farmer" ? PaymentType.Paid : PaymentType.Receive);
                     handleClose();
                 } else {
                     setErrors({ ...errors, api: "Failed to add user" });

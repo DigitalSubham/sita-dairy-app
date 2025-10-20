@@ -1,4 +1,5 @@
 import { api } from "@/constants/api";
+import { AuthContextType, User } from "@/constants/types";
 import { logout, setReduxUser } from "@/store/userSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -12,32 +13,6 @@ import {
 import Toast from "react-native-toast-message";
 import { useDispatch } from "react-redux";
 
-type User = {
-  totalWalletAmount: User | null;
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-};
-
-type AuthContextType = {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  user: User | null;
-  signIn: (mobile: string, password: string) => Promise<any>;
-  signUp: (
-    name: string,
-    mobile: string,
-    role?: string
-  ) => Promise<any>;
-  signOut: () => void;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (
-    email: string,
-    code: string,
-    newPassword: string
-  ) => Promise<void>;
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

@@ -1,5 +1,6 @@
-import { Customer } from '@/app/(admin)/customers';
+
 import { api } from '@/constants/api';
+import { Customer } from '@/constants/types';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';

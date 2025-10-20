@@ -1,6 +1,7 @@
 import RenderDeleteModal from "@/components/common/DeleteModal";
 import { ProductsHeader } from "@/components/common/HeaderVarients";
 import { api } from "@/constants/api";
+import { Product, ProductFormData } from "@/constants/types";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -28,24 +29,6 @@ import Toast from "react-native-toast-message";
 
 const { width, height } = Dimensions.get("window");
 
-// Define TypeScript interfaces
-interface Product {
-  _id: string;
-  title: string;
-  price: number;
-  description: string;
-  thumbnail: string;
-  isFeatured: boolean;
-}
-
-interface ProductFormData {
-  _id: string;
-  title: string;
-  price: string;
-  description: string;
-  thumbnail: string;
-  isFeatured: boolean;
-}
 
 export default function AdminProductsScreen(): React.ReactElement {
   const [products, setProducts] = useState<Product[]>([]);

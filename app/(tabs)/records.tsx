@@ -1,8 +1,7 @@
-"use client";
-
 import { FarmerRecordsHeader } from "@/components/common/HeaderVarients";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
+import { FilterParams, MilkRecord, ShiftType } from "@/constants/types";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format, subDays } from "date-fns";
@@ -29,31 +28,7 @@ import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
-interface MilkRecord {
-  _id: string;
-  byUser: {
-    _id: string;
-    name: string;
-    profilePic?: string;
-  };
-  date: string;
-  shift: "Morning" | "Evening";
-  weight: string;
-  fat?: string;
-  snf: string;
-  rate: string;
-  price: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
-interface FilterParams {
-  startDate?: string;
-  endDate?: string;
-  date?: string;
-  userId?: string;
-  shift?: "Morning" | "Evening";
-}
 
 export default function EnhancedCustomerMilkRecords() {
   const [allEntries, setAllEntries] = useState<MilkRecord[]>([]);
@@ -71,7 +46,7 @@ export default function EnhancedCustomerMilkRecords() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [selectedShift, setSelectedShift] = useState<
-    "Morning" | "Evening" | ""
+    ShiftType | ""
   >("");
 
   // Calendar selection state
@@ -127,7 +102,7 @@ export default function EnhancedCustomerMilkRecords() {
           .includes(searchLower) ||
         entry.shift.toLowerCase().includes(searchLower) ||
         entry.weight.includes(searchQuery) ||
-        entry.snf.includes(searchQuery) ||
+        entry.snf && entry.snf.includes(searchQuery) ||
         entry.rate.includes(searchQuery) ||
         entry.price.includes(searchQuery) ||
         (entry.fat && entry.fat.includes(searchQuery))
@@ -213,7 +188,7 @@ export default function EnhancedCustomerMilkRecords() {
     const averageSNF =
       recordsData.length > 0
         ? recordsData.reduce(
-          (sum, record) => sum + Number.parseFloat(record.snf),
+          (sum, record) => sum + Number.parseFloat(record.snf!),
           0
         ) / recordsData.length
         : 0;

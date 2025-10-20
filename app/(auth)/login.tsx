@@ -1,20 +1,17 @@
+import AuthTemplate from "@/components/auth/AuthTemplate";
 import { FontAwesome } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
-
-
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Image,
   Keyboard,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
@@ -27,6 +24,7 @@ export default function Login() {
   const { signIn } = useAuth();
   const router = useRouter();
   const passwordRef = useRef<TextInput>(null);
+  const { t } = useTranslation();
 
 
   const handleLogin = async () => {
@@ -41,12 +39,12 @@ export default function Login() {
 
     const phoneRegex = /^[6-9]\d{9}$/; // strict Indian mobile number
     if (!trimmedMobile || !trimmedPassword) {
-      setError("Please fill in all fields");
+      setError(t("validation.all_fields_required"));
       return;
     }
 
     if (!phoneRegex.test(trimmedMobile)) {
-      setError("Please enter a valid 10-digit phone number");
+      setError(t("validation.mobile"));
       return;
     }
 
@@ -60,10 +58,11 @@ export default function Login() {
           router.replace("/(tabs)");
         }
       } else {
-        setError(response.message || "Failed to login");
+        setError(response.message || t("err.login_fail"));
       }
     } catch (err) {
-      setError("Invalid mobile or password");
+      console.error(t("err.login_fail"), err);
+      setError(t("err.login_fail"));
     } finally {
       setIsLoading(false);
     }
@@ -78,163 +77,90 @@ export default function Login() {
   };
 
   return (
-    <LinearGradient colors={["#e6f0ff", "#f0f9ff"]} style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-            <Image
-              source={require('../../assets/images/adaptive-icon.png')}
-              style={{ width: 200, height: 200 }}
-            />
-          </View>
-          <Text style={styles.logoText}>Sita Dairy</Text>
-          <Text style={styles.logoSubtext}>Management System</Text>
+    <AuthTemplate>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>{t("auth.login_sita_dairy")}</Text>
+        <Text style={styles.subtitle} > {t("auth.join_our_dairy_community")}</Text>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <View style={styles.inputContainer}>
+          <FontAwesome
+            name="phone"
+            size={20}
+            color="#38bdf8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={t("common.mobile_number")}
+            placeholderTextColor="#93c5fd"
+            value={mobile}
+            onChangeText={setMobile}
+            autoCapitalize="none"
+            keyboardType="number-pad"
+            editable={!isLoading}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+          />
         </View>
-
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Login Account</Text>
-          <Text style={styles.subtitle}>Join our dairy community</Text>
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
-
-          <View style={styles.inputContainer}>
-            <FontAwesome
-              name="phone"
-              size={20}
-              color="#38bdf8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Mobile Number"
-              placeholderTextColor="#93c5fd"
-              value={mobile}
-              onChangeText={setMobile}
-              autoCapitalize="none"
-              keyboardType="number-pad"
-              editable={!isLoading}
-              returnKeyType="next"
-              onSubmitEditing={() => passwordRef.current?.focus()}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <FontAwesome
-              name="key"
-              size={20}
-              color="#38bdf8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              ref={passwordRef}
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#93c5fd"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              keyboardType="number-pad"
-              editable={!isLoading}
-              onSubmitEditing={() => handleLogin()}
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={togglePasswordVisibility}
-            >
-              {showPassword ? (
-                <FontAwesome name="eye" size={20} color="#666" />
-              ) : (
-                <FontAwesome name="eye-slash" size={20} color="#666" />
-              )}
-            </TouchableOpacity>
-          </View>
+        <View style={styles.inputContainer}>
+          <FontAwesome
+            name="key"
+            size={20}
+            color="#38bdf8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            ref={passwordRef}
+            style={styles.input}
+            placeholder={t("common.password")}
+            placeholderTextColor="#93c5fd"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            keyboardType="number-pad"
+            editable={!isLoading}
+            onSubmitEditing={() => handleLogin()}
+          />
           <TouchableOpacity
-            disabled={isLoading}
-            style={styles.signupButton}
-            onPress={handleLogin}
+            style={styles.eyeIcon}
+            onPress={togglePasswordVisibility}
           >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
+            {showPassword ? (
+              <FontAwesome name="eye" size={20} color="#666" />
             ) : (
-              <Text style={styles.signupButtonText}>Login Sita Dairy</Text>
+              <FontAwesome name="eye-slash" size={20} color="#666" />
             )}
           </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Create new account? </Text>
-            <Link href="/(auth)/signup" asChild>
-              <TouchableOpacity>
-                <Text style={styles.loginLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
         </View>
+        <TouchableOpacity
+          disabled={isLoading}
+          style={styles.signupButton}
+          onPress={handleLogin}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.signupButtonText}>{t("auth.login_sita_dairy")}</Text>
+          )}
+        </TouchableOpacity>
 
-        <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>
-            © 2025 Sita Dairy Management System
-          </Text>
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>{t("auth.create_new_account")}? </Text>
+          <Link href="/(auth)/signup" asChild>
+            <TouchableOpacity>
+              <Text style={styles.loginLink}>{t("auth.sign_up")}</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
-      </ScrollView>
-
-      {/* Milk bottle decorations */}
-      <View style={styles.milkBottleLeft}>
-        <View style={styles.bottleNeck} />
-        <View style={styles.bottleBody} />
       </View>
-
-      <View style={styles.milkBottleRight}>
-        <View style={styles.bottleNeck} />
-        <View style={styles.bottleBody} />
-      </View>
-    </LinearGradient>
+    </AuthTemplate>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#e6f0ff",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginTop: 60,
-    marginBottom: 30,
-  },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
-    borderWidth: 4,
-    borderColor: "white",
-  },
-  logoText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#0c4a6e",
-    marginTop: 12,
-  },
-  logoSubtext: {
-    fontSize: 16,
-    color: "#0284c7",
-    fontWeight: "500",
-  },
   formContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.85)",
     borderRadius: 24,
@@ -323,45 +249,5 @@ const styles = StyleSheet.create({
     color: "#0ea5e9",
     fontSize: 15,
     fontWeight: "bold",
-  },
-  footerContainer: {
-    marginTop: 30,
-    alignItems: "center",
-  },
-  footerText: {
-    color: "#0284c7",
-    fontSize: 12,
-  },
-  milkBottleLeft: {
-    position: "absolute",
-    bottom: 0,
-    left: 20,
-    opacity: 0.2,
-    alignItems: "center",
-  },
-  milkBottleRight: {
-    position: "absolute",
-    bottom: 0,
-    right: 20,
-    opacity: 0.2,
-    alignItems: "center",
-  },
-  bottleNeck: {
-    width: 15,
-    height: 20,
-    backgroundColor: "white",
-    borderTopLeftRadius: 7.5,
-    borderTopRightRadius: 7.5,
-    borderWidth: 1,
-    borderColor: "#bae6fd",
-  },
-  bottleBody: {
-    width: 40,
-    height: 60,
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: "#bae6fd",
   },
 });

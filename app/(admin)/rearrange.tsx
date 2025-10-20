@@ -1,7 +1,10 @@
 import { ReaarangeUsersHeader } from "@/components/common/HeaderVarients"
 import DairyLoadingScreen from "@/components/Loading"
 import { api } from "@/constants/api"
-import useCustomers, { Customer, CustomerRole } from "@/hooks/useCustomer"
+
+import { Customer, CustomerRole } from "@/constants/types"
+import useCustomers from "@/hooks/useCustomer"
+import { sortByPosition } from "@/utils/helper"
 import { Ionicons } from "@expo/vector-icons"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useEffect, useState } from "react"
@@ -21,20 +24,14 @@ export default function Rearrange() {
         role: selectedRole,
     })
 
-    const [users, setUsers] = useState<Customer[]>([...customers].sort((a, b) => a.positionNo - b.positionNo))
+    const [users, setUsers] = useState<Customer[]>(sortByPosition(customers));
 
-
-    useEffect(() => {
-        setUsers([...customers].sort((a, b) => a.positionNo - b.positionNo))
-    }, [customers])
-
+    useEffect(() => setUsers(sortByPosition(customers)), [customers]);
 
     useFocusEffect(
-        useCallback(() => {
-            // Reset users to the current customers whenever the screen is focused
-            setUsers([...customers].sort((a, b) => a.positionNo - b.positionNo))
-        }, [customers])
-    )
+        useCallback(() => setUsers(sortByPosition(customers)), [customers])
+    );
+
 
 
     const renderUserCard = ({ item, drag, isActive }: RenderItemParams<Customer>) => {

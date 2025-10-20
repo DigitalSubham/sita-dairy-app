@@ -13,6 +13,7 @@ const icons = {
     collection: require("@/assets/icons/collection.png"),
     entry: require("@/assets/icons/dataC.png"),
     settings: require("@/assets/icons/settings.png"),
+    language: require("@/assets/icons/languages.png")
 };
 
 export default function Icon(name: keyof typeof icons) {

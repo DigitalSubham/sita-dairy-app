@@ -1,5 +1,6 @@
 import { CustomHeader } from '@/components/common/CustomHeader';
 import { api } from '@/constants/api';
+import { AlertConfig, AlertType, CustomAlertProps, Payment } from '@/constants/types';
 import { Entypo, Feather, FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -22,32 +23,7 @@ import {
   type ViewStyle
 } from 'react-native';
 
-interface Transaction {
-  _id: string | number;
-  type: 'earned' | 'withdrawn' | 'rejected';
-  amount: number;
-  description: string;
-  date: Date;
-}
 
-// Alert type definition
-type AlertType = 'info' | 'success' | 'error';
-
-// Custom Alert Props interface
-interface CustomAlertProps {
-  visible: boolean;
-  title: string;
-  message: string;
-  onClose: () => void;
-  type?: AlertType;
-}
-
-// Alert configuration interface
-interface AlertConfig {
-  title: string;
-  message: string;
-  type: AlertType;
-}
 
 
 // Custom Alert Component
@@ -142,7 +118,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
 
 const WalletModal: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Payment[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);

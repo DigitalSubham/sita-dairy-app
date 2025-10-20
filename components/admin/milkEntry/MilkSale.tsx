@@ -1,5 +1,6 @@
 import UserModal from "@/components/common/UserModal"
 import { api } from "@/constants/api"
+import { MilkEntry, MilkEntryFormData, MilkType, ShiftType, User } from "@/constants/types"
 import useCustomers from "@/hooks/useCustomer"
 import { calculateTotal, fetchTodayEntries, handleDeleteEntry } from "@/utils/helper"
 import { Feather, FontAwesome } from "@expo/vector-icons"
@@ -22,45 +23,6 @@ import ListShow from "./ListShow"
 
 const { width: screenWidth } = Dimensions.get("window")
 
-interface User {
-    _id: string
-    id: string
-    name: string
-    mobile: string
-    collectionCenter: string
-    profilePic: string
-    milkRate?: string;
-    morningMilk?: string;
-    eveningMilk?: string;
-}
-
-interface FormData {
-    userId: string
-    weight: string
-    rate: string
-    date: string
-    shift: "Morning" | "Evening"
-    milkType: "Cow" | "Buffalo"
-}
-
-interface MilkEntry {
-    _id: string
-    byUser: {
-        _id: string;
-        name: string;
-        profilePic?: string;
-    };
-    // userId: string
-    weight: number
-    rate: number
-    price: number
-    date: string
-    shift: "Morning" | "Evening"
-    milkType: "Cow" | "Buffalo"
-}
-
-
-
 export default function MilkSaleEntry() {
     const [showUserSelector, setShowUserSelector] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -77,13 +39,13 @@ export default function MilkSaleEntry() {
     const weightRef = useRef<TextInput>(null);
     const rateRef = useRef<TextInput>(null);
 
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<MilkEntryFormData>({
         userId: "",
         weight: "",
         rate: "",
         date: format(new Date(), "yyyy-MM-dd"),
-        shift: new Date().getHours() < 12 ? "Morning" : "Evening",
-        milkType: "Cow",
+        shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+        milkType: MilkType.Cow,
     })
 
 
@@ -131,8 +93,8 @@ export default function MilkSaleEntry() {
             weight: "",
             rate: "",
             date: format(new Date(), "yyyy-MM-dd"),
-            shift: new Date().getHours() < 12 ? "Morning" : "Evening",
-            milkType: "Cow",
+            shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+            milkType: MilkType.Cow,
         })
         setSelectedUser(null)
         setEditingEntry(null)
@@ -218,7 +180,12 @@ export default function MilkSaleEntry() {
             return false;
         })
         .filter(c => !existingUserIds.includes(c._id))
-        .sort((a, b) => a.positionNo - b.positionNo);
+        .sort((a, b) => {
+            if (a.positionNo === undefined && b.positionNo === undefined) return 0;
+            if (a.positionNo === undefined) return 1; // move undefined to end
+            if (b.positionNo === undefined) return -1;
+            return a.positionNo - b.positionNo
+        });
 
 
     // Render entry options modal

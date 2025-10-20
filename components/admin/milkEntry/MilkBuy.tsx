@@ -1,6 +1,7 @@
 import UserModal from "@/components/common/UserModal"
 import { api } from "@/constants/api"
 import { defaultRateChart } from "@/constants/rateData"
+import { MilkEntry, MilkEntryFormData, MilkType, RateChartRow, ShiftType, User } from "@/constants/types"
 import useCustomers from "@/hooks/useCustomer"
 import { calculateTotal, fetchTodayEntries, handleDeleteEntry } from "@/utils/helper"
 import { Feather, FontAwesome } from "@expo/vector-icons"
@@ -11,7 +12,6 @@ import { useFocusEffect } from "expo-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
     Alert,
-    Dimensions,
     Modal,
     StyleSheet,
     Text,
@@ -20,56 +20,6 @@ import {
     View
 } from "react-native"
 import ListShow from "./ListShow"
-
-const { width: screenWidth } = Dimensions.get("window")
-
-interface User {
-    _id: string
-    id: string
-    name: string
-    mobile: string
-    collectionCenter: string
-    profilePic: string
-}
-
-interface FormData {
-    userId: string
-    weight: string
-    fat: string
-    snf: string
-    rate: string
-    date: string
-    shift: "Morning" | "Evening"
-    milkType: "Cow" | "Buffalo"
-}
-
-interface MilkEntry {
-    _id: string
-    byUser: {
-        _id: string;
-        name: string;
-        profilePic?: string;
-    };
-    // userId: string
-    weight: number
-    fat: number
-    snf: number
-    rate: number
-    price: number
-    date: string
-    shift: "Morning" | "Evening"
-    milkType: "Cow" | "Buffalo"
-}
-
-interface RateChartRow {
-    fat: number
-    snf8_0: number
-    snf8_1: number
-    snf8_2: number
-    snf8_3: number
-    snf8_4: number
-    snf8_5: number
-}
 
 export default function MilkBuyEntry() {
     const [rateChart] = useState<RateChartRow[]>(defaultRateChart)
@@ -87,15 +37,15 @@ export default function MilkBuyEntry() {
     const fatRef = useRef<TextInput>(null);
     const snfRef = useRef<TextInput>(null);
 
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<MilkEntryFormData>({
         userId: "",
         weight: "",
         fat: "",
         snf: "",
         rate: "",
         date: format(new Date(), "yyyy-MM-dd"),
-        shift: new Date().getHours() < 12 ? "Morning" : "Evening",
-        milkType: "Cow",
+        shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+        milkType: MilkType.Cow,
     })
 
     // Helper function to update form data
@@ -169,8 +119,8 @@ export default function MilkBuyEntry() {
             snf: "",
             rate: "",
             date: format(new Date(), "yyyy-MM-dd"),
-            shift: new Date().getHours() < 12 ? "Morning" : "Evening",
-            milkType: "Cow",
+            shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+            milkType: MilkType.Cow,
         })
         setSelectedUser(null)
         setEditingEntry(null)
@@ -240,8 +190,8 @@ export default function MilkBuyEntry() {
         setFormData({
             userId: entry.byUser._id,
             weight: entry.weight.toString(),
-            fat: entry.fat.toString(),
-            snf: entry.snf.toString(),
+            fat: entry.fat?.toString() ?? "",
+            snf: entry.snf?.toString() ?? "",
             rate: entry.rate.toString(),
             date: entry.date,
             shift: entry.shift,
@@ -257,7 +207,13 @@ export default function MilkBuyEntry() {
 
     const filteredUser = customers
         .filter(c => !existingUserIds.includes(c._id))
-        .sort((a, b) => a.positionNo - b.positionNo);
+        .sort((a, b) => {
+            if (a.positionNo === undefined && b.positionNo === undefined) return 0;
+            if (a.positionNo === undefined) return 1; // move undefined to end
+            if (b.positionNo === undefined) return -1;
+            return a.positionNo - b.positionNo;
+        });
+
 
 
 

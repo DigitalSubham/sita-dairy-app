@@ -87,14 +87,14 @@ export default function CustomerDetailsScreen() {
 
   const handleCall = () => {
     if (userData?.mobile) {
-      const mobileNumber = userData.mobile.replace(/\s+/g, "");
+      const mobileNumber = userData.mobile.replaceAll(/\s+/g, "");
       Linking.openURL(`tel:${mobileNumber}`);
     }
   };
 
   const handleMessage = () => {
     if (userData?.mobile) {
-      const mobileNumber = userData.mobile.replace(/\s+/g, "");
+      const mobileNumber = userData.mobile.replaceAll(/\s+/g, "");
       Linking.openURL(`sms:${mobileNumber}`);
     }
   };

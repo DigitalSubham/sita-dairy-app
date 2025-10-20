@@ -95,39 +95,39 @@ const RateChartScreen = () => {
     }
 
     // Add new column
-    const addColumn = () => {
-        Alert.prompt(
-            "Add Column",
-            "Enter column label:",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Add",
-                    onPress: (label) => {
-                        if (label && label.trim()) {
-                            const newKey = `custom_${Date.now()}`
-                            const newColumn: ChartColumn = {
-                                key: newKey,
-                                label: label.trim(),
-                                type: "number",
-                                editable: true,
-                            }
+    // const addColumn = () => {
+    //     Alert.prompt(
+    //         "Add Column",
+    //         "Enter column label:",
+    //         [
+    //             { text: "Cancel", style: "cancel" },
+    //             {
+    //                 text: "Add",
+    //                 onPress: (label) => {
+    //                     if (label && label.trim()) {
+    //                         const newKey = `custom_${Date.now()}`
+    //                         const newColumn: ChartColumn = {
+    //                             key: newKey,
+    //                             label: label.trim(),
+    //                             type: "number",
+    //                             editable: true,
+    //                         }
 
-                            setColumns([...columns, newColumn])
+    //                         setColumns([...columns, newColumn])
 
-                            // Add the new column to all existing rows
-                            const updatedChart = rateChart.map((row) => ({
-                                ...row,
-                                [newKey]: 0,
-                            }))
-                            setRateChart(updatedChart)
-                        }
-                    },
-                },
-            ],
-            "plain-text",
-        )
-    }
+    //                         // Add the new column to all existing rows
+    //                         const updatedChart = rateChart.map((row) => ({
+    //                             ...row,
+    //                             [newKey]: 0,
+    //                         }))
+    //                         setRateChart(updatedChart)
+    //                     }
+    //                 },
+    //             },
+    //         ],
+    //         "plain-text",
+    //     )
+    // }
 
     // Remove column
     const removeColumn = (columnKey: string) => {

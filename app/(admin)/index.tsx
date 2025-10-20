@@ -2,14 +2,16 @@ import TransactionItem from "@/components/admin/dashboard/EntryCard";
 import { BorderedDashboardCard } from "@/components/admin/DashboardCard";
 import { DashboardHeader } from "@/components/common/HeaderVarients";
 import Icon from "@/components/common/Icon";
+import LanguageChange from "@/components/common/LanguageChange";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
+import { AdminDashboardData } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { ReactNode, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
-  Dimensions,
   GestureResponderEvent,
   RefreshControl,
   ScrollView,
@@ -21,69 +23,11 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
-const { width } = Dimensions.get("window");
-
-interface Farmer {
-  id: string;
-  name: string;
-  profilePic: string;
-  totalMilk: number;
-  pendingAmount: number;
-}
-
-interface MilkInventory {
-  date: string;
-  morningCollection: number;
-  eveningCollection: number;
-  totalSold: number;
-}
-
-interface AdminDashboardData {
-  totalCustomers: number;
-  activeFarmers: number;
-  totalMilkCollected: number;
-  totalMilkSold: number;
-  totalMonthlyMilk: number;
-  totalTodaysMilk: number;
-  pendingPayments: number;
-  milkWastage: number;
-  inventoryValue: number;
-  byUser: Farmer[];
-  lastFiveEntries: Transaction[];
-  milkInventory: MilkInventory[];
-  collectionTrend: number[];
-  collectionDates: string[];
-}
-
-interface Transaction {
-  _id: string;
-  byUser: Farmer;
-  rate: string;
-  shift: string;
-  snf: string;
-  fat: string;
-  weight: string;
-  farmerName: string;
-  price: string;
-  type: "payment" | "collection";
-  status: "completed" | "pending";
-  date: string;
-  profilePic: string;
-}
-
 interface QuickActionButtonProps {
   title: string;
   icon: ReactNode;
   color: string;
   onPress?: (event: GestureResponderEvent) => void;
-  delay?: number;
-}
-
-interface FarmerItemProps {
-  name: string;
-  totalMilk: number;
-  pendingAmount: number;
-  profilePic: string;
   delay?: number;
 }
 
@@ -93,8 +37,9 @@ const AdminDashboard = () => {
   );
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [languageModal, setLanguageModal] = useState<boolean>(false)
   const router = useRouter();
-
+  const { t } = useTranslation()
 
 
   const fetchDashboardData = async () => {
@@ -177,7 +122,7 @@ const AdminDashboard = () => {
 
   return (
     <View style={styles.container}>
-      <DashboardHeader />
+      <DashboardHeader title={t("dashboard.admin_dashboard")} subtitle={t("dashboard.admin_dashboard_tagine")} setLanguageModal={setLanguageModal} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -197,7 +142,7 @@ const AdminDashboard = () => {
         {/* Dashboard Cards */}
         <View style={styles.cardsSection}>
           <BorderedDashboardCard
-            title="Total Users"
+            title={t("dashboard.total_users")}
             value={dashboardData?.totalCustomers || 0}
             icon={Icon("users")(50, "#FFFFFF")}
             color="#1976D2"
@@ -205,7 +150,7 @@ const AdminDashboard = () => {
             onPress={() => router.push("/(admin)/customers")}
           />
           <BorderedDashboardCard
-            title="Today's Collection"
+            title={t("dashboard.today_collection")}
             value={`${dashboardData?.totalTodaysMilk || 0} L`}
             icon={Icon("collection")(50, "#FFFFFF")}
             color="#2E7D32"
@@ -213,7 +158,7 @@ const AdminDashboard = () => {
             onPress={() => router.push("/(admin)/record")}
           />
           <BorderedDashboardCard
-            title="Months's Collection"
+            title={t("dashboard.monthly_collection")}
             value={`${dashboardData?.totalMonthlyMilk || 0} L`}
             icon={Icon("collection")(50, "#FFFFFF")}
             color="#7B1FA2"
@@ -224,31 +169,31 @@ const AdminDashboard = () => {
 
         {/* Quick Actions */}
         <Animated.View entering={FadeInUp.delay(600)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t("dashboard.quick_actions")}</Text>
           <View style={styles.quickActionsGrid}>
             <QuickActionButton
-              title="All Users"
+              title={t("dashboard.all_users")}
               icon={Icon("users")(40, "#FFFFFF")}
               color="#1976D2"
               delay={0}
               onPress={() => router.push("/(admin)/customers")}
             />
             <QuickActionButton
-              title="Milk Entry"
+              title={t("dashboard.milk_entry")}
               icon={Icon("entry")(40, "#FFFFFF")}
               color="#2E7D32"
               delay={100}
               onPress={() => router.push("/(admin)/milkEntry")}
             />
             <QuickActionButton
-              title="Payments"
+              title={t("navigation.payments")}
               icon={Icon("wallet")(40, "#FFFFFF")}
               color="#F57C00"
               delay={200}
               onPress={() => router.push("/(admin)/payments")}
             />
             <QuickActionButton
-              title="Reports"
+              title={t("dashboard.reports")}
               icon={Icon("ledger")(40, "#FFFFFF")}
               color="#7B1FA2"
               delay={300}
@@ -338,9 +283,9 @@ const AdminDashboard = () => {
         {/* Recent Transactions */}
         <Animated.View entering={FadeInUp.delay(900)} style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Entry</Text>
+            <Text style={styles.sectionTitle}>{t("dashboard.recent_entries")}</Text>
             <TouchableOpacity onPress={() => router.push("/(admin)/record")}>
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={styles.viewAllText}>{t("common.view_all")}</Text>
             </TouchableOpacity>
           </View>
           <View>
@@ -350,6 +295,7 @@ const AdminDashboard = () => {
           </View>
         </Animated.View>
       </ScrollView>
+      <LanguageChange languageModal={languageModal} setLanguageModal={setLanguageModal} />
     </View>
   );
 };

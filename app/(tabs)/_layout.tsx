@@ -6,10 +6,12 @@ import { CustomDrawer } from "@/components/common/CustomDrawer";
 import Icon from "@/components/common/Icon";
 import DairyLoadingScreen from "@/components/Loading";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export default function Layout() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation()
 
   // 🔁 Redirect users based on role
   useEffect(() => {
@@ -43,13 +45,13 @@ export default function Layout() {
 
   // 🧱 Drawer screens configuration
   const screens = [
-    { name: "index", title: "Dashboard", icon: Icon("home") },
-    { name: "payment", title: "Payments", icon: Icon("wallet") },
-    { name: "products", title: "Products", icon: Icon("products") },
-    { name: "records", title: "Milk Records", icon: Icon("ledger") },
-    { name: "viewRates", title: "Milk Rates", icon: Icon("up-arrow") },
-    { name: "profile", title: "Profile", icon: Icon("user") },
-    { name: "settings", title: "Settings", icon: Icon("settings") },
+    { name: "index", title: t("navigation.dashboard"), icon: Icon("home") },
+    { name: "payment", title: t("navigation.payments"), icon: Icon("wallet") },
+    { name: "products", title: t("navigation.products"), icon: Icon("products") },
+    { name: "records", title: t("navigation.milk_records"), icon: Icon("ledger") },
+    { name: "viewRates", title: t("navigation.milk_rate"), icon: Icon("up-arrow") },
+    { name: "profile", title: t("navigation.profile"), icon: Icon("user") },
+    { name: "settings", title: t("navigation.settings"), icon: Icon("settings") },
   ];
 
   return (

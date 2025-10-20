@@ -28,15 +28,6 @@ import { useDispatch } from "react-redux";
 
 const { width } = Dimensions.get("window");
 
-// Types
-interface User {
-    _id: string;
-    id: string;
-    name: string;
-    mobile: string;
-    profilePic?: string;
-}
-
 interface MilkEntry {
     _id: string;
     byUser: {

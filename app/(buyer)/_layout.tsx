@@ -1,33 +1,35 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
 import Icon from "@/components/common/Icon";
 import { Drawer } from "expo-router/drawer";
+import { useTranslation } from "react-i18next";
 
 export default function Layout() {
+    const { t } = useTranslation()
     const screens = [
         {
             name: "index",
-            title: "Products",
-            icon: Icon("user"),
+            title: t("navigation.products"),
+            icon: Icon("home"),
         },
         {
             name: "payment",
-            title: "Payments",
-            icon: Icon("user"),
+            title: t("navigation.payments"),
+            icon: Icon("wallet"),
         },
         {
             name: "records",
-            title: "Milk Subcription",
-            icon: Icon("user"),
+            title: t("navigation.milk_subscription"),
+            icon: Icon("ledger"),
         },
         {
             name: "profile",
-            title: "Profile",
+            title: t("navigation.profile"),
             icon: Icon("user"),
         },
         {
             name: "Settings",
-            title: "Settings",
-            icon: Icon("user"),
+            title: t("navigation.settings"),
+            icon: Icon("settings"),
         },
     ];
 

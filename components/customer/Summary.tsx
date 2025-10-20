@@ -1,18 +1,11 @@
+import { FarmerDashboardData } from "@/constants/types";
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-interface DashboardData {
-  totalTodaysEarnings: number;
-  monthlyEarning: number;
-  totalTodaysMilk: number;
-  totalMonthlyMilk: number;
-  todaysFatValues: number;
-  todaysSnfValues: number;
-}
 
 interface SummaryProps {
-  data: DashboardData;
+  data: FarmerDashboardData;
 }
 
 const Summary: React.FC<SummaryProps> = ({ data }) => {

@@ -13,28 +13,6 @@ import {
   View,
 } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
-
-// Define Customer type with role
-type CustomerRole = "User" | "Farmer" | "Buyer"
-
-export type Customer = {
-  _id: string
-  id: string
-  name: string
-  profilePic: string
-  isVerified: boolean
-  mobile: string
-  fatherName: string
-  dailryName: string
-  collectionCenter: string
-  createdAt: string
-  role: CustomerRole
-  morningMilk?: string
-  eveningMilk?: string
-  milkRate?: string
-
-}
-
 // Import your components and hooks
 import BuyerRateConfigModal from "@/components/admin/users/BuyerRateConfigModal"
 import CreateUserModal from "@/components/admin/users/CreateUserModal"
@@ -42,6 +20,7 @@ import RoleCheckBox from "@/components/admin/users/RoleCheckBox"
 import { UsersHeader } from "@/components/common/HeaderVarients"
 import DairyLoadingScreen from "@/components/Loading"
 import { api } from "@/constants/api"
+import { Customer, CustomerRole } from "@/constants/types"
 import useCustomers from "@/hooks/useCustomer"
 import { useFocusEffect, useRouter } from "expo-router"
 import Toast from "react-native-toast-message"
@@ -221,9 +200,7 @@ const ImprovedCustomersList: React.FC = () => {
     const isModified = modifiedCustomers[customer._id] === role
     const isOriginalRole = customer.role === role
     const canRemoveModification = isModified || (isOriginalRole && modifiedCustomers[customer._id])
-
     return (
-
       <RoleCheckBox
         handleRoleChange={() => handleRoleChange(customer._id, role)}
         isSelected={isSelected}
@@ -231,7 +208,6 @@ const ImprovedCustomersList: React.FC = () => {
         canRemoveModification={canRemoveModification}
         label={label}
       />
-
     )
   }
 
@@ -311,10 +287,6 @@ const ImprovedCustomersList: React.FC = () => {
   if (loading) {
     return <DairyLoadingScreen loading={loading} loadingText="Syncing your Customer data..." />
   }
-
-
-
-
 
   return (
     <View style={styles.container}>

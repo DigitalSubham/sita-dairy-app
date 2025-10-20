@@ -3,6 +3,7 @@ import Icon from "@/components/common/Icon";
 import Summary from "@/components/customer/Summary";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
+import { FarmerDashboardData } from "@/constants/types";
 import { RootState } from "@/store/store";
 import {
   AntDesign,
@@ -15,7 +16,6 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
-  Dimensions,
   Linking,
   RefreshControl,
   StyleSheet,
@@ -33,43 +33,13 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSelector } from "react-redux";
 
-const { width } = Dimensions.get("window");
-
-interface MilkCollection {
-  _id: string;
-  date: string;
-  weight: number;
-  fat: number;
-  snf: number;
-  rate: number;
-  price: number;
-  shift: "morning" | "evening";
-}
-
-interface MilkQuality {
-  fat: number;
-  snf: number;
-  date: string;
-}
-
-interface DashboardData {
-  totalTodaysEarnings: number;
-  monthlyEarning: number;
-  totalTodaysMilk: number;
-  totalMonthlyMilk: number;
-  todaysFatValues: number;
-  todaysSnfValues: number;
-  lastFiveEntries: MilkCollection[];
-
-  qualityTrend: MilkQuality[];
-}
 
 export default function SellerDashboard() {
   const router = useRouter();
   const scrollY = useSharedValue(0);
   const supportButtonScale = useSharedValue(1);
   const [token, setToken] = useState<string>("");
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<FarmerDashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const user = useSelector((store: RootState) => store.user);
