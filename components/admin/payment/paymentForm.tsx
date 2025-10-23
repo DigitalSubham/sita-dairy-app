@@ -5,6 +5,7 @@ import { Feather, FontAwesome } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -50,6 +51,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
     selectedUser,
     setSelectedUser,
 }) => {
+    const { t } = useTranslation()
     const [errors, setErrors] = React.useState({
         user: "",
         amount: "",
@@ -79,21 +81,21 @@ const PaymentForm: React.FC<paymentFormProps> = ({
         // Validate amount
         const amountNum = Number.parseInt(formData.amount, 10);
         if (!formData.amount || Number.isNaN(amountNum)) {
-            newErrors.amount = "Please enter a valid amount";
+            newErrors.amount = t("validation.amount")
             isValid = false;
         }
 
         // Validate UPI ID
         if (!formData.role) {
-            newErrors.role = "Please Choose role";
+            newErrors.role = t("validation.role")
             isValid = false;
         }
         if (!formData.userId) {
-            newErrors.user = "Please Choose User";
+            newErrors.user = t("validation.user")
             isValid = false;
         }
         if (!formData.role) {
-            newErrors.role = "Please Choose Date";
+            newErrors.role = t("validation.date");
             isValid = false;
         }
 
@@ -199,7 +201,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
                         <View style={styles.modalContent}>
                             {/* Header */}
                             <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>Select Payment For</Text>
+                                <Text style={styles.modalTitle}>{t("payments.select_payment_for")}</Text>
                                 <TouchableOpacity
                                     onPress={handleClose}
                                     style={styles.closeButton}
@@ -215,7 +217,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
                             <View style={styles.formContainer}>
                                 {/* Name Input */}
                                 <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>Select Date</Text>
+                                    <Text style={styles.inputLabel}>{t("payments.select_date")}</Text>
                                     <TouchableOpacity
                                         onPress={() => setShowDatePicker(true)}
                                         style={styles.compactField}
@@ -230,7 +232,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
                                     ) : null}
                                 </View>
                                 <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>Select user</Text>
+                                    <Text style={styles.inputLabel}>{t("payments.select_user")}</Text>
                                     <View style={styles.roleContainer}>
                                         <RoleCheckBox
                                             isSelected={false}
@@ -254,7 +256,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
 
                                 {/* amount Input */}
                                 <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>Select user</Text>
+                                    <Text style={styles.inputLabel}>{t("payments.select_user")}</Text>
                                     <TouchableOpacity
                                         style={styles.userSelector}
                                         onPress={() => setShowUserSelector(true)}
@@ -274,7 +276,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
 
                                 {/* amount Input */}
                                 <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>Enter Amount</Text>
+                                    <Text style={styles.inputLabel}>{t("payments.enter_amount")}</Text>
                                     <TextInput
                                         placeholder="Amount"
                                         style={[
@@ -303,7 +305,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
                                     style={styles.cancelButton}
                                     onPress={handleClose}
                                 >
-                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                    <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity

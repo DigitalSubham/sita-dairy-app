@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   FlatList,
@@ -29,6 +30,7 @@ import {
 
 export default function PaymentRequestsScreen(): React.ReactElement {
   const { defaultTab } = useLocalSearchParams();
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<PaymentStatus>(PaymentType.Paid);
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -192,7 +194,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
           </Text>
         </View>
         <View style={styles.amountContainer}>
-          <Text style={styles.amountLabel}>Amount</Text>
+          <Text style={styles.amountLabel}>{t("entry.amount")}</Text>
           <Text style={styles.amount}>₹{item?.amount}</Text>
         </View>
       </View>
@@ -211,7 +213,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
               item.paymentType.slice(1)}
           </Text>
           {item?.transactionId && (
-            <Text style={styles.transactionId}>TXN: {item?.transactionId}</Text>
+            <Text style={styles.transactionId}>{t("common.txn")}: {item?.transactionId}</Text>
           )}
           {item?.paymentMethod && (
             <Text style={styles.paymentMethod}>
@@ -261,7 +263,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
         <DairyLoadingScreen loading loadingText="Loading payments..." />
       ) : paymentRequests?.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No payments found</Text>
+          <Text style={styles.emptyText}>{t("common.no_payments_found")}</Text>
         </View>
       ) : (
         <FlatList

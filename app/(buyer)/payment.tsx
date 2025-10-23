@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
@@ -130,7 +131,7 @@ const WalletModal: React.FC = () => {
   });
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
-
+  const { t } = useTranslation()
   const showAlert = (
     title: string,
     message: string,
@@ -217,7 +218,7 @@ const WalletModal: React.FC = () => {
       return (
         <View style={styles.emptyStateContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.emptyStateText}>Loading transactions...</Text>
+          <Text style={styles.emptyStateText}>{t("payments.loading_payments")}...</Text>
         </View>
       );
     }
@@ -237,7 +238,7 @@ const WalletModal: React.FC = () => {
           }
         >
           <Feather name='alert-circle' size={48} color="#9CA3AF" />
-          <Text style={styles.emptyStateText}>No transactions found</Text>
+          <Text style={styles.emptyStateText}>{t("payments.no_transactions_found")}</Text>
         </ScrollView>
       );
     }
@@ -341,7 +342,7 @@ const WalletModal: React.FC = () => {
             >
               <View style={styles.balanceHeader}>
                 <View>
-                  <Text style={styles.balanceLabel}>Total Money Earned</Text>
+                  <Text style={styles.balanceLabel}>{t("payments.total_money_earned")}</Text>
                   <Text style={styles.balanceAmount}>
                     {totalAmount.toFixed(2)}
                   </Text>
@@ -354,7 +355,7 @@ const WalletModal: React.FC = () => {
           </TouchableOpacity>
         </Animated.View>
         <View style={styles.transSection}>
-          <Text style={styles.sectionTitle}>Transaction History</Text>
+          <Text style={styles.sectionTitle}>{t("payments.transaction_history")}</Text>
           <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.compactField}>
             <FontAwesome name="calendar" size={14} color="#0284c7" />
             <Text style={styles.compactFieldText}>{format(new Date(date), "dd/MM")}</Text>

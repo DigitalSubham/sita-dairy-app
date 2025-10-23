@@ -3,6 +3,7 @@ import { onExportPDF } from '@/utils/pdf'
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { MilkEntry } from '../admin/milkRecords/milkBuyRecords'
@@ -10,6 +11,7 @@ import { CustomHeader, type HeaderAction } from "./CustomHeader"
 
 type ExtendedCustomerRole = CustomerRole | "All";
 
+const { t } = useTranslation()
 
 interface UsersHeaderProps {
     onRoleFilter?: (role: CustomerRole | "All") => void
@@ -197,12 +199,12 @@ export const ProfileHeader: React.FC<ProfileProps> = ({ isEditing, setIsEditing 
         },
     ]
 
-    return <CustomHeader title="Profile" actions={actions} backgroundColor="#f8fafc" />
+    return <CustomHeader title={t("common.profile")} actions={actions} backgroundColor="#f8fafc" />
 }
 
 // Settings Header
 export const SettingsHeader = () => {
-    return <CustomHeader title="Settings" subtitle="Manage your preferences" />
+    return <CustomHeader title={t("common.settings")} subtitle="Manage your preferences" />
 }
 
 
@@ -220,7 +222,7 @@ export const RateChartHeader: React.FC<RateChartHeaderProps> = ({ fetchDataFromS
         },
     ]
 
-    return <CustomHeader title="Rate Chart Manager" backgroundColor="#f8fafc" />
+    return <CustomHeader title={t("headers.rate_chart_manager")} backgroundColor="#f8fafc" />
 }
 
 export const UsersHeader: React.FC<UsersHeaderProps> = ({
@@ -271,9 +273,9 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
                     <Ionicons name="menu" size={24} color={"#111827"} />
                 </TouchableOpacity>
                 <View style={styles.titleSection}>
-                    <Text style={styles.title}>All Users</Text>
+                    <Text style={styles.title}>{t("headers.all_users")}</Text>
                     <Text style={styles.subtitle}>
-                        {selectedRole === "All" ? "Showing all users" : `Filtered by ${selectedRole}`}
+                        {selectedRole === "All" ? t("headers.showing_all_users") : `${t("headers.filter_by")} ${selectedRole}`}
                     </Text>
                 </View>
 
@@ -327,7 +329,7 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
 
             {showFilters && (
                 <Animated.View entering={FadeInDown.duration(300)} style={styles.filtersContainer}>
-                    <Text style={styles.filtersTitle}>Filter by Role</Text>
+                    <Text style={styles.filtersTitle}>{t("headers.filter_by_role")}</Text>
                     <View style={styles.roleButtons}>
                         {roles.map((role) => (
                             <TouchableOpacity
@@ -384,10 +386,6 @@ export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
         setShowFilters(false)
     }
 
-
-
-
-
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -395,7 +393,7 @@ export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
                     <Ionicons name="menu" size={24} color={"#111827"} />
                 </TouchableOpacity>
                 <View style={styles.titleSection}>
-                    <Text style={styles.title}>Rearrange Users</Text>
+                    <Text style={styles.title}>{t("headers.rearrange_users")}</Text>
                     <Text style={styles.subtitle}>
                         {`Filtered by ${selectedRole}`}
                     </Text>
@@ -426,15 +424,15 @@ export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
                     <View style={styles.editActions}>
                         <TouchableOpacity style={styles.saveButton} onPress={handleSaveOrder}>
                             <Ionicons name="checkmark-outline" size={20} color="#fff" />
-                            <Text style={styles.buttonText}>Save</Text>
+                            <Text style={styles.buttonText}>{t("common.save")}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditMode(false)}>
                             <Ionicons name="close-outline" size={20} color="#666" />
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.resetButton} onPress={handleResetOrder}>
                             <Ionicons name="refresh-outline" size={20} color="#ff6b6b" />
-                            <Text style={styles.resetButtonText}>Reset</Text>
+                            <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -442,7 +440,7 @@ export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
 
             {showFilters && (
                 <Animated.View entering={FadeInDown.duration(300)} style={styles.filtersContainer}>
-                    <Text style={styles.filtersTitle}>Filter by Role</Text>
+                    <Text style={styles.filtersTitle}>{t("headers.filter_by_role")}</Text>
                     <View style={styles.roleButtons}>
                         {roles.map((role) => (
                             <TouchableOpacity
@@ -481,8 +479,8 @@ export const FarmerDashboardHeader: React.FC<FarmerDashboardProps> = ({ name, pr
 
     return (
         <CustomHeader
-            subtitle="Welcome to your milk dashboard"
-            title={`Welcome, ${name}`}
+            subtitle={t("headers.welcome_milk_dashboard")}
+            title={`${t("common.welcome")}, ${name}`}
 
         />
     )
@@ -490,14 +488,14 @@ export const FarmerDashboardHeader: React.FC<FarmerDashboardProps> = ({ name, pr
 
 export const FarmerRecordsHeader = () => {
     return (
-        <CustomHeader title={"Milk Records"} />
+        <CustomHeader title={t("navigation.milk_records")} />
     )
 }
 
 export const FarmerRateChartHeader = () => {
 
 
-    return <CustomHeader title="Rate Chart" backgroundColor="#f8fafc" />
+    return <CustomHeader title={t("navigation.rate_chart")} backgroundColor="#f8fafc" />
 }
 
 

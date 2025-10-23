@@ -1,6 +1,7 @@
 import { UserCard } from '@/components/common/UserRecordsCards';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 type ListShowProps = {
@@ -32,12 +33,13 @@ const ListShow: React.FC<ListShowProps> = ({
     setIsLoadingEntries,
     url
 }) => {
+    const { t } = useTranslation()
     return (
         <View style={styles.entriesSection}>
             <View style={styles.entriesHeader}>
                 <View style={styles.entriesHeaderLeft}>
                     <FontAwesome name="list" size={18} color="#0ea5e9" />
-                    <Text style={styles.entriesTitle}>Today's {text} ({shift})</Text>
+                    <Text style={styles.entriesTitle}>{t("entry.todays")} {text} ({shift})</Text>
                 </View>
                 <View style={styles.entriesStats}>
                     <Text style={styles.entriesCount}>{todayEntries.length}</Text>
@@ -68,8 +70,8 @@ const ListShow: React.FC<ListShowProps> = ({
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
                         <Feather name="droplet" size={32} color="#cbd5e1" />
-                        <Text style={styles.emptyStateText}>No entries yet</Text>
-                        <Text style={styles.emptyStateSubtext}>Add your first {shift.toLowerCase()} {text}</Text>
+                        <Text style={styles.emptyStateText}>{t("entry.no_entries_yet")}</Text>
+                        <Text style={styles.emptyStateSubtext}>{t("entry.add_your_first")} {shift.toLowerCase()} {text}</Text>
                     </View>
                 }
             />}

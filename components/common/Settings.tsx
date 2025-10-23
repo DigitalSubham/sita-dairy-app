@@ -1,5 +1,6 @@
 import { Feather, FontAwesome } from "@expo/vector-icons"
 import type React from "react"
+import { useTranslation } from "react-i18next"
 import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native"
 import { SettingsHeader } from "./HeaderVarients"
 
@@ -20,6 +21,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
   emailUpdates,
   setEmailUpdates,
 }) => {
+  const { t } = useTranslation()
   const showDeleteAccountAlert = () => {
     Alert.alert(
       "Delete Account",
@@ -45,7 +47,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
       <View style={styles.content}>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
+            <Text style={styles.sectionTitle}>{t("settings.preferences")}</Text>
           </View>
 
           <View style={styles.card}>
@@ -71,7 +73,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionTitle}>{t("settings.account")}</Text>
           </View>
 
           <TouchableOpacity
@@ -81,7 +83,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             accessibilityRole="button"
           >
             <Feather name="log-out" size={20} color="#dc2626" style={styles.signOutIcon} />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={styles.signOutText}>{t("settings.sign_out")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -91,20 +93,20 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             accessibilityRole="button"
           >
             <Feather name="trash-2" size={20} color="#ffffff" style={styles.deleteAccountIcon} />
-            <Text style={styles.deleteAccountText}>Delete Account</Text>
+            <Text style={styles.deleteAccountText}>{("settings.delete_account")}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>About</Text>
+            <Text style={styles.sectionTitle}>{t("settings.about")}</Text>
           </View>
 
           <View style={styles.card}>
             <View style={styles.aboutItem}>
               <Feather name="info" size={20} color="#6b7280" style={styles.aboutIcon} />
               <View>
-                <Text style={styles.aboutTitle}>Version</Text>
+                <Text style={styles.aboutTitle}>{("settings.version")}</Text>
                 <Text style={styles.aboutDescription}>1.0.0</Text>
               </View>
             </View>
@@ -112,7 +114,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             <View style={styles.divider} />
 
             <View style={styles.aboutItem}>
-              <Text style={styles.aboutText}>Built by TrueLoop Solutions</Text>
+              <Text style={styles.aboutText}>{("settings.built_by")}</Text>
             </View>
           </View>
         </View>

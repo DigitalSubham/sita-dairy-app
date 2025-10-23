@@ -6,12 +6,11 @@ import LanguageChange from "@/components/common/LanguageChange";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import { AdminDashboardData } from "@/constants/types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router";
+import { fetchData } from "@/utils/services";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import React, { ReactNode, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   GestureResponderEvent,
   RefreshControl,
   ScrollView,
@@ -21,7 +20,6 @@ import {
   View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import Toast from "react-native-toast-message";
 
 interface QuickActionButtonProps {
   title: string;
@@ -40,40 +38,20 @@ const AdminDashboard = () => {
   const [languageModal, setLanguageModal] = useState<boolean>(false)
   const router = useRouter();
   const { t } = useTranslation()
+  const navigation = useNavigation()
 
 
   const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const storedToken = await AsyncStorage.getItem("token");
-      if (!storedToken) {
-        Toast.show({
-          type: "error",
-          text1: "Authentication token not found",
-        });
-        return;
-      }
-      const parsedToken: string = JSON.parse(storedToken);
-      const response = await fetch(api.dashboard, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${parsedToken}`,
-        },
-      });
-      const data = await response.json();
+    await fetchData({
+      apiUrl: api.dashboard,
+      setLoading,
+      setRefreshing,
+      setData: setDashboardData,
+      extractData: (res) => (res.success && res.data ? res.data : []),
+      navigation
+    });
 
-      if (data.success) {
-        setDashboardData(data.data);
-      } else {
-        Alert.alert("Error", data.message);
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      Alert.alert("Error", "Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
+
   };
 
   useFocusEffect(
@@ -84,7 +62,7 @@ const AdminDashboard = () => {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchDashboardData().finally(() => setRefreshing(false));
+    fetchDashboardData()
   }, []);
 
   const QuickActionButton: React.FC<QuickActionButtonProps> = ({
@@ -136,9 +114,6 @@ const AdminDashboard = () => {
           />
         }
       >
-
-
-
         {/* Dashboard Cards */}
         <View style={styles.cardsSection}>
           <BorderedDashboardCard

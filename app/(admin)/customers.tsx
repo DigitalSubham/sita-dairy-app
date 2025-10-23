@@ -23,6 +23,7 @@ import { api } from "@/constants/api"
 import { Customer, CustomerRole } from "@/constants/types"
 import useCustomers from "@/hooks/useCustomer"
 import { useFocusEffect, useRouter } from "expo-router"
+import { useTranslation } from "react-i18next"
 import Toast from "react-native-toast-message"
 
 const ImprovedCustomersList: React.FC = () => {
@@ -31,6 +32,7 @@ const ImprovedCustomersList: React.FC = () => {
   const [searchText, setSearchText] = useState("")
   const [createUserModalVisible, setCreateUserModalVisible] = useState(false)
   const [buyerRateModalVisible, setBuyerRateModalVisible] = useState<Customer | null>(null)
+  const { t } = useTranslation()
 
   // Use the hook with role filter
   const { customers, loading, refreshing, refresh, token } = useCustomers({
@@ -272,7 +274,7 @@ const ImprovedCustomersList: React.FC = () => {
 
           {/* Role Selection Section */}
           <View style={styles.roleSection}>
-            <Text style={styles.roleSectionTitle}>Role Assignment</Text>
+            <Text style={styles.roleSectionTitle}>{t("admin.role_assignment")}</Text>
             <View style={styles.roleCheckboxes}>
               {renderRoleCheckbox(item, "User", "User")}
               {renderRoleCheckbox(item, "Farmer", "Farmer")}
@@ -297,12 +299,12 @@ const ImprovedCustomersList: React.FC = () => {
           <View style={styles.saveHeaderContent}>
             <View style={styles.changesInfo}>
               <MaterialIcons name="edit" size={16} color="#f59e0b" />
-              <Text style={styles.changesText}>{Object.keys(modifiedCustomers).length} modified</Text>
+              <Text style={styles.changesText}>{Object.keys(modifiedCustomers).length} {t("common.modified")}</Text>
             </View>
             <View style={styles.actionButtons}>
               <TouchableOpacity style={styles.cancelButton} onPress={handleCancelChanges} activeOpacity={0.8}>
                 <MaterialIcons name="close" size={16} color="#ef4444" />
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
@@ -315,7 +317,7 @@ const ImprovedCustomersList: React.FC = () => {
                 ) : (
                   <MaterialIcons name="save" size={18} color="#ffffff" />
                 )}
-                <Text style={styles.saveButtonText}>{isSaving ? "Saving..." : "Save"}</Text>
+                <Text style={styles.saveButtonText}>{isSaving ? t("common.saving") : t("common.save")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -344,7 +346,7 @@ const ImprovedCustomersList: React.FC = () => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={48} color="#94a3b8" />
-            <Text style={styles.emptyTitle}>No users found</Text>
+            <Text style={styles.emptyTitle}>{t("common.no_users_found")}</Text>
             <Text style={styles.emptySubtitle}>
               {searchText
                 ? "Try adjusting your search terms"

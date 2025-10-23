@@ -6,17 +6,11 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
-import "../i18n";
 
 SplashScreen.preventAutoHideAsync();
-
-declare global {
-  interface Window {
-    frameworkReady?: () => void;
-  }
-}
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
@@ -29,7 +23,6 @@ export default function RootLayout() {
         console.warn(e);
       } finally {
         setAppIsReady(true);
-        window.frameworkReady?.();
       }
     }
 
@@ -42,25 +35,25 @@ export default function RootLayout() {
     }
   }, [appIsReady]);
 
-  if (!appIsReady) {
-    return null;
-  }
+  if (!appIsReady) return null;
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <Provider store={store}>
-        <AuthProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" options={{ animation: "none" }} />
-            <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-            <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
-            <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
-            <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
-          </Stack>
-          <Toast />
-        </AuthProvider>
-      </Provider>
-    </I18nextProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <I18nextProvider i18n={i18n}>
+        <Provider store={store}>
+          <AuthProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" options={{ animation: "none" }} />
+              <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+              <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
+              <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
+              <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
+            </Stack>
+            <Toast />
+          </AuthProvider>
+        </Provider>
+      </I18nextProvider>
+    </GestureHandlerRootView>
   );
 }

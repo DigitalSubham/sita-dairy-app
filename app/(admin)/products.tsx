@@ -2,9 +2,11 @@ import RenderDeleteModal from "@/components/common/DeleteModal";
 import { ProductsHeader } from "@/components/common/HeaderVarients";
 import { api } from "@/constants/api";
 import { Product, ProductFormData } from "@/constants/types";
+import { fetchData } from "@/utils/services";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useNavigation } from "expo-router";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -27,7 +29,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 
 export default function AdminProductsScreen(): React.ReactElement {
@@ -51,7 +53,7 @@ export default function AdminProductsScreen(): React.ReactElement {
     thumbnail: "",
     isFeatured: false,
   });
-
+  const navigation = useNavigation()
   // Filtered products based on search
   const filteredProducts = products.filter((product) =>
     product?.title?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -80,40 +82,18 @@ export default function AdminProductsScreen(): React.ReactElement {
   };
 
   // Simulated API calls
+  // Assuming fetchData is imported
   const fetchProducts = async (): Promise<void> => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      const response = await fetch(
-        api.getProducts,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.success) {
-        setProducts(
-          data?.product && data?.product.length > 0 ? data?.product : []
-        );
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setLoading(false);
-      Alert.alert("Error", "Failed to load products");
-    } finally {
-      setRefreshing(false);
-    }
+    await fetchData({
+      apiUrl: api.getProducts,
+      setLoading,
+      setRefreshing,
+      setData: setProducts,
+      extractData: (res) => (res.success && res.product ? res.product : []),
+      navigation
+    });
   };
+
 
   useEffect(() => {
     const fetchToken = async () => {

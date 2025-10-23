@@ -1,3 +1,4 @@
+// i18n.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Localization from "expo-localization";
 import i18n from "i18next";
@@ -14,21 +15,18 @@ const resources = {
   "bh-IN": { translation: bh },
 };
 
-// AsyncStorage key to save user language
 const LANGUAGE_KEY = "APP_LANGUAGE";
+
+// Get device language
 const getDeviceLanguage = () => {
   const locales = Localization.getLocales();
   return locales && locales.length > 0 ? locales[0].languageTag : "en-US";
 };
 
-const getStoredLanguage = async () => {
-  const storedLang = await AsyncStorage.getItem(LANGUAGE_KEY);
-  return storedLang || getDeviceLanguage();
-};
-
+// Initialize i18next
 i18n.use(initReactI18next).init({
   resources,
-  lng: "en-US", // default language
+  lng: "en-US",
   fallbackLng: "en-US",
   interpolation: { escapeValue: false },
   react: { useSuspense: false },
@@ -41,6 +39,9 @@ export const setAppLanguage = async (lng: string) => {
 };
 
 // Load stored language on app start
-getStoredLanguage().then((lng) => i18n.changeLanguage(lng));
+(async () => {
+  const storedLang = await AsyncStorage.getItem(LANGUAGE_KEY);
+  i18n.changeLanguage(storedLang || getDeviceLanguage());
+})();
 
 export default i18n;

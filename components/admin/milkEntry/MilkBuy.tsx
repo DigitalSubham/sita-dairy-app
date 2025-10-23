@@ -10,6 +10,7 @@ import { format } from "date-fns"
 import { LinearGradient } from "expo-linear-gradient"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
     Alert,
     Modal,
@@ -36,7 +37,7 @@ export default function MilkBuyEntry() {
     const weightRef = useRef<TextInput>(null);
     const fatRef = useRef<TextInput>(null);
     const snfRef = useRef<TextInput>(null);
-
+    const { t } = useTranslation()
     const [formData, setFormData] = useState<MilkEntryFormData>({
         userId: "",
         weight: "",
@@ -222,12 +223,12 @@ export default function MilkBuyEntry() {
         <Modal visible={showOptionsModal} animationType="fade" transparent statusBarTranslucent={true}>
             <View style={styles.modalOverlay}>
                 <View style={styles.optionsModalContent}>
-                    <Text style={styles.optionsModalTitle}>Entry Options</Text>
+                    <Text style={styles.optionsModalTitle}>{t("entry.options")}</Text>
                     <TouchableOpacity style={styles.optionButton} onPress={() => selectedEntry && handleEditEntry(selectedEntry)}>
                         <View style={styles.optionIconContainer}>
                             <Feather name="edit" size={20} color="#0ea5e9" />
                         </View>
-                        <Text style={styles.optionButtonText}>Edit Entry</Text>
+                        <Text style={styles.optionButtonText}>{t("entry.edit_entry")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.optionButton, styles.deleteOptionButton]}
@@ -243,10 +244,10 @@ export default function MilkBuyEntry() {
                         <View style={[styles.optionIconContainer, styles.deleteIconContainer]}>
                             <Feather name="trash-2" size={20} color="#ef4444" />
                         </View>
-                        <Text style={[styles.optionButtonText, styles.deleteOptionText]}>Delete Entry</Text>
+                        <Text style={[styles.optionButtonText, styles.deleteOptionText]}>{t("entry.delete_entry")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOptionsModal(false)}>
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                        <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -261,7 +262,7 @@ export default function MilkBuyEntry() {
                     {editingEntry && (
                         <View style={styles.editingBanner}>
                             <Feather name="edit" size={14} color="#0ea5e9" />
-                            <Text style={styles.editingBannerText}>Editing: {selectedUser?.name}</Text>
+                            <Text style={styles.editingBannerText}>{t("entry.editing")}: {selectedUser?.name}</Text>
                             <TouchableOpacity onPress={resetForm}>
                                 <Feather name="x" size={14} color="#64748b" />
                             </TouchableOpacity>
@@ -306,7 +307,7 @@ export default function MilkBuyEntry() {
                     {/* User Selector */}
                     <TouchableOpacity style={styles.userSelector} onPress={() => setShowUserSelector(true)}>
                         <FontAwesome name="user" size={16} color="#0ea5e9" />
-                        <Text style={styles.userSelectorText}>{selectedUser ? selectedUser.name : "Select Farmer"}</Text>
+                        <Text style={styles.userSelectorText}>{selectedUser ? selectedUser.name : t("entry.select_farmer")}</Text>
                         <Feather name="chevron-down" size={16} color="#64748b" />
                     </TouchableOpacity>
 
@@ -373,7 +374,7 @@ export default function MilkBuyEntry() {
                     {/* Total and Submit */}
                     <View style={styles.bottomRow}>
                         <View style={styles.totalDisplay}>
-                            <Text style={styles.totalLabel}>Total: </Text>
+                            <Text style={styles.totalLabel}>{t("entry.total")}: </Text>
                             <Text style={styles.totalValue}>₹{calculateTotal(formData.weight, formData.rate)}</Text>
                         </View>
 
@@ -384,7 +385,7 @@ export default function MilkBuyEntry() {
                         >
                             <LinearGradient colors={["#0ea5e9", "#0284c7"]} style={styles.submitGradient}>
                                 <FontAwesome name={editingEntry ? "save" : "plus"} size={16} color="white" />
-                                <Text style={styles.submitButtonText}>{isSubmitting ? "..." : editingEntry ? "Update" : "Add"}</Text>
+                                <Text style={styles.submitButtonText}>{isSubmitting ? "..." : editingEntry ? t("common.update") : t("common.add")}</Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
@@ -404,7 +405,7 @@ export default function MilkBuyEntry() {
 
             {/* Entries List Section */}
             <ListShow
-                text="Collection"
+                text={t("entry.collection")}
                 url={api.getRecords}
                 todayEntries={todayEntries}
                 setTodayEntries={setTodayEntries}
@@ -415,7 +416,7 @@ export default function MilkBuyEntry() {
                 setIsLoadingEntries={setIsLoadingEntries}
             />
 
-            {<UserModal title="Farmer" showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
+            {<UserModal title={t("entry.buyer")} showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
             {renderEntryOptionsModal()}
         </>
     )
