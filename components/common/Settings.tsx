@@ -83,7 +83,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             accessibilityRole="button"
           >
             <Feather name="log-out" size={20} color="#dc2626" style={styles.signOutIcon} />
-            <Text style={styles.signOutText}>{t("settings.sign_out")}</Text>
+            <Text style={styles.signOutText}>{t("auth.sign_out")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

@@ -1,6 +1,7 @@
 import { AntDesign, FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons"
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import type React from "react"
+import { useTranslation } from "react-i18next"
 import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import Icon from "./Icon"
 
@@ -40,7 +41,7 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
   rightContent,
 }) => {
   const navigation = useNavigation()
-
+  const { t } = useTranslation()
   const handleMenuPress = () => {
     navigation.dispatch(DrawerActions.openDrawer())
   }
@@ -102,11 +103,11 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
           {centerContent ?? (
             <View style={styles.titleContainer}>
               <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
-                {title}
+                {t(title)}
               </Text>
               {subtitle && (
                 <Text style={[styles.subtitle, { color: textColor }]} numberOfLines={1}>
-                  {subtitle}
+                  {t(subtitle)}
                 </Text>
               )}
             </View>

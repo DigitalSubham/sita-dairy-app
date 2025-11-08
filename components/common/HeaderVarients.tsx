@@ -11,8 +11,6 @@ import { CustomHeader, type HeaderAction } from "./CustomHeader"
 
 type ExtendedCustomerRole = CustomerRole | "All";
 
-const { t } = useTranslation()
-
 interface UsersHeaderProps {
     onRoleFilter?: (role: CustomerRole | "All") => void
     onSearch?: (searchText: string) => void
@@ -119,7 +117,7 @@ export const ProductsHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct })
 
     return (
         <CustomHeader
-            title="Product Management"
+            title="products.product_management"
             actions={actions}
         />
     )
@@ -135,7 +133,7 @@ export const PaymentHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct }) 
 
     return (
         <CustomHeader
-            title="Payments"
+            title="navigation.payments"
             actions={actions}
         />
     )
@@ -151,7 +149,7 @@ export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProp
         },
     ]
 
-    return <CustomHeader title={entryType} actions={actions} />
+    return <CustomHeader title={entryType === "Milk Buy" ? "entry.milk_buy" : "entry.milk_sale"} actions={actions} />
 }
 
 // Records Header with filter options
@@ -186,7 +184,7 @@ export const RecordsHeader = ({ entryType, setEntryType, entryData }: MilkEntryH
     ]
 
     return (
-        <CustomHeader title={entryType} actions={actions} />
+        <CustomHeader title={entryType === "Milk Buy" ? "entry.milk_buy" : "entry.milk_sale"} actions={actions} />
     )
 }
 
@@ -199,12 +197,12 @@ export const ProfileHeader: React.FC<ProfileProps> = ({ isEditing, setIsEditing 
         },
     ]
 
-    return <CustomHeader title={t("common.profile")} actions={actions} backgroundColor="#f8fafc" />
+    return <CustomHeader title={"common.profile"} actions={actions} backgroundColor="#f8fafc" />
 }
 
 // Settings Header
 export const SettingsHeader = () => {
-    return <CustomHeader title={t("common.settings")} subtitle="Manage your preferences" />
+    return <CustomHeader title={"common.settings"} subtitle="settings.manage_your_preferences" />
 }
 
 
@@ -222,7 +220,7 @@ export const RateChartHeader: React.FC<RateChartHeaderProps> = ({ fetchDataFromS
         },
     ]
 
-    return <CustomHeader title={t("headers.rate_chart_manager")} backgroundColor="#f8fafc" />
+    return <CustomHeader title={"headers.rate_chart_manager"} backgroundColor="#f8fafc" />
 }
 
 export const UsersHeader: React.FC<UsersHeaderProps> = ({
@@ -236,6 +234,7 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
     const [showSearch, setShowSearch] = useState(false)
     const [searchText, setSearchText] = useState('')
     const navigation = useNavigation()
+    const { t } = useTranslation()
 
     const handleMenuPress = () => {
         navigation.dispatch(DrawerActions.openDrawer())
@@ -371,6 +370,7 @@ export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
 }) => {
     const [showFilters, setShowFilters] = useState(false)
     const navigation = useNavigation()
+    const { t } = useTranslation()
 
     const handleMenuPress = () => {
         navigation.dispatch(DrawerActions.openDrawer())
@@ -479,23 +479,22 @@ export const FarmerDashboardHeader: React.FC<FarmerDashboardProps> = ({ name, pr
 
     return (
         <CustomHeader
-            subtitle={t("headers.welcome_milk_dashboard")}
-            title={`${t("common.welcome")}, ${name}`}
-
+            subtitle={"headers.welcome_milk_dashboard"}
+            title={"common.welcome"}
         />
     )
 }
 
 export const FarmerRecordsHeader = () => {
     return (
-        <CustomHeader title={t("navigation.milk_records")} />
+        <CustomHeader title={"navigation.milk_records"} />
     )
 }
 
 export const FarmerRateChartHeader = () => {
 
 
-    return <CustomHeader title={t("navigation.rate_chart")} backgroundColor="#f8fafc" />
+    return <CustomHeader title={"navigation.rate_chart"} backgroundColor="#f8fafc" />
 }
 
 

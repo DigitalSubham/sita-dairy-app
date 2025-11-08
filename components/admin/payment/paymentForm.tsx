@@ -217,7 +217,7 @@ const PaymentForm: React.FC<paymentFormProps> = ({
                             <View style={styles.formContainer}>
                                 {/* Name Input */}
                                 <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>{t("payments.select_date")}</Text>
+                                    <Text style={styles.inputLabel}>{t("common.select_date")}</Text>
                                     <TouchableOpacity
                                         onPress={() => setShowDatePicker(true)}
                                         style={styles.compactField}

@@ -346,7 +346,7 @@ const ImprovedCustomersList: React.FC = () => {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={48} color="#94a3b8" />
-            <Text style={styles.emptyTitle}>{t("common.no_users_found")}</Text>
+            <Text style={styles.emptyTitle}>{t("common.no_results_found")}</Text>
             <Text style={styles.emptySubtitle}>
               {searchText
                 ? "Try adjusting your search terms"

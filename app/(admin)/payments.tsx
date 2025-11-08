@@ -6,14 +6,14 @@ import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import { CustomerRole, FormData, PaymentRequest, PaymentStatus, PaymentType, TabButtonProps, User } from "@/constants/types";
 import useCustomers from "@/hooks/useCustomer";
+import { fetchData } from "@/utils/services";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   FlatList,
   Image,
   type ListRenderItem,
@@ -22,7 +22,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 
@@ -55,7 +55,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
   });
   const [showUserSelector, setShowUserSelector] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
+  const navigation = useNavigation()
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -89,37 +89,22 @@ export default function PaymentRequestsScreen(): React.ReactElement {
 
 
   const fetchPaymentRequests = useCallback(async (status: PaymentStatus): Promise<void> => {
-    if (showPaymentMethodModal) return; // Prevent fetching when modal is open
-    if (!token) return;
-    setLoading(true);
-    try {
-      const payload: { code: PaymentStatus; date: string; userId?: string } = {
-        code: status,
-        date: date, // fetch all records
-        userId: selectedUser ? selectedUser._id : undefined,
-      };
-
-      const response = await fetch(api.getPaymentsReport, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setPaymentRequests(data.data);
-      } else {
-        setPaymentRequests([]);
-      }
-    } catch (error) {
-      console.error("Error fetching payment requests:", error);
-      Alert.alert("Error", "Failed to load payment requests");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    if (showPaymentMethodModal) return;
+    const payload: { code: PaymentStatus; date: string; userId?: string } = {
+      code: status,
+      date: date, // fetch all records
+      userId: selectedUser ? selectedUser._id : undefined,
+    };
+    await fetchData({
+      apiUrl: api.getPaymentsReport,
+      setLoading,
+      setRefreshing,
+      setData: setPaymentRequests,
+      extractData: (res) => (res.success && res.data ? res.data : []),
+      navigation,
+      payload,
+      method: "POST",
+    });
   }, [token, date, selectedUser, showPaymentMethodModal]);
 
   const TabButton: React.FC<TabButtonProps> = ({
@@ -194,7 +179,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
           </Text>
         </View>
         <View style={styles.amountContainer}>
-          <Text style={styles.amountLabel}>{t("entry.amount")}</Text>
+          <Text style={styles.amountLabel}>{t("common.amount")}</Text>
           <Text style={styles.amount}>₹{item?.amount}</Text>
         </View>
       </View>
@@ -213,7 +198,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
               item.paymentType.slice(1)}
           </Text>
           {item?.transactionId && (
-            <Text style={styles.transactionId}>{t("common.txn")}: {item?.transactionId}</Text>
+            <Text style={styles.transactionId}>{t("common.transaction")}: {item?.transactionId}</Text>
           )}
           {item?.paymentMethod && (
             <Text style={styles.paymentMethod}>
@@ -263,7 +248,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
         <DairyLoadingScreen loading loadingText="Loading payments..." />
       ) : paymentRequests?.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>{t("common.no_payments_found")}</Text>
+          <Text style={styles.emptyText}>{t("common.no_results_found")}</Text>
         </View>
       ) : (
         <FlatList

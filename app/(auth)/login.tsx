@@ -28,14 +28,14 @@ export default function Login() {
 
 
   const handleLogin = async () => {
-    let trimmedMobile = mobile.replace(/\D/g, ""); // remove all non-digits
+    let trimmedMobile = mobile.replaceAll(/\D/g, ""); // remove all non-digits
     const trimmedPassword = password.trim();
 
     // Remove +91 and all spaces
     if (trimmedMobile.startsWith("91") && trimmedMobile.length === 12) {
       trimmedMobile = trimmedMobile.slice(2);
     }
-    trimmedMobile = trimmedMobile.replace(/\s+/g, "");
+    trimmedMobile = trimmedMobile.replaceAll(/\s+/g, "");
 
     const phoneRegex = /^[6-9]\d{9}$/; // strict Indian mobile number
     if (!trimmedMobile || !trimmedPassword) {
@@ -75,6 +75,8 @@ export default function Login() {
       Keyboard.dismiss();
     }
   };
+
+
 
   return (
     <AuthTemplate>
@@ -148,7 +150,7 @@ export default function Login() {
         </TouchableOpacity>
 
         <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>{t("auth.create_new_account")}? </Text>
+          <Text style={styles.loginText}>{t("auth.create_account")}? </Text>
           <Link href="/(auth)/signup" asChild>
             <TouchableOpacity>
               <Text style={styles.loginLink}>{t("auth.sign_up")}</Text>

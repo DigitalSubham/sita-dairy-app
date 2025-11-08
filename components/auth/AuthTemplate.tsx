@@ -1,8 +1,12 @@
-import { LinearGradient } from 'expo-linear-gradient'
-import React, { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Image, StyleSheet, Text, View } from 'react-native'
-import { ScrollView } from 'react-native-gesture-handler'
+import { LANGUAGE_KEY } from "@/constants/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
+import Icon from "../common/Icon";
+import LanguageChange from "../common/LanguageChange";
 
 type AuthTemplateProps = {
     children: ReactNode;
@@ -10,8 +14,26 @@ type AuthTemplateProps = {
 
 const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
     const { t } = useTranslation();
+    const [languageModal, setLanguageModal] = useState<boolean>(false)
+    const handleLanguagePress = () => {
+        setLanguageModal(true);
+    };
+
+    useEffect(() => {
+        const checkLanguage = async () => {
+            const lang = await AsyncStorage.getItem(LANGUAGE_KEY);
+            if (!lang) { setLanguageModal(true) }
+        };
+        checkLanguage();
+    }, []);
+
     return (
         <LinearGradient colors={["#e6f0ff", "#f0f9ff"]} style={styles.container}>
+            {/* 🌐 Language button in corner */}
+            <TouchableOpacity style={styles.languageButton} onPress={handleLanguagePress}>
+                {Icon("language" as any)(24, "#0284c7")}
+            </TouchableOpacity>
+
             <ScrollView
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
@@ -19,7 +41,7 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
                 <View style={styles.logoContainer}>
                     <View style={styles.logoCircle}>
                         <Image
-                            source={require('../../assets/images/adaptive-icon.png')}
+                            source={require("../../assets/images/adaptive-icon.png")}
                             style={{ width: 200, height: 200 }}
                         />
                     </View>
@@ -36,7 +58,7 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
                 </View>
             </ScrollView>
 
-            {/* Milk bottle decorations */}
+            {/* Decorative bottles */}
             <View style={styles.milkBottleLeft}>
                 <View style={styles.bottleNeck} />
                 <View style={styles.bottleBody} />
@@ -46,16 +68,31 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
                 <View style={styles.bottleNeck} />
                 <View style={styles.bottleBody} />
             </View>
+            <LanguageChange languageModal={languageModal} setLanguageModal={setLanguageModal} />
         </LinearGradient>
-    )
-}
+    );
+};
 
-export default AuthTemplate
+export default AuthTemplate;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#e6f0ff",
+    },
+    languageButton: {
+        position: "absolute",
+        top: 50,
+        right: 25,
+        zIndex: 10,
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 4,
     },
     scrollContainer: {
         flexGrow: 1,
@@ -133,4 +170,4 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#bae6fd",
     },
-})
+});

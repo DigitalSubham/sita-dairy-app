@@ -218,7 +218,7 @@ const WalletModal: React.FC = () => {
       return (
         <View style={styles.emptyStateContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.emptyStateText}>{t("payments.loading_payments")}...</Text>
+          <Text style={styles.emptyStateText}>{t("payments.loading_transactions")}...</Text>
         </View>
       );
     }

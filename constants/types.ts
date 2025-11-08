@@ -1,3 +1,5 @@
+export const LANGUAGE_KEY = "APP_LANGUAGE";
+
 export enum ShiftType {
   Morning = "Morning",
   Evening = "Evening",

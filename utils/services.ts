@@ -10,6 +10,8 @@ interface FetchOptions<T> {
   setData: SetState<T>;
   extractData?: (responseJson: any) => T;
   navigation: any; // pass navigation to redirect
+  payload?: any;
+  method?: "GET" | "POST" | "PUT" | "DELETE";
 }
 
 export const fetchData = async <T>({
@@ -19,28 +21,35 @@ export const fetchData = async <T>({
   setData,
   extractData,
   navigation,
+  payload,
+  method = "GET",
 }: FetchOptions<T>): Promise<void> => {
   // Get token from AsyncStorage
   const token = (await AsyncStorage.getItem("token")) || "";
+  const parsedToken: string = JSON.parse(token);
 
   if (!token) {
-    // Redirect to login immediately
-    navigation.navigate("Login");
+    setTimeout(() => navigation.navigate("Login"), 0);
     return;
   }
 
   try {
     setLoading(true);
 
-    const response = await fetch(apiUrl, {
+    const options: RequestInit = {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${parsedToken}`,
       },
-    });
+    };
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (payload) {
+      options.body = JSON.stringify(payload);
+      options.method = method; // or PUT/PATCH if needed
+    }
+
+    const response = await fetch(apiUrl, options);
 
     const data = await response.json();
 

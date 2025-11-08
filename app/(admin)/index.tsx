@@ -50,8 +50,6 @@ const AdminDashboard = () => {
       extractData: (res) => (res.success && res.data ? res.data : []),
       navigation
     });
-
-
   };
 
   useFocusEffect(
@@ -100,7 +98,7 @@ const AdminDashboard = () => {
 
   return (
     <View style={styles.container}>
-      <DashboardHeader title={t("dashboard.admin_dashboard")} subtitle={t("dashboard.admin_dashboard_tagine")} setLanguageModal={setLanguageModal} />
+      <DashboardHeader title={t("dashboard.admin_dashboard")} subtitle={t("dashboard.admin_dashboard_tagline")} setLanguageModal={setLanguageModal} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -264,7 +262,7 @@ const AdminDashboard = () => {
             </TouchableOpacity>
           </View>
           <View>
-            {dashboardData?.lastFiveEntries.map((transaction) => (
+            {dashboardData?.lastFiveEntries?.map((transaction) => (
               <TransactionItem key={transaction._id} data={transaction} />
             ))}
           </View>
