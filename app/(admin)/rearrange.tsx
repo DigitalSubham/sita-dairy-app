@@ -8,9 +8,10 @@ import { sortByPosition } from "@/utils/helper"
 import { Ionicons } from "@expo/vector-icons"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useEffect, useState } from "react"
-import { Alert, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import DraggableFlatList, { ScaleDecorator, type RenderItemParams } from "react-native-draggable-flatlist"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 
 
@@ -143,23 +144,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#f8f9fa",
-    },
-    header: {
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: "#fff",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e9ecef",
-    },
-    headerTitle: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#212529",
-        marginBottom: 4,
-    },
-    headerSubtitle: {
-        fontSize: 16,
-        color: "#6c757d",
     },
 
     listContainer: {

@@ -24,6 +24,7 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
@@ -488,7 +489,7 @@ export default function EnhancedCustomerMilkRecords() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <FarmerRecordsHeader />
       <View style={styles.header}>
         <View style={styles.searchContainer}>
@@ -740,7 +741,7 @@ export default function EnhancedCustomerMilkRecords() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

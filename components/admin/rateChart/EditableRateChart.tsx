@@ -155,9 +155,9 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                                 </TouchableOpacity>
                             </View>
                         ))}
-                        {/* <View style={styles.headerCell}>
+                        <View style={styles.headerCell}>
                             <Text style={styles.headerCellText}>Actions</Text>
-                        </View> */}
+                        </View>
                     </View>
 
                     {/* Data Rows */}
@@ -176,11 +176,11 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                                         editable={column.editable}
                                     />
                                 ))}
-                                {/* <View style={styles.actionCell}>
+                                <View style={styles.actionCell}>
                                     <TouchableOpacity style={styles.rowActionButton} onPress={() => handleRemoveRow(row.id)}>
                                         <Ionicons name="trash-outline" size={16} color="#ef4444" />
                                     </TouchableOpacity>
-                                </View> */}
+                                </View>
                             </View>
                         ))}
                     </ScrollView>
@@ -208,6 +208,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 3,
+        marginBottom: 32,
+        marginHorizontal: 16,
     },
     table: {
         minWidth: "100%",

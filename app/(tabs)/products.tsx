@@ -22,6 +22,7 @@ import Animated, {
     FadeInUp,
     Layout
 } from 'react-native-reanimated';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
 
@@ -252,7 +253,7 @@ export default function ProductsScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
 
             <BuyerDashboardHeader title="Products" desc="Discover our exclusive collection" />
 
@@ -283,7 +284,7 @@ export default function ProductsScreen() {
                     }
                 />
             )}
-        </View>
+        </SafeAreaView>
 
     );
 }

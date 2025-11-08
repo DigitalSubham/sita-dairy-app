@@ -20,6 +20,7 @@ import {
   View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface QuickActionButtonProps {
   title: string;
@@ -97,7 +98,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <DashboardHeader title={t("dashboard.admin_dashboard")} subtitle={t("dashboard.admin_dashboard_tagline")} setLanguageModal={setLanguageModal} />
       <ScrollView
         style={styles.scrollView}
@@ -269,7 +270,7 @@ const AdminDashboard = () => {
         </Animated.View>
       </ScrollView>
       <LanguageChange languageModal={languageModal} setLanguageModal={setLanguageModal} />
-    </View>
+    </SafeAreaView>
   );
 };
 

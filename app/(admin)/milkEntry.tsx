@@ -2,15 +2,16 @@ import MilkBuyEntry from '@/components/admin/milkEntry/MilkBuy'
 import MilkSaleEntry from '@/components/admin/milkEntry/MilkSale'
 import { MilkEntryHeader } from '@/components/common/HeaderVarients'
 import React, { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const MilkEntry = () => {
   const [entryType, setEntryType] = useState("Milk Buy")
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <MilkEntryHeader entryType={entryType} setEntryType={setEntryType} />
       {entryType === "Milk Buy" ? <MilkBuyEntry /> : <MilkSaleEntry />}
-    </View>
+    </SafeAreaView>
 
   )
 }

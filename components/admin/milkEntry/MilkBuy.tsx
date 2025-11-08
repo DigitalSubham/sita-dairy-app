@@ -405,7 +405,7 @@ export default function MilkBuyEntry() {
 
             {/* Entries List Section */}
             <ListShow
-                text={t("entry.collection")}
+                text={t("entry.today_buy")}
                 url={api.getRecords}
                 todayEntries={todayEntries}
                 setTodayEntries={setTodayEntries}

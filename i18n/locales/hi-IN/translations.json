@@ -164,6 +164,8 @@
   "entry.buyer": "खरीदार",
   "entry.milk_buy": "दूध खरीद",
   "entry.milk_sale": "दूध बिक्री",
+  "entry.today_sale": "आज की बिक्री",
+  "entry.today_buy": "आज की खरीद",
 
   "users.create_new_user": "नया उपयोगकर्ता बनाएँ",
   "users.select_role": "भूमिका चुनें",

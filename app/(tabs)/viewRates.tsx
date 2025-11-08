@@ -1,6 +1,7 @@
 import { FarmerRateChartHeader } from "@/components/common/HeaderVarients";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Default rate chart data based on the images
 const defaultRateChart = [
@@ -219,10 +220,10 @@ export default function MilkEntry() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Content */}<FarmerRateChartHeader />
       {renderRateChart()}
-    </View>
+    </SafeAreaView>
   );
 }
 

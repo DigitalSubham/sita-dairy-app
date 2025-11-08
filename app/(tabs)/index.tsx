@@ -31,6 +31,7 @@ import Animated, {
   withSequence,
   withSpring
 } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
 
@@ -146,7 +147,7 @@ export default function SellerDashboard() {
   }
 
   return (
-    <View style={[styles.container]}>
+    <SafeAreaView style={[styles.container]}>
       <FarmerDashboardHeader name={user?.name?.split(" ")[0] || "Farmer"} profilePic={user.profilePic ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(
           user.name || "Dairy Farmer"
@@ -366,7 +367,7 @@ export default function SellerDashboard() {
           </Animated.View>
         </LinearGradient>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

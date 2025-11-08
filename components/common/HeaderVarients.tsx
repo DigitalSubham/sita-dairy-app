@@ -220,7 +220,7 @@ export const RateChartHeader: React.FC<RateChartHeaderProps> = ({ fetchDataFromS
         },
     ]
 
-    return <CustomHeader title={"headers.rate_chart_manager"} backgroundColor="#f8fafc" />
+    return <CustomHeader title={"headers.rate_chart_manager"} backgroundColor="#f8fafc" actions={actions} />
 }
 
 export const UsersHeader: React.FC<UsersHeaderProps> = ({
@@ -440,7 +440,6 @@ export const ReaarangeUsersHeader: React.FC<RearrangeHeaderProps> = ({
 
             {showFilters && (
                 <Animated.View entering={FadeInDown.duration(300)} style={styles.filtersContainer}>
-                    <Text style={styles.filtersTitle}>{t("headers.filter_by_role")}</Text>
                     <View style={styles.roleButtons}>
                         {roles.map((role) => (
                             <TouchableOpacity
@@ -520,8 +519,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 16,
-        paddingVertical: 10,
-        paddingTop: 50, // Account for status bar
+        paddingVertical: 4,
     },
     titleSection: {
         flex: 1,
@@ -593,7 +591,7 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     filtersTitle: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "600",
         color: "#374151",
         marginBottom: 12,

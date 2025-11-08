@@ -27,4 +27,6 @@ export const api = {
   createPayment: `${BASE_URL}/payment/add-payment`,
   getPaymentsReport: `${BASE_URL}/payment/payment-report`,
   resetPayments: `${BASE_URL}/payment/reset-payment`,
+
+  rateChart: `${BASE_URL}/ratechart`,
 };

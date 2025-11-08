@@ -2,6 +2,7 @@ import { Feather, FontAwesome } from "@expo/vector-icons"
 import type React from "react"
 import { useTranslation } from "react-i18next"
 import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { SettingsHeader } from "./HeaderVarients"
 
 interface SettingsProps {
@@ -42,7 +43,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
   }
 
   return (
-    <View style={styles.container}  >
+    <SafeAreaView style={styles.container}  >
       <SettingsHeader />
       <View style={styles.content}>
         <View style={styles.section}>
@@ -93,7 +94,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             accessibilityRole="button"
           >
             <Feather name="trash-2" size={20} color="#ffffff" style={styles.deleteAccountIcon} />
-            <Text style={styles.deleteAccountText}>{("settings.delete_account")}</Text>
+            <Text style={styles.deleteAccountText}>{t("settings.delete_account")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -106,7 +107,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             <View style={styles.aboutItem}>
               <Feather name="info" size={20} color="#6b7280" style={styles.aboutIcon} />
               <View>
-                <Text style={styles.aboutTitle}>{("settings.version")}</Text>
+                <Text style={styles.aboutTitle}>{t("settings.version")}</Text>
                 <Text style={styles.aboutDescription}>1.0.0</Text>
               </View>
             </View>
@@ -114,12 +115,12 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             <View style={styles.divider} />
 
             <View style={styles.aboutItem}>
-              <Text style={styles.aboutText}>{("settings.built_by")}</Text>
+              <Text style={styles.aboutText}>{t("settings.built_by")}</Text>
             </View>
           </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   )
 }
 

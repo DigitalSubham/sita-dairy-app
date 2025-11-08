@@ -27,6 +27,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
@@ -387,7 +388,7 @@ export default function AdminProductsScreen(): React.ReactElement {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ProductsHeader addNewProduct={addNewProduct} />
 
 
@@ -589,7 +590,7 @@ export default function AdminProductsScreen(): React.ReactElement {
         </View >
       )
       }
-    </View >
+    </SafeAreaView >
 
 
   );
@@ -598,7 +599,7 @@ export default function AdminProductsScreen(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc", // Light gray background
+    backgroundColor: "#f8fafc",
   },
   header: {
     flexDirection: "row",

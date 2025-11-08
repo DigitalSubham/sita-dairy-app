@@ -5,6 +5,7 @@ import React, { ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../common/Icon";
 import LanguageChange from "../common/LanguageChange";
 
@@ -28,48 +29,50 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
     }, []);
 
     return (
-        <LinearGradient colors={["#e6f0ff", "#f0f9ff"]} style={styles.container}>
-            {/* 🌐 Language button in corner */}
-            <TouchableOpacity style={styles.languageButton} onPress={handleLanguagePress}>
-                {Icon("language" as any)(24, "#0284c7")}
-            </TouchableOpacity>
+        <SafeAreaView style={styles.container}>
+            <LinearGradient colors={["#e6f0ff", "#f0f9ff"]} style={styles.container}>
+                {/* 🌐 Language button in corner */}
+                <TouchableOpacity style={styles.languageButton} onPress={handleLanguagePress}>
+                    {Icon("language" as any)(24, "#0284c7")}
+                </TouchableOpacity>
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.logoContainer}>
-                    <View style={styles.logoCircle}>
-                        <Image
-                            source={require("../../assets/images/adaptive-icon.png")}
-                            style={{ width: 200, height: 200 }}
-                        />
+                <ScrollView
+                    contentContainerStyle={styles.scrollContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.logoContainer}>
+                        <View style={styles.logoCircle}>
+                            <Image
+                                source={require("../../assets/images/adaptive-icon.png")}
+                                style={{ width: 200, height: 200 }}
+                            />
+                        </View>
+                        <Text style={styles.logoText}>{t("auth.sita_dairy")}</Text>
+                        <Text style={styles.logoSubtext}>{t("auth.management_system")}</Text>
                     </View>
-                    <Text style={styles.logoText}>{t("auth.sita_dairy")}</Text>
-                    <Text style={styles.logoSubtext}>{t("auth.management_system")}</Text>
+
+                    {children}
+
+                    <View style={styles.footerContainer}>
+                        <Text style={styles.footerText}>
+                            © 2025 {t("auth.sita_dairy_management_system")}
+                        </Text>
+                    </View>
+                </ScrollView>
+
+                {/* Decorative bottles */}
+                <View style={styles.milkBottleLeft}>
+                    <View style={styles.bottleNeck} />
+                    <View style={styles.bottleBody} />
                 </View>
 
-                {children}
-
-                <View style={styles.footerContainer}>
-                    <Text style={styles.footerText}>
-                        © 2025 {t("auth.sita_dairy_management_system")}
-                    </Text>
+                <View style={styles.milkBottleRight}>
+                    <View style={styles.bottleNeck} />
+                    <View style={styles.bottleBody} />
                 </View>
-            </ScrollView>
-
-            {/* Decorative bottles */}
-            <View style={styles.milkBottleLeft}>
-                <View style={styles.bottleNeck} />
-                <View style={styles.bottleBody} />
-            </View>
-
-            <View style={styles.milkBottleRight}>
-                <View style={styles.bottleNeck} />
-                <View style={styles.bottleBody} />
-            </View>
-            <LanguageChange languageModal={languageModal} setLanguageModal={setLanguageModal} />
-        </LinearGradient>
+                <LanguageChange languageModal={languageModal} setLanguageModal={setLanguageModal} />
+            </LinearGradient>
+        </SafeAreaView>
     );
 };
 
@@ -82,7 +85,7 @@ const styles = StyleSheet.create({
     },
     languageButton: {
         position: "absolute",
-        top: 50,
+        top: 20,
         right: 25,
         zIndex: 10,
         backgroundColor: "white",
@@ -101,7 +104,7 @@ const styles = StyleSheet.create({
     },
     logoContainer: {
         alignItems: "center",
-        marginTop: 60,
+        marginTop: 30,
         marginBottom: 30,
     },
     logoCircle: {

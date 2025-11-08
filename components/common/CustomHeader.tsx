@@ -2,7 +2,7 @@ import { AntDesign, FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-ic
 import { DrawerActions, useNavigation } from "@react-navigation/native"
 import type React from "react"
 import { useTranslation } from "react-i18next"
-import { ActivityIndicator, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import Icon from "./Icon"
 
 export interface HeaderAction {
@@ -78,77 +78,71 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
 
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-      <View style={[styles.header, { backgroundColor }]}>
-        {/* Left Section */}
-        <View style={styles.leftSection}>
-          {leftContent ??
-            <>
-              {showMenuButton && (
-                <TouchableOpacity style={styles.iconButton} onPress={handleMenuPress} activeOpacity={0.7}>
-                  <Ionicons name="menu" size={24} color={textColor} />
-                </TouchableOpacity>
-              )}
-              {showBackButton && (
-                <TouchableOpacity style={styles.iconButton} onPress={handleBackPress} activeOpacity={0.7}>
-                  <Ionicons name="arrow-back" size={24} color={textColor} />
-                </TouchableOpacity>
-              )}
-            </>
-          }
-        </View>
 
-        {/* Center Section */}
-        <View style={styles.centerSection}>
-          {centerContent ?? (
-            <View style={styles.titleContainer}>
-              <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
-                {t(title)}
-              </Text>
-              {subtitle && (
-                <Text style={[styles.subtitle, { color: textColor }]} numberOfLines={1}>
-                  {t(subtitle)}
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* Right Section */}
-        <View style={styles.rightSection}>
-          {rightContent ??
-            <View style={styles.actionsContainer}>
-              {actions.map((action) => (
-                <TouchableOpacity
-                  key={`${action.iconFamily ?? "Ionicons"}-${action.icon}${action.label ? `-${action.label}` : ""}`}
-                  style={styles.iconButton}
-                  onPress={action.onPress}
-                  activeOpacity={0.7}
-                >
-                  {renderIcon(action.icon, action.iconFamily, action.isSpinner)}
-                </TouchableOpacity>
-              ))}
-            </View>
-          }
-        </View>
+    <View style={[styles.header]}>
+      {/* Left Section */}
+      <View style={styles.leftSection}>
+        {leftContent ??
+          <>
+            {showMenuButton && (
+              <TouchableOpacity style={styles.iconButton} onPress={handleMenuPress} activeOpacity={0.7}>
+                <Ionicons name="menu" size={24} color={textColor} />
+              </TouchableOpacity>
+            )}
+            {showBackButton && (
+              <TouchableOpacity style={styles.iconButton} onPress={handleBackPress} activeOpacity={0.7}>
+                <Ionicons name="arrow-back" size={24} color={textColor} />
+              </TouchableOpacity>
+            )}
+          </>
+        }
       </View>
-    </SafeAreaView>
+
+      {/* Center Section */}
+      <View style={styles.centerSection}>
+        {centerContent ?? (
+          <View style={styles.titleContainer}>
+            <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
+              {t(title)}
+            </Text>
+            {subtitle && (
+              <Text style={[styles.subtitle, { color: textColor }]} numberOfLines={1}>
+                {t(subtitle)}
+              </Text>
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* Right Section */}
+      <View style={styles.rightSection}>
+        {rightContent ??
+          <View style={styles.actionsContainer}>
+            {actions.map((action) => (
+              <TouchableOpacity
+                key={`${action.iconFamily ?? "Ionicons"}-${action.icon}${action.label ? `-${action.label}` : ""}`}
+                style={styles.iconButton}
+                onPress={action.onPress}
+                activeOpacity={0.7}
+              >
+                {renderIcon(action.icon, action.iconFamily, action.isSpinner)}
+              </TouchableOpacity>
+            ))}
+          </View>
+        }
+      </View>
+    </View>
+
   )
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    minHeight: 56,
-    // elevation: 2,
-    // shadowColor: "#000",
+    paddingVertical: 4,
     shadowOffset: {
       width: 0,
       height: 1,

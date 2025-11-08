@@ -24,6 +24,7 @@ import { Customer, CustomerRole } from "@/constants/types"
 import useCustomers from "@/hooks/useCustomer"
 import { useFocusEffect, useRouter } from "expo-router"
 import { useTranslation } from "react-i18next"
+import { SafeAreaView } from "react-native-safe-area-context"
 import Toast from "react-native-toast-message"
 
 const ImprovedCustomersList: React.FC = () => {
@@ -291,7 +292,7 @@ const ImprovedCustomersList: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <UsersHeader onRoleFilter={handleRoleFilter} onSearch={handleSearch} selectedRole={selectedRole} setCreateUserModalVisible={setCreateUserModalVisible} createUserModalVisible={createUserModalVisible} />
 
       {hasChanges && (
@@ -366,7 +367,7 @@ const ImprovedCustomersList: React.FC = () => {
         onClose={() => setBuyerRateModalVisible(null)}
         onBuyerSet={() => refresh()}
       />
-    </View>
+    </SafeAreaView>
   )
 }
 

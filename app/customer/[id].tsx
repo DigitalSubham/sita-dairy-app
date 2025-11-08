@@ -21,6 +21,7 @@ import {
   View
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface User {
   id: number;
@@ -127,8 +128,7 @@ export default function CustomerDetailsScreen() {
 
 
   return (
-
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <CustomHeader title="Customer Details" showBackButton showMenuButton={false} />
       <ScrollView
         style={styles.container}
@@ -397,7 +397,7 @@ export default function CustomerDetailsScreen() {
           </Animated.View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -361,7 +361,7 @@ export default function MilkSaleEntry() {
 
             {/* Entries List Section */}
             <ListShow
-                text={("entry.sale")}
+                text={t("entry.today_sale")}
                 url={api.milkSales}
                 todayEntries={todayEntries}
                 setTodayEntries={setTodayEntries}

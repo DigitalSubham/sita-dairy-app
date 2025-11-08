@@ -23,6 +23,7 @@ import {
   type TextStyle,
   type ViewStyle
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 
@@ -316,7 +317,7 @@ const WalletModal: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <CustomHeader title="Payments" />
 
       <ScrollView
@@ -380,7 +381,7 @@ const WalletModal: React.FC = () => {
         type={alertConfig.type}
         onClose={hideAlert}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

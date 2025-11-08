@@ -4,7 +4,8 @@ import { api } from "@/constants/api";
 import { setReduxUser } from "@/store/userSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
 
 export default function ProfileScreen() {
@@ -51,16 +52,16 @@ export default function ProfileScreen() {
   }, [token]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ProfileHeader setIsEditing={setIsEditing} isEditing={isEditing} />
       <ProfileComponent setIsEditing={setIsEditing} isEditing={isEditing} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111827",
+    backgroundColor: "#f8fafc",
   },
 });

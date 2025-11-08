@@ -1,9 +1,11 @@
 import EditableRateChart from "@/components/admin/rateChart/EditableRateChart"
 import { RateChartHeader } from "@/components/common/HeaderVarients"
-import { defaultRateChart } from "@/constants/rateData"
-import * as DocumentPicker from "expo-document-picker"
+import { api } from "@/constants/api"
+import { Ionicons } from "@expo/vector-icons"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useState } from "react"
-import { Alert, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 export interface RateChartRow {
     id: string
@@ -33,8 +35,7 @@ export interface ApiResponse {
 
 
 const RateChartScreen = () => {
-    const [rateChart, setRateChart] = useState<RateChartRow[]>(defaultRateChart)
-
+    const [rateChart, setRateChart] = useState<RateChartRow[]>([])
     const [columns, setColumns] = useState<ChartColumn[]>([
         { key: "fat", label: "Fat %", type: "number", editable: true },
         { key: "snf8_0", label: "8.0", type: "number", editable: true },
@@ -95,39 +96,39 @@ const RateChartScreen = () => {
     }
 
     // Add new column
-    // const addColumn = () => {
-    //     Alert.prompt(
-    //         "Add Column",
-    //         "Enter column label:",
-    //         [
-    //             { text: "Cancel", style: "cancel" },
-    //             {
-    //                 text: "Add",
-    //                 onPress: (label) => {
-    //                     if (label && label.trim()) {
-    //                         const newKey = `custom_${Date.now()}`
-    //                         const newColumn: ChartColumn = {
-    //                             key: newKey,
-    //                             label: label.trim(),
-    //                             type: "number",
-    //                             editable: true,
-    //                         }
+    const addColumn = () => {
+        Alert.prompt(
+            "Add Column",
+            "Enter column label:",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Add",
+                    onPress: (label: any) => {
+                        if (label && label.trim()) {
+                            const newKey = `custom_${Date.now()}`
+                            const newColumn: ChartColumn = {
+                                key: newKey,
+                                label: label.trim(),
+                                type: "number",
+                                editable: true,
+                            }
 
-    //                         setColumns([...columns, newColumn])
+                            setColumns([...columns, newColumn])
 
-    //                         // Add the new column to all existing rows
-    //                         const updatedChart = rateChart.map((row) => ({
-    //                             ...row,
-    //                             [newKey]: 0,
-    //                         }))
-    //                         setRateChart(updatedChart)
-    //                     }
-    //                 },
-    //             },
-    //         ],
-    //         "plain-text",
-    //     )
-    // }
+                            // Add the new column to all existing rows
+                            const updatedChart = rateChart.map((row) => ({
+                                ...row,
+                                [newKey]: 0,
+                            }))
+                            setRateChart(updatedChart)
+                        }
+                    },
+                },
+            ],
+            "plain-text",
+        )
+    }
 
     // Remove column
     const removeColumn = (columnKey: string) => {
@@ -155,69 +156,75 @@ const RateChartScreen = () => {
     }
 
     // Upload Excel file
-    const uploadExcelFile = async () => {
-        try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"],
-                copyToCacheDirectory: true,
-            })
+    // const uploadExcelFile = async () => {
+    //     try {
+    //         const result = await DocumentPicker.getDocumentAsync({
+    //             type: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"],
+    //             copyToCacheDirectory: true,
+    //         })
 
-            if (!result.canceled && result.assets[0]) {
-                setLoading(true)
-                const file = result.assets[0]
+    //         if (!result.canceled && result.assets[0]) {
+    //             setLoading(true)
+    //             const file = result.assets[0]
 
-                // Create FormData for file upload
-                const formData = new FormData()
-                formData.append("file", {
-                    uri: file.uri,
-                    type: file.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    name: file.name,
-                } as any)
+    //             // Create FormData for file upload
+    //             const formData = new FormData()
+    //             formData.append("file", {
+    //                 uri: file.uri,
+    //                 type: file.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    //                 name: file.name,
+    //             } as any)
 
-                // Replace with your actual API endpoint
-                const response = await fetch("YOUR_API_ENDPOINT/upload-excel", {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                })
+    //             // Replace with your actual API endpoint
+    //             const response = await fetch("YOUR_API_ENDPOINT/upload-excel", {
+    //                 method: "POST",
+    //                 body: formData,
+    //                 headers: {
+    //                     "Content-Type": "multipart/form-data",
+    //                 },
+    //             })
 
-                if (response.ok) {
-                    const data = await response.json()
-                    Alert.alert("Success", "Excel file uploaded successfully!")
-                    // Optionally refresh data from server
-                    await fetchDataFromServer()
-                } else {
-                    throw new Error("Upload failed")
-                }
-            }
-        } catch (error) {
-            Alert.alert("Error", "Failed to upload Excel file")
-            console.error("Upload error:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    //             if (response.ok) {
+    //                 const data = await response.json()
+    //                 Alert.alert("Success", "Excel file uploaded successfully!")
+    //                 // Optionally refresh data from server
+    //                 await fetchDataFromServer()
+    //             } else {
+    //                 throw new Error("Upload failed")
+    //             }
+    //         }
+    //     } catch (error) {
+    //         Alert.alert("Error", "Failed to upload Excel file")
+    //         console.error("Upload error:", error)
+    //     } finally {
+    //         setLoading(false)
+    //     }
+    // }
 
     // Fetch data from server
     const fetchDataFromServer = async () => {
+        const token = await AsyncStorage.getItem("token");
+        const parsedToken = token ? JSON.parse(token) : null;
         try {
             setLoading(true)
 
             // Replace with your actual API endpoint
-            const response = await fetch("YOUR_API_ENDPOINT/rate-chart")
+            const response = await fetch(api.rateChart, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${parsedToken}`
+                },
+            })
 
-            if (response.ok) {
-                const data = await response.json()
-
-                if (data.chart && data.columns) {
-                    setRateChart(data.chart)
-                    setColumns(data.columns)
-                }
+            const data = await response.json()
+            console.log("data", data)
+            if (data.success) {
+                setRateChart(data.data)
             } else {
-                throw new Error("Failed to fetch data")
+                Alert.alert("Error", data.message || "Failed to fetch data")
             }
+
         } catch (error) {
             Alert.alert("Error", "Failed to fetch data from server")
             console.error("Fetch error:", error)
@@ -259,20 +266,19 @@ const RateChartScreen = () => {
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <RateChartHeader fetchDataFromServer={fetchDataFromServer} saveDataToServer={saveDataToServer} />
 
 
             {/* Loading Indicator */}
-            {/* {loading && (
+            {loading && (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#0ea5e9" />
                     <Text style={styles.loadingText}>Processing...</Text>
                 </View>
-            )} */}
+            )}
 
-            {/* Chart Controls */}
-            {/* <View style={styles.controls}>
+            <View style={styles.controls}>
                 <TouchableOpacity style={styles.controlButton} onPress={addRow}>
                     <Ionicons name="add-circle-outline" size={20} color="#0ea5e9" />
                     <Text style={styles.controlButtonText}>Row</Text>
@@ -283,14 +289,14 @@ const RateChartScreen = () => {
                     <Text style={styles.controlButtonText}>Column</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.controlButton} onPress={uploadExcelFile}>
+                {/* <TouchableOpacity style={styles.controlButton} onPress={uploadExcelFile}>
                     <Ionicons name="cloud-upload-outline" size={20} color="#0ea5e9" />
                     <Text style={styles.controlButtonText}>Excel</Text>
-                </TouchableOpacity>
-            </View> */}
+                </TouchableOpacity> */}
+            </View>
 
             {/* Editable Chart */}
-            <EditableRateChart
+            {rateChart && rateChart.length && <EditableRateChart
                 rateChart={rateChart}
                 columns={columns}
                 editingCell={editingCell}
@@ -298,8 +304,8 @@ const RateChartScreen = () => {
                 handleCellEdit={handleCellEdit}
                 removeRow={removeRow}
                 removeColumn={removeColumn}
-            />
-        </View>
+            />}
+        </SafeAreaView>
     )
 }
 
@@ -307,7 +313,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#f8fafc",
-
     },
     loadingContainer: {
         alignItems: "center",

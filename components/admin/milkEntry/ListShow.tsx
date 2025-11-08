@@ -39,7 +39,7 @@ const ListShow: React.FC<ListShowProps> = ({
             <View style={styles.entriesHeader}>
                 <View style={styles.entriesHeaderLeft}>
                     <FontAwesome name="list" size={18} color="#0ea5e9" />
-                    <Text style={styles.entriesTitle}>{t("entry.todays")} {text} ({shift})</Text>
+                    <Text style={styles.entriesTitle}> {text} ({shift})</Text>
                 </View>
                 <View style={styles.entriesStats}>
                     <Text style={styles.entriesCount}>{todayEntries.length}</Text>

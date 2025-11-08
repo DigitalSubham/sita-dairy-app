@@ -12,6 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
 
@@ -125,7 +126,7 @@ const DairyLoadingScreen: React.FC<DairyLoadingScreenProps> = ({
   if (!loading) return null;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={["#4ade80", "#22c55e", "#16a34a"]}
         start={{ x: 0, y: 0 }}
@@ -289,7 +290,7 @@ const DairyLoadingScreen: React.FC<DairyLoadingScreenProps> = ({
           </View>
         </Animated.View>
       </LinearGradient>
-    </View>
+    </SafeAreaView>
   );
 };
 

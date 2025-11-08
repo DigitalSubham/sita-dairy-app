@@ -164,6 +164,8 @@
   "entry.buyer": "Buyer",
   "entry.milk_buy": "Milk Buy",
   "entry.milk_sale": "Milk Sale",
+  "entry.today_sale": "Today's Sale",
+  "entry.today_buy": "Today's Buy",
 
   "users.create_new_user": "Create New User",
   "users.select_role": "Select Role",
