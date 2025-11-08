@@ -10,6 +10,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 import { useDispatch } from "react-redux";
 
@@ -22,6 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const dispatch = useDispatch();
   const router = useRouter();
+  const { t } = useTranslation();
+
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -53,9 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       Toast.show({
         type: "info",
-        text1: "Signing In...",
-        text2: "Please wait while we log you in.",
+        text1: t("auth.signing_in"),
+        text2: t("auth.please_wait_login"),
       });
+
       const response = await fetch(api.login, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,8 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.success) {
         Toast.show({
           type: "success",
-          text1: "Login Successful!",
-          text2: `Welcome, ${data.user.name}! 🎉`,
+          text1: t("auth.login_successful"),
+          text2: t("auth.welcome_user", { name: data.user.name }),
           visibilityTime: 1500,
         });
 
@@ -82,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         Toast.show({
           type: "error",
-          text1: "Login Failed",
+          text1: t("auth.login_failed"),
           text2: data.message,
         });
 
@@ -92,8 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       Toast.show({
         type: "error",
-        text1: "Network Error",
-        text2: "Something went wrong. Please try again.",
+        text1: t("common.network_error"),       // "Network Error"
+        text2: t("common.something_wrong_retry")
       });
 
       return { success: false, message: "Something Went Wrong." };
@@ -115,8 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       Toast.show({
         type: "info",
-        text1: "Signing Up...",
-        text2: "Please wait..",
+        text1: t("auth.signing_up"),
+        text2: t("common.please_wait"),
       });
 
       const response = await fetch(api.signup, {
@@ -131,8 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.success) {
         Toast.show({
           type: "success",
-          text1: "Sign up Successful!",
-          text2: `Welcome, ${data.user.name}! 🎉`,
+          text1: t("auth.signup_successful"),       // "Sign up Successful!"
+          text2: t("auth.welcome_user", { name: data.user.name }),
         });
 
         // Store user data in AsyncStorage (React Native does not support localStorage)
@@ -146,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Error toast for failed login
         Toast.show({
           type: "error",
-          text1: "Signup Failed",
+          text1: t("auth.signup_failed"), // "Signup Failed"
           text2: data.message,
         });
         setIsAuthenticated(false);
@@ -157,8 +161,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // throw error;
       Toast.show({
         type: "error",
-        text1: "Network Error",
-        text2: "Something went wrong. Please try again.",
+        text1: t("common.network_error"),
+        text2: t("common.something_wrong_retry"),
       });
       return { success: false, message: "Something Went Wrong." };
     }
@@ -218,8 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     Toast.show({
       type: "success",
-      text1: "Logged out successfully!",
-      text2: "Come back soon!",
+      text1: t("auth.logout_successful"), // "Logged out successfully!"
+      text2: t("auth.come_back_soon"),
     });
     dispatch(logout());
     setUser(null);
