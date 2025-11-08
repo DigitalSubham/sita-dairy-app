@@ -21,6 +21,6 @@ export default function Index() {
     case "Buyer":
     case "User":
     default:
-      return <Redirect href="/(buyer)" />; // Farmer tabs at root
+      return <Redirect href="/(buyer)" />;
   }
 }
