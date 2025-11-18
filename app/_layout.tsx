@@ -3,13 +3,16 @@ import i18n from "@/i18n";
 import store from "@/store/store";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
+import { LogBox, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
+
+
+LogBox.ignoreAllLogs()
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,7 +47,7 @@ export default function RootLayout() {
         <I18nextProvider i18n={i18n}>
           <Provider store={store}>
             <AuthProvider>
-              <StatusBar style="dark" />
+              <StatusBar barStyle="dark-content" />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" options={{ animation: "none" }} />
                 <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />

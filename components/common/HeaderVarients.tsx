@@ -197,7 +197,7 @@ export const ProfileHeader: React.FC<ProfileProps> = ({ isEditing, setIsEditing 
         },
     ]
 
-    return <CustomHeader title={"common.profile"} actions={actions} backgroundColor="#f8fafc" />
+    return <CustomHeader title={"common.profile"} actions={actions} />
 }
 
 // Settings Header
@@ -220,7 +220,7 @@ export const RateChartHeader: React.FC<RateChartHeaderProps> = ({ fetchDataFromS
         },
     ]
 
-    return <CustomHeader title={"headers.rate_chart_manager"} backgroundColor="#f8fafc" actions={actions} />
+    return <CustomHeader title={"headers.rate_chart_manager"} actions={actions} />
 }
 
 export const UsersHeader: React.FC<UsersHeaderProps> = ({
@@ -493,7 +493,7 @@ export const FarmerRecordsHeader = () => {
 export const FarmerRateChartHeader = () => {
 
 
-    return <CustomHeader title={"navigation.rate_chart"} backgroundColor="#f8fafc" />
+    return <CustomHeader title={"navigation.rate_chart"} />
 }
 
 

@@ -19,9 +19,7 @@ export interface CustomHeaderProps {
   showBackButton?: boolean
   showMenuButton?: boolean
   actions?: HeaderAction[]
-  backgroundColor?: string
   textColor?: string
-  statusBarStyle?: "light" | "dark"
   centerContent?: React.ReactNode
   leftContent?: React.ReactNode
   rightContent?: React.ReactNode
@@ -33,9 +31,7 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
   showBackButton = false,
   showMenuButton = true,
   actions = [],
-  backgroundColor = "#ffffff",
   textColor = "#111827",
-  statusBarStyle = "dark",
   centerContent,
   leftContent,
   rightContent,

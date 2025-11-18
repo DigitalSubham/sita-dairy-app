@@ -95,8 +95,13 @@ const EditableCell: React.FC<EditableCellProps> = ({
             disabled={!editable}
         >
             <Text style={[styles.cellText, !editable && styles.cellTextDisabled]}>
-                {typeof value === "number" ? value.toFixed(2) : value}
+                {value === undefined || value === null
+                    ? ""
+                    : typeof value === "number"
+                        ? value.toFixed(2)
+                        : String(value)}
             </Text>
+
         </TouchableOpacity>
     )
 }

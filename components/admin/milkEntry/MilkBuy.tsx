@@ -1,43 +1,45 @@
-import UserModal from "@/components/common/UserModal"
-import { api } from "@/constants/api"
-import { defaultRateChart } from "@/constants/rateData"
-import { MilkEntry, MilkEntryFormData, MilkType, RateChartRow, ShiftType, User } from "@/constants/types"
-import useCustomers from "@/hooks/useCustomer"
-import { calculateTotal, fetchTodayEntries, handleDeleteEntry } from "@/utils/helper"
-import { Feather, FontAwesome } from "@expo/vector-icons"
-import DateTimePicker from "@react-native-community/datetimepicker"
-import { format } from "date-fns"
-import { LinearGradient } from "expo-linear-gradient"
-import { useFocusEffect } from "expo-router"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
+import UserModal from "@/components/common/UserModal";
+import EntryForm from "@/components/forms/EntryForm";
+import { api } from "@/constants/api";
+import { defaultRateChart } from "@/constants/rateData";
+import {
+    MilkEntry,
+    MilkEntryFormData,
+    MilkType,
+    RateChartRow,
+    ShiftType,
+    User,
+} from "@/constants/types";
+import useCustomers from "@/hooks/useCustomer";
+import {
+    calculateTotal,
+    fetchTodayEntries
+} from "@/utils/helper";
+import { format } from "date-fns";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
-    Modal,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from "react-native"
-import ListShow from "./ListShow"
+    TextInput
+} from "react-native";
+import ListShow from "./ListShow";
 
 export default function MilkBuyEntry() {
-    const [rateChart] = useState<RateChartRow[]>(defaultRateChart)
-    const [showUserSelector, setShowUserSelector] = useState(false)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [selectedUser, setSelectedUser] = useState<User | null>(null)
-    const [showDatePicker, setShowDatePicker] = useState(false)
-    const [todayEntries, setTodayEntries] = useState<MilkEntry[]>([])
-    const [isLoadingEntries, setIsLoadingEntries] = useState(false)
-    const [showOptionsModal, setShowOptionsModal] = useState(false)
-    const [selectedEntry, setSelectedEntry] = useState<MilkEntry | null>(null)
-    const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null)
-    const { customers, token } = useCustomers({ role: "Farmer" })
+    const [rateChart] = useState<RateChartRow[]>(defaultRateChart);
+    const [showUserSelector, setShowUserSelector] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [todayEntries, setTodayEntries] = useState<MilkEntry[]>([]);
+    const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+    const [showOptionsModal, setShowOptionsModal] = useState(false);
+    const [selectedEntry, setSelectedEntry] = useState<MilkEntry | null>(null);
+    const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null);
+    const { customers, token } = useCustomers({ role: "Farmer" });
     const weightRef = useRef<TextInput>(null);
-    const fatRef = useRef<TextInput>(null);
-    const snfRef = useRef<TextInput>(null);
-    const { t } = useTranslation()
+
+    const { t } = useTranslation();
     const [formData, setFormData] = useState<MilkEntryFormData>({
         userId: "",
         weight: "",
@@ -47,69 +49,71 @@ export default function MilkBuyEntry() {
         date: format(new Date(), "yyyy-MM-dd"),
         shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
         milkType: MilkType.Cow,
-    })
+    });
 
     // Helper function to update form data
     const updateFormData = (field: string, value: string) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
-        }))
-    }
+        }));
+    };
 
     // Function to get rate from chart based on fat and SNF
     const getRateFromChart = (fatValue: number, snfValue: number): number => {
-        const fatRow = rateChart.find((row) => Math.abs(row.fat - fatValue) < 0.05)
-        if (!fatRow) return 0
-        if (snfValue >= 8.0 && snfValue < 8.05) return fatRow.snf8_0
-        if (snfValue >= 8.05 && snfValue < 8.15) return fatRow.snf8_1
-        if (snfValue >= 8.15 && snfValue < 8.25) return fatRow.snf8_2
-        if (snfValue >= 8.25 && snfValue < 8.35) return fatRow.snf8_3
-        if (snfValue >= 8.35 && snfValue < 8.45) return fatRow.snf8_4
-        if (snfValue >= 8.45 && snfValue <= 8.5) return fatRow.snf8_5
+        const fatRow = rateChart.find((row) => Math.abs(row.fat - fatValue) < 0.05);
+        if (!fatRow) return 0;
+        if (snfValue >= 8.00 && snfValue < 8.05) return fatRow.snf8_0;
+        if (snfValue >= 8.05 && snfValue < 8.15) return fatRow.snf8_1;
+        if (snfValue >= 8.15 && snfValue < 8.25) return fatRow.snf8_2;
+        if (snfValue >= 8.25 && snfValue < 8.35) return fatRow.snf8_3;
+        if (snfValue >= 8.35 && snfValue < 8.45) return fatRow.snf8_4;
+        if (snfValue >= 8.45 && snfValue <= 8.5) return fatRow.snf8_5;
 
-        return 0
-    }
+        return 0;
+    };
 
     // Auto-calculate rate when fat or SNF changes
     useEffect(() => {
         if (formData.fat && formData.snf) {
-            const fatNum = Number.parseFloat(formData.fat)
-            const snfNum = Number.parseFloat(formData.snf)
+            const fatNum = Number.parseFloat(formData.fat);
+            const snfNum = Number.parseFloat(formData.snf);
 
             if (!isNaN(fatNum) && !isNaN(snfNum)) {
-                const rate = getRateFromChart(fatNum, snfNum)
+                const rate = getRateFromChart(fatNum, snfNum);
                 if (rate > 0) {
-                    updateFormData("rate", rate.toFixed(2))
+                    updateFormData("rate", rate.toFixed(2));
                 }
             }
         }
-    }, [formData.fat, formData.snf, rateChart])
-
-
+    }, [formData.fat, formData.snf, rateChart]);
 
     // Load entries when date or shift changes
     useEffect(() => {
         if (token) {
-            fetchTodayEntries(api.getRecords, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
+            fetchTodayEntries(
+                api.getRecords,
+                setIsLoadingEntries,
+                formData.date,
+                formData.shift,
+                setTodayEntries
+            );
         }
-    }, [formData.date, formData.shift, token])
+    }, [formData.date, formData.shift, token]);
 
     useFocusEffect(
         useCallback(() => {
             resetForm();
-            fetchTodayEntries(api.getRecords, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries);
+            fetchTodayEntries(
+                api.getRecords,
+                setIsLoadingEntries,
+                formData.date,
+                formData.shift,
+                setTodayEntries
+            );
         }, [])
     );
 
-    // Handle date picker change
-    const onDateChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(false)
-        if (selectedDate) {
-            const dateString = format(selectedDate, "yyyy-MM-dd")
-            updateFormData("date", dateString)
-        }
-    }
 
     // Reset form
     const resetForm = () => {
@@ -122,24 +126,24 @@ export default function MilkBuyEntry() {
             date: format(new Date(), "yyyy-MM-dd"),
             shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
             milkType: MilkType.Cow,
-        })
-        setSelectedUser(null)
-        setEditingEntry(null)
-    }
+        });
+        setSelectedUser(null);
+        setEditingEntry(null);
+    };
 
     // Handle submit
     const handleSubmit = async () => {
         if (!formData.userId) {
-            Alert.alert("Error", "Please select a user")
-            return
+            Alert.alert("Error", "Please select a user");
+            return;
         }
 
         if (!formData.weight || !formData.fat || !formData.snf || !formData.rate) {
-            Alert.alert("Error", "Please fill in all required fields")
-            return
+            Alert.alert("Error", "Please fill in all required fields");
+            return;
         }
 
-        setIsSubmitting(true)
+        setIsSubmitting(true);
 
         try {
             const entryData = {
@@ -152,10 +156,12 @@ export default function MilkBuyEntry() {
                 rate: formData.rate,
                 price: calculateTotal(formData.weight, formData.rate),
                 milkType: formData.milkType,
-            }
+            };
 
-            const url = editingEntry ? `${api.milkEntry}/${editingEntry._id}` : api.milkEntry
-            const method = editingEntry ? "PUT" : "POST"
+            const url = editingEntry
+                ? `${api.milkEntry}/${editingEntry._id}`
+                : api.milkEntry;
+            const method = editingEntry ? "PUT" : "POST";
 
             const response = await fetch(url, {
                 method,
@@ -164,30 +170,36 @@ export default function MilkBuyEntry() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-            })
+            });
 
-            const data = await response.json()
+            const data = await response.json();
 
             if (data.success) {
-                Alert.alert("Success", data.message)
-                resetForm()
-                fetchTodayEntries(api.getRecords, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
+                Alert.alert("Success", data.message);
+                resetForm();
+                fetchTodayEntries(
+                    api.getRecords,
+                    setIsLoadingEntries,
+                    formData.date,
+                    formData.shift,
+                    setTodayEntries
+                );
             } else {
-                Alert.alert("Error", data.message)
+                Alert.alert("Error", data.message);
             }
         } catch (error) {
-            console.error("Submit Error:", error)
-            Alert.alert("Error", "Failed to add milk entry")
+            console.error("Submit Error:", error);
+            Alert.alert("Error", "Failed to add milk entry");
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
+    };
 
     // Handle edit entry
     const handleEditEntry = (entry: MilkEntry) => {
-        setEditingEntry(entry)
-        const user = customers.find((c) => c._id === entry.byUser._id)
-        setSelectedUser(user || null)
+        setEditingEntry(entry);
+        const user = customers.find((c) => c._id === entry.byUser._id);
+        setSelectedUser(user || null);
         setFormData({
             userId: entry.byUser._id,
             weight: entry.weight.toString(),
@@ -197,17 +209,17 @@ export default function MilkBuyEntry() {
             date: entry.date,
             shift: entry.shift,
             milkType: entry.milkType,
-        })
-        setShowOptionsModal(false)
-    }
+        });
+        setShowOptionsModal(false);
+    };
 
-    const existingUserIds: string[] = Array.isArray(todayEntries) && todayEntries.length > 0
-        ? todayEntries.map(entry => entry?.byUser?._id)
-        : [];
-
+    const existingUserIds: string[] =
+        Array.isArray(todayEntries) && todayEntries.length > 0
+            ? todayEntries.map((entry) => entry?.byUser?._id)
+            : [];
 
     const filteredUser = customers
-        .filter(c => !existingUserIds.includes(c._id))
+        .filter((c) => !existingUserIds.includes(c._id))
         .sort((a, b) => {
             if (a.positionNo === undefined && b.positionNo === undefined) return 0;
             if (a.positionNo === undefined) return 1; // move undefined to end
@@ -217,191 +229,21 @@ export default function MilkBuyEntry() {
 
 
 
-
-    // Render entry options modal
-    const renderEntryOptionsModal = () => (
-        <Modal visible={showOptionsModal} animationType="fade" transparent statusBarTranslucent={true}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.optionsModalContent}>
-                    <Text style={styles.optionsModalTitle}>{t("entry.options")}</Text>
-                    <TouchableOpacity style={styles.optionButton} onPress={() => selectedEntry && handleEditEntry(selectedEntry)}>
-                        <View style={styles.optionIconContainer}>
-                            <Feather name="edit" size={20} color="#0ea5e9" />
-                        </View>
-                        <Text style={styles.optionButtonText}>{t("entry.edit_entry")}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.optionButton, styles.deleteOptionButton]}
-                        onPress={() => {
-                            setShowOptionsModal(false)
-                            selectedEntry && handleDeleteEntry(
-                                selectedEntry._id,
-                                () => fetchTodayEntries(api.getRecords, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries),
-                                token
-                            )
-                        }}
-                    >
-                        <View style={[styles.optionIconContainer, styles.deleteIconContainer]}>
-                            <Feather name="trash-2" size={20} color="#ef4444" />
-                        </View>
-                        <Text style={[styles.optionButtonText, styles.deleteOptionText]}>{t("entry.delete_entry")}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.cancelButton} onPress={() => setShowOptionsModal(false)}>
-                        <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    )
-
     return (
         <>
             {/* Compact Form Section */}
-            <View style={styles.formSection}>
-                <LinearGradient colors={["#f0f9ff", "#e0f2fe"]} style={styles.formCard}>
-                    {editingEntry && (
-                        <View style={styles.editingBanner}>
-                            <Feather name="edit" size={14} color="#0ea5e9" />
-                            <Text style={styles.editingBannerText}>{t("entry.editing")}: {selectedUser?.name}</Text>
-                            <TouchableOpacity onPress={resetForm}>
-                                <Feather name="x" size={14} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {/* Date, Shift and Milk Type in one row */}
-                    <View style={styles.topRow}>
-                        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.compactField}>
-                            <FontAwesome name="calendar" size={14} color="#0284c7" />
-                            <Text style={styles.compactFieldText}>{format(new Date(formData.date), "dd/MM")}</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.compactField}
-                            onPress={() => {
-                                const newShift = formData.shift === "Morning" ? "Evening" : "Morning"
-                                updateFormData("shift", newShift)
-                            }}
-                        >
-                            <Text style={styles.compactFieldText}>
-                                {formData.shift === "Morning" ? "🌅" : "🌙"} {formData.shift}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.milkTypeToggle}>
-                            <TouchableOpacity
-                                style={[styles.milkTypeBtn, formData.milkType === "Cow" && styles.milkTypeBtnActive]}
-                                onPress={() => updateFormData("milkType", "Cow")}
-                            >
-                                <Text style={styles.milkTypeText}>🐄</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.milkTypeBtn, formData.milkType === "Buffalo" && styles.milkTypeBtnActive]}
-                                onPress={() => updateFormData("milkType", "Buffalo")}
-                            >
-                                <Text style={styles.milkTypeText}>🐃</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* User Selector */}
-                    <TouchableOpacity style={styles.userSelector} onPress={() => setShowUserSelector(true)}>
-                        <FontAwesome name="user" size={16} color="#0ea5e9" />
-                        <Text style={styles.userSelectorText}>{selectedUser ? selectedUser.name : t("entry.select_farmer")}</Text>
-                        <Feather name="chevron-down" size={16} color="#64748b" />
-                    </TouchableOpacity>
-
-                    {/* Input fields in two rows */}
-                    <View style={styles.inputRow}>
-                        <View style={styles.inputContainer}>
-                            <FontAwesome name="balance-scale" size={16} color="#38bdf8" />
-                            <TextInput
-                                ref={weightRef}
-                                style={styles.input}
-                                placeholder="Weight"
-                                placeholderTextColor="#93c5fd"
-                                value={formData.weight}
-                                onChangeText={(value) => updateFormData("weight", value)}
-                                keyboardType="decimal-pad"
-                                returnKeyType="next"
-                                onSubmitEditing={() => fatRef.current?.focus()}
-                            />
-                            <Text style={styles.inputUnit}>L</Text>
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <FontAwesome name="percent" size={16} color="#f59e0b" />
-                            <TextInput
-                                ref={fatRef}
-                                style={styles.input}
-                                placeholder="Fat"
-                                placeholderTextColor="#93c5fd"
-                                value={formData.fat}
-                                onChangeText={(value) => updateFormData("fat", value)}
-                                keyboardType="decimal-pad"
-                                onSubmitEditing={() => snfRef.current?.focus()}
-                            />
-                            <Text style={styles.inputUnit}>%</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.inputRow}>
-                        <View style={styles.inputContainer}>
-                            <FontAwesome name="percent" size={16} color="#8b5cf6" />
-                            <TextInput
-                                ref={snfRef}
-                                style={styles.input}
-                                placeholder="SNF"
-                                placeholderTextColor="#93c5fd"
-                                value={formData.snf}
-                                onChangeText={(value) => updateFormData("snf", value)}
-                                keyboardType="decimal-pad"
-                                onSubmitEditing={() => {
-                                    /* all fields filled—either calculate rate or move to submit */
-                                    // e.g.:
-                                    handleSubmit();
-                                }}
-                            />
-                            <Text style={styles.inputUnit}>%</Text>
-                        </View>
-
-                        <View style={styles.rateDisplay}>
-                            <FontAwesome name="rupee" size={16} color="#10b981" />
-                            <Text style={styles.rateText}>₹{formData.rate || "0.00"}</Text>
-                        </View>
-                    </View>
-
-                    {/* Total and Submit */}
-                    <View style={styles.bottomRow}>
-                        <View style={styles.totalDisplay}>
-                            <Text style={styles.totalLabel}>{t("entry.total")}: </Text>
-                            <Text style={styles.totalValue}>₹{calculateTotal(formData.weight, formData.rate)}</Text>
-                        </View>
-
-                        <TouchableOpacity
-                            style={styles.submitButton}
-                            disabled={isSubmitting || !selectedUser}
-                            onPress={handleSubmit}
-                        >
-                            <LinearGradient colors={["#0ea5e9", "#0284c7"]} style={styles.submitGradient}>
-                                <FontAwesome name={editingEntry ? "save" : "plus"} size={16} color="white" />
-                                <Text style={styles.submitButtonText}>{isSubmitting ? "..." : editingEntry ? t("common.update") : t("common.add")}</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Date Picker Modal */}
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={new Date(formData.date)}
-                            mode="date"
-                            display="default"
-                            onChange={onDateChange}
-                            maximumDate={new Date()}
-                        />
-                    )}
-                </LinearGradient>
-            </View>
+            <EntryForm
+                editingEntry={editingEntry}
+                formData={formData}
+                selectedUser={selectedUser}
+                updateFormData={updateFormData}
+                setShowUserSelector={setShowUserSelector}
+                weightRef={weightRef}
+                handleSubmit={handleSubmit}
+                resetForm={resetForm}
+                calculateTotal={calculateTotal}
+                isSubmitting={isSubmitting}
+            />
 
             {/* Entries List Section */}
             <ListShow
@@ -410,18 +252,29 @@ export default function MilkBuyEntry() {
                 todayEntries={todayEntries}
                 setTodayEntries={setTodayEntries}
                 fetchTodayEntries={fetchTodayEntries}
-                shift={formData.shift}
+                shift={
+                    formData.shift === "Morning" ? t("entry.morning") : t("entry.evening")
+                }
                 date={formData.date}
                 isLoadingEntries={isLoadingEntries}
                 setIsLoadingEntries={setIsLoadingEntries}
             />
 
-            {<UserModal title={t("entry.buyer")} showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
-            {renderEntryOptionsModal()}
-        </>
-    )
-}
 
+            <UserModal
+                title={t("entry.buyer")}
+                showUserSelector={showUserSelector}
+                setShowUserSelector={setShowUserSelector}
+                filteredUser={filteredUser}
+                selectedUser={selectedUser}
+                setSelectedUser={setSelectedUser}
+                updateFormData={updateFormData}
+                weightRef={weightRef}
+            />
+
+        </>
+    );
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -754,7 +607,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     userOptionContentColumn: {
-        flex: 1
+        flex: 1,
     },
     userOptionName: {
         fontSize: 16,
@@ -827,4 +680,4 @@ const styles = StyleSheet.create({
         color: "#64748b",
         fontWeight: "500",
     },
-})
+});

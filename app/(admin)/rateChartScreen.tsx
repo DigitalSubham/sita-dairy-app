@@ -3,7 +3,7 @@ import { RateChartHeader } from "@/components/common/HeaderVarients"
 import { api } from "@/constants/api"
 import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
@@ -36,15 +36,7 @@ export interface ApiResponse {
 
 const RateChartScreen = () => {
     const [rateChart, setRateChart] = useState<RateChartRow[]>([])
-    const [columns, setColumns] = useState<ChartColumn[]>([
-        { key: "fat", label: "Fat %", type: "number", editable: true },
-        { key: "snf8_0", label: "8.0", type: "number", editable: true },
-        { key: "snf8_1", label: "8.1", type: "number", editable: true },
-        { key: "snf8_2", label: "8.2", type: "number", editable: true },
-        { key: "snf8_3", label: "8.3", type: "number", editable: true },
-        { key: "snf8_4", label: "8.4", type: "number", editable: true },
-        { key: "snf8_5", label: "8.5", type: "number", editable: true },
-    ])
+    const [columns, setColumns] = useState<ChartColumn[]>([])
 
     const [loading, setLoading] = useState(false)
     const [editingCell, setEditingCell] = useState<{
@@ -75,12 +67,12 @@ const RateChartScreen = () => {
         const newRow: RateChartRow = {
             id: newId,
             fat: lastRow.fat + 0.1,
-            snf8_0: lastRow.snf8_0 + 1.0,
-            snf8_1: lastRow.snf8_1 + 1.0,
-            snf8_2: lastRow.snf8_2 + 1.0,
-            snf8_3: lastRow.snf8_3 + 1.0,
-            snf8_4: lastRow.snf8_4 + 1.0,
-            snf8_5: lastRow.snf8_5 + 1.0,
+            snf8_0: lastRow.snf8_0 + 1,
+            snf8_1: lastRow.snf8_1 + 1,
+            snf8_2: lastRow.snf8_2 + 1,
+            snf8_3: lastRow.snf8_3 + 1,
+            snf8_4: lastRow.snf8_4 + 1,
+            snf8_5: lastRow.snf8_5 + 1,
         }
 
         setRateChart([...rateChart, newRow])
@@ -155,53 +147,7 @@ const RateChartScreen = () => {
         }
     }
 
-    // Upload Excel file
-    // const uploadExcelFile = async () => {
-    //     try {
-    //         const result = await DocumentPicker.getDocumentAsync({
-    //             type: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"],
-    //             copyToCacheDirectory: true,
-    //         })
 
-    //         if (!result.canceled && result.assets[0]) {
-    //             setLoading(true)
-    //             const file = result.assets[0]
-
-    //             // Create FormData for file upload
-    //             const formData = new FormData()
-    //             formData.append("file", {
-    //                 uri: file.uri,
-    //                 type: file.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    //                 name: file.name,
-    //             } as any)
-
-    //             // Replace with your actual API endpoint
-    //             const response = await fetch("YOUR_API_ENDPOINT/upload-excel", {
-    //                 method: "POST",
-    //                 body: formData,
-    //                 headers: {
-    //                     "Content-Type": "multipart/form-data",
-    //                 },
-    //             })
-
-    //             if (response.ok) {
-    //                 const data = await response.json()
-    //                 Alert.alert("Success", "Excel file uploaded successfully!")
-    //                 // Optionally refresh data from server
-    //                 await fetchDataFromServer()
-    //             } else {
-    //                 throw new Error("Upload failed")
-    //             }
-    //         }
-    //     } catch (error) {
-    //         Alert.alert("Error", "Failed to upload Excel file")
-    //         console.error("Upload error:", error)
-    //     } finally {
-    //         setLoading(false)
-    //     }
-    // }
-
-    // Fetch data from server
     const fetchDataFromServer = async () => {
         const token = await AsyncStorage.getItem("token");
         const parsedToken = token ? JSON.parse(token) : null;
@@ -220,7 +166,8 @@ const RateChartScreen = () => {
             const data = await response.json()
             console.log("data", data)
             if (data.success) {
-                setRateChart(data.data)
+                setRateChart(data.row)
+                setColumns(data.column)
             } else {
                 Alert.alert("Error", data.message || "Failed to fetch data")
             }
@@ -265,18 +212,13 @@ const RateChartScreen = () => {
         }
     }
 
+    useEffect(() => {
+        fetchDataFromServer()
+    }, [])
+
     return (
         <SafeAreaView style={styles.container}>
             <RateChartHeader fetchDataFromServer={fetchDataFromServer} saveDataToServer={saveDataToServer} />
-
-
-            {/* Loading Indicator */}
-            {loading && (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0ea5e9" />
-                    <Text style={styles.loadingText}>Processing...</Text>
-                </View>
-            )}
 
             <View style={styles.controls}>
                 <TouchableOpacity style={styles.controlButton} onPress={addRow}>
@@ -289,12 +231,13 @@ const RateChartScreen = () => {
                     <Text style={styles.controlButtonText}>Column</Text>
                 </TouchableOpacity>
 
-                {/* <TouchableOpacity style={styles.controlButton} onPress={uploadExcelFile}>
-                    <Ionicons name="cloud-upload-outline" size={20} color="#0ea5e9" />
-                    <Text style={styles.controlButtonText}>Excel</Text>
-                </TouchableOpacity> */}
             </View>
-
+            {loading && (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#0ea5e9" />
+                    <Text style={styles.loadingText}>Processing...</Text>
+                </View>
+            )}
             {/* Editable Chart */}
             {rateChart && rateChart.length && <EditableRateChart
                 rateChart={rateChart}
@@ -328,6 +271,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 12,
         marginBottom: 16,
+        marginHorizontal: 16,
     },
     controlButton: {
         flexDirection: "row",

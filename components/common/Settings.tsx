@@ -108,7 +108,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
               <Feather name="info" size={20} color="#6b7280" style={styles.aboutIcon} />
               <View>
                 <Text style={styles.aboutTitle}>{t("settings.version")}</Text>
-                <Text style={styles.aboutDescription}>1.0.0</Text>
+                <Text style={styles.aboutDescription}>1.1.7</Text>
               </View>
             </View>
 
