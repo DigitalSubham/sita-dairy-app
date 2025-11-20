@@ -3,7 +3,8 @@ import { RateChartHeader } from "@/components/common/HeaderVarients"
 import { api } from "@/constants/api"
 import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useEffect, useState } from "react"
+import { useFocusEffect } from "expo-router"
+import { useCallback, useState } from "react"
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
@@ -16,7 +17,7 @@ export interface RateChartRow {
     snf8_3: number
     snf8_4: number
     snf8_5: number
-    [key: string]: string | number // Allow dynamic columns
+    [key: string]: string | number
 }
 
 export interface ChartColumn {
@@ -27,7 +28,7 @@ export interface ChartColumn {
 }
 
 export interface ApiResponse {
-    chart: RateChartRow[]
+    row: RateChartRow[]
     columns: ChartColumn[]
     success: boolean
     message?: string
@@ -131,14 +132,15 @@ const RateChartScreen = () => {
                     text: "Remove",
                     style: "destructive",
                     onPress: () => {
-                        setColumns(columns.filter((col) => col.key !== columnKey))
+                        // remove from columns
+                        setColumns((prev) => prev.filter((col) => col.key !== columnKey))
 
-                        // Remove the column from all rows
-                        const updatedChart = rateChart.map((row) => {
-                            const { [columnKey]: removed, ...rest } = row
-                            return rest
+                        // remove from rows
+                        const updatedChart: RateChartRow[] = rateChart.map((row) => {
+                            const { [columnKey]: _, ...rest } = row
+                            return rest as RateChartRow
                         })
-                        // setRateChart(updatedChart)
+                        setRateChart(updatedChart)
                     },
                 },
             ])
@@ -164,7 +166,7 @@ const RateChartScreen = () => {
             })
 
             const data = await response.json()
-            console.log("data", data)
+
             if (data.success) {
                 setRateChart(data.row)
                 setColumns(data.column)
@@ -212,9 +214,9 @@ const RateChartScreen = () => {
         }
     }
 
-    useEffect(() => {
+    useFocusEffect(useCallback(() => {
         fetchDataFromServer()
-    }, [])
+    }, []))
 
     return (
         <SafeAreaView style={styles.container}>
@@ -239,15 +241,18 @@ const RateChartScreen = () => {
                 </View>
             )}
             {/* Editable Chart */}
-            {rateChart && rateChart.length && <EditableRateChart
-                rateChart={rateChart}
-                columns={columns}
-                editingCell={editingCell}
-                setEditingCell={setEditingCell}
-                handleCellEdit={handleCellEdit}
-                removeRow={removeRow}
-                removeColumn={removeColumn}
-            />}
+            {rateChart.length > 0 ? (
+                <EditableRateChart
+                    rateChart={rateChart}
+                    columns={columns}
+                    editingCell={editingCell}
+                    setEditingCell={setEditingCell}
+                    handleCellEdit={handleCellEdit}
+                    removeRow={removeRow}
+                    removeColumn={removeColumn}
+                />
+            ) : null}
+
         </SafeAreaView>
     )
 }

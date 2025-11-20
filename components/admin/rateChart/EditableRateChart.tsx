@@ -1,8 +1,14 @@
-
-import { Ionicons } from "@expo/vector-icons"
+import { Feather, Ionicons } from "@expo/vector-icons"
 import React, { useState } from "react"
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
-
+import {
+    FlatList,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from "react-native"
 
 export interface RateChartRow {
     id: string
@@ -13,7 +19,7 @@ export interface RateChartRow {
     snf8_3: number
     snf8_4: number
     snf8_5: number
-    [key: string]: string | number // Allow dynamic columns
+    [key: string]: string | number
 }
 
 export interface ChartColumn {
@@ -22,14 +28,6 @@ export interface ChartColumn {
     type: "number" | "text"
     editable: boolean
 }
-
-export interface ApiResponse {
-    chart: RateChartRow[]
-    columns: ChartColumn[]
-    success: boolean
-    message?: string
-}
-
 
 interface EditableRateChartProps {
     rateChart: RateChartRow[]
@@ -60,13 +58,11 @@ const EditableCell: React.FC<EditableCellProps> = ({
     handleCellEdit,
     editable,
 }) => {
-    const [text, setText] = useState(value.toString())
+    const [text, setText] = React.useState(value?.toString() || "")
     const isEditing = editingCell?.rowId === rowId && editingCell?.columnKey === columnKey
 
     React.useEffect(() => {
-        if (!isEditing) {
-            setText(value.toString())
-        }
+        if (!isEditing) setText(value?.toString() || "")
     }, [value, isEditing])
 
     if (isEditing && editable) {
@@ -75,12 +71,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                 style={styles.cellInput}
                 value={text}
                 onChangeText={setText}
-                onBlur={() => {
-                    handleCellEdit(rowId, columnKey, text)
-                }}
-                onSubmitEditing={() => {
-                    handleCellEdit(rowId, columnKey, text)
-                }}
+                onBlur={() => handleCellEdit(rowId, columnKey, text)}
                 keyboardType="decimal-pad"
                 autoFocus
                 selectTextOnFocus
@@ -95,13 +86,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
             disabled={!editable}
         >
             <Text style={[styles.cellText, !editable && styles.cellTextDisabled]}>
-                {value === undefined || value === null
-                    ? ""
-                    : typeof value === "number"
-                        ? value.toFixed(2)
-                        : String(value)}
+                {typeof value === "number" ? value.toFixed(2) : value}
             </Text>
-
         </TouchableOpacity>
     )
 }
@@ -116,204 +102,182 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
     removeColumn,
 }) => {
     const [showColumnActions, setShowColumnActions] = useState<string | null>(null)
-    const [showRowActions, setShowRowActions] = useState<string | null>(null)
 
-    const handleRemoveColumn = (columnKey: string) => {
-        Alert.alert("Remove Column", "Are you sure you want to remove this column?", [
-            { text: "Cancel", style: "cancel" },
-            {
-                text: "Remove",
-                style: "destructive",
-                onPress: () => removeColumn(columnKey),
-            },
-        ])
-        setShowColumnActions(null)
-    }
+    const sortedRateChart = React.useMemo(() => {
+        if (columns.length === 0) return rateChart;
 
-    const handleRemoveRow = (rowId: string) => {
-        Alert.alert("Remove Row", "Are you sure you want to remove this row?", [
-            { text: "Cancel", style: "cancel" },
-            {
-                text: "Remove",
-                style: "destructive",
-                onPress: () => removeRow(rowId),
-            },
-        ])
-        setShowRowActions(null)
+        const firstKey = columns[0].key;
+
+        return [...rateChart].sort((a, b) => {
+            const valA = Number(a[firstKey]) || 0;
+            const valB = Number(b[firstKey]) || 0;
+            return valA - valB;   // ascending
+        });
+    }, [rateChart, columns]);
+
+    const renderRow = ({ item }: { item: any }) => {
+        return (
+            <View style={styles.dataRow}>
+                {columns.map((column) => (
+                    <EditableCell
+                        key={`${item.id}-${column.key}`}
+                        value={item[column.key]}
+                        rowId={item.id}
+                        columnKey={column.key}
+                        editingCell={editingCell}
+                        setEditingCell={setEditingCell}
+                        handleCellEdit={handleCellEdit}
+                        editable={column.editable}
+                    />
+                ))}
+
+                {<View style={styles.actionCell}>
+                    <TouchableOpacity
+                        style={styles.rowActionButton}
+                    // onPress={() => removeRow(item.id)}
+                    >
+                        <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                    </TouchableOpacity>
+                </View>}
+            </View>
+        )
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles.boxContainer}>
+            {/* Horizontal scroll for columns */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.table}>
-                    {/* Header Row */}
+                <View>
+                    {/* HEADER */}
                     <View style={styles.headerRow}>
                         {columns.map((column) => (
-                            <View key={column.key} style={styles.headerCellContainer}>
-                                <TouchableOpacity style={styles.headerCell} onLongPress={() => setShowColumnActions(column.key)}>
-                                    <Text style={styles.headerCellText}>{column.label}</Text>
-                                    {showColumnActions === column.key && (
-                                        <TouchableOpacity style={styles.removeButton} onPress={() => handleRemoveColumn(column.key)}>
-                                            <Ionicons name="close-circle" size={16} color="#ef4444" />
-                                        </TouchableOpacity>
-                                    )}
-                                </TouchableOpacity>
-                            </View>
+                            <TouchableOpacity
+                                key={column.key}
+                                style={styles.headerCell}
+                            // onLongPress={() => setShowColumnActions(column.key)}
+                            >
+                                <Text style={styles.headerText}>{column.label}</Text>
+
+                                {showColumnActions === column.key && (
+                                    <TouchableOpacity
+                                        style={styles.removeButton}
+                                    // onPress={() => removeColumn(column.key)}
+                                    >
+                                        <Ionicons name="close-circle" size={16} color="#ef4444" />
+                                    </TouchableOpacity>
+                                )}
+                                {column.key === "snf8_5" && (
+                                    <TouchableOpacity
+                                        style={styles.removeButton}
+                                    // onPress={() => removeColumn(column.key)}
+                                    >
+                                        <Feather name="plus-circle" size={16} color="#44ef52ff" />
+                                    </TouchableOpacity>
+                                )}
+                            </TouchableOpacity>
                         ))}
+
                         <View style={styles.headerCell}>
-                            <Text style={styles.headerCellText}>Actions</Text>
+                            <Text style={styles.headerText}>Actions</Text>
                         </View>
                     </View>
 
-                    {/* Data Rows */}
-                    <ScrollView style={styles.dataContainer}>
-                        {rateChart.map((row) => (
-                            <View key={row.id} style={styles.dataRow}>
-                                {columns.map((column) => (
-                                    <EditableCell
-                                        key={`${row.id}-${column.key}`}
-                                        value={row[column.key] as number}
-                                        rowId={row.id}
-                                        columnKey={column.key}
-                                        editingCell={editingCell}
-                                        setEditingCell={setEditingCell}
-                                        handleCellEdit={handleCellEdit}
-                                        editable={column.editable}
-                                    />
-                                ))}
-                                <View style={styles.actionCell}>
-                                    <TouchableOpacity style={styles.rowActionButton} onPress={() => handleRemoveRow(row.id)}>
-                                        <Ionicons name="trash-outline" size={16} color="#ef4444" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ))}
-                    </ScrollView>
+                    {/* VERTICAL LIST (inside fixed-height box) */}
+                    <FlatList
+                        data={sortedRateChart}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderRow}
+                        nestedScrollEnabled
+                        style={styles.list}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                    />
                 </View>
             </ScrollView>
-
-            {/* Instructions */}
-            <View style={styles.instructions}>
-                <Text style={styles.instructionText}>
-                    💡 Tap any cell to edit • Long press column headers to remove columns • Use action buttons to remove rows
-                </Text>
-            </View>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "white",
+    boxContainer: {
+        height: "80%",
+        backgroundColor: "#fff",
+        margin: 16,
         borderRadius: 12,
         overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
         elevation: 3,
-        marginBottom: 32,
-        marginHorizontal: 16,
-    },
-    table: {
-        minWidth: "100%",
     },
     headerRow: {
         flexDirection: "row",
         backgroundColor: "#0ea5e9",
     },
-    headerCellContainer: {
-        position: "relative",
-    },
     headerCell: {
         width: 100,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
-        justifyContent: "center",
-        alignItems: "center",
+        padding: 14,
         borderRightWidth: 1,
-        borderRightColor: "rgba(255, 255, 255, 0.2)",
+        borderRightColor: "#38bdf8",
+        alignItems: "center",
+        justifyContent: "center",
     },
-    headerCellText: {
+    headerText: {
         color: "white",
-        fontWeight: "bold",
-        fontSize: 14,
-        textAlign: "center",
+        fontWeight: "600",
     },
     removeButton: {
         position: "absolute",
-        top: 2,
-        right: 2,
+        top: 4,
+        right: 4,
         backgroundColor: "white",
-        borderRadius: 8,
         padding: 2,
-    },
-    dataContainer: {
-        flex: 1,
+        borderRadius: 10,
     },
     dataRow: {
         flexDirection: "row",
         borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
+        borderBottomColor: "#e5e7eb",
     },
     cellTouchable: {
         width: 100,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
-        justifyContent: "center",
+        padding: 14,
         alignItems: "center",
+        justifyContent: "center",
         borderRightWidth: 1,
-        borderRightColor: "#e2e8f0",
-        backgroundColor: "white",
+        borderRightColor: "#e5e7eb",
     },
     cellDisabled: {
         backgroundColor: "#f8fafc",
     },
     cellText: {
         fontSize: 14,
-        color: "#334155",
-        textAlign: "center",
+        color: "#1e293b",
     },
     cellTextDisabled: {
         color: "#94a3b8",
     },
     cellInput: {
         width: 100,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
+        padding: 14,
         fontSize: 14,
-        color: "#334155",
-        textAlign: "center",
         backgroundColor: "#f0f9ff",
+        textAlign: "center",
         borderWidth: 2,
         borderColor: "#0ea5e9",
     },
     actionCell: {
         width: 100,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
         justifyContent: "center",
         alignItems: "center",
-        borderRightWidth: 1,
-        borderRightColor: "#e2e8f0",
+        borderLeftWidth: 1,
+        borderLeftColor: "#e5e7eb",
     },
     rowActionButton: {
         padding: 8,
+        backgroundColor: "#fee2e2",
         borderRadius: 6,
-        backgroundColor: "#fef2f2",
     },
-    instructions: {
-        backgroundColor: "#fef3c7",
-        padding: 16,
-        borderTopWidth: 1,
-        borderTopColor: "#fbbf24",
-    },
-    instructionText: {
-        color: "#92400e",
-        fontSize: 12,
-        textAlign: "center",
-        lineHeight: 16,
+    list: {
+        maxHeight: "100%", // inside the 400 px box (header + content)
     },
 })
 
