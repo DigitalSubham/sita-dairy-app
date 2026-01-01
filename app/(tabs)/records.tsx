@@ -1,18 +1,21 @@
+import DataCard from "@/components/admin/milkRecords/DataCard";
+import ShiftModal from "@/components/admin/milkRecords/ShiftModal";
+import FilterChip from "@/components/common/Chips";
 import { FarmerRecordsHeader } from "@/components/common/HeaderVarients";
+import RenderSummary from "@/components/common/RenderSummary";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import { FilterParams, MilkRecord, ShiftType } from "@/constants/types";
+import { buildMarkedRange } from "@/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format, subDays } from "date-fns";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Dimensions,
   FlatList,
-  Image,
   Modal,
   RefreshControl,
   ScrollView,
@@ -20,10 +23,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -42,49 +44,25 @@ export default function EnhancedCustomerMilkRecords() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter states
-  const [selectedUser, setSelectedUser] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [selectedShift, setSelectedShift] = useState<
     ShiftType | ""
   >("");
 
-  // Calendar selection state
-  const [calendarMode, setCalendarMode] = useState<"single" | "range">(
-    "single"
-  );
   const [markedDates, setMarkedDates] = useState<any>({});
-
-  // Modal states
-  const [showDateModal, setShowDateModal] = useState(false);
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
 
-  const [summary, setSummary] = useState({
-    totalQuantity: 0,
-    totalAmount: 0,
-    morningQuantity: 0,
-    eveningQuantity: 0,
-    averageFat: 0,
-    averageSNF: 0,
-    totalEntries: 0,
-  });
-
-  // Initialize with today's date
   useEffect(() => {
-    const today = format(new Date(), "yyyy-MM-dd");
-    setSelectedDate(today);
+    const end = format(subDays(new Date(), 1), "yyyy-MM-dd");
+    const start = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
-    // Mark today's date in calendar
-    setMarkedDates({
-      [today]: { selected: true, selectedColor: "#0ea5e9" },
-    });
+    setStartDate(start);
+    setEndDate(end);
+    setMarkedDates(buildMarkedRange(start, end)); // ✅ KEY LINE
 
-    const endDate = format(subDays(new Date(), 1), "yyyy-MM-dd");      // yesterday
-    const startDate = format(subDays(new Date(), 7), "yyyy-MM-dd");    // 7 days ago from today
-
-    fetchEntries({ startDate, endDate });
+    fetchEntries({ startDate: start, endDate: end });
   }, []);
 
   // Client-side search on current data
@@ -133,6 +111,7 @@ export default function EnhancedCustomerMilkRecords() {
       if (filters.date) queryParams.append("date", filters.date);
       if (filters.userId) queryParams.append("userId", filters.userId);
       if (filters.shift) queryParams.append("shift", filters.shift);
+      console.log("filters", filters)
 
       const response = await fetch(`${api.getRecords}?${queryParams}`, {
         method: "GET",
@@ -145,7 +124,6 @@ export default function EnhancedCustomerMilkRecords() {
 
       setAllEntries(recordsData);
       setFilteredEntries(recordsData);
-      calculateSummary(recordsData);
     } catch (error) {
       console.error("Failed to fetch entries:", error);
       Alert.alert("Error", "Failed to fetch entries");
@@ -155,55 +133,7 @@ export default function EnhancedCustomerMilkRecords() {
     }
   };
 
-  // Calculate comprehensive summary
-  const calculateSummary = (recordsData: MilkRecord[]) => {
-    const totalQuantity = recordsData.reduce(
-      (sum, record) => sum + Number.parseFloat(record.weight),
-      0
-    );
-    const totalAmount = recordsData.reduce(
-      (sum, record) => sum + Number.parseFloat(record.price),
-      0
-    );
-    const morningRecords = recordsData.filter(
-      (record) => record.shift === "Morning"
-    );
-    const eveningRecords = recordsData.filter(
-      (record) => record.shift === "Evening"
-    );
-    const morningQuantity = morningRecords.reduce(
-      (sum, record) => sum + Number.parseFloat(record.weight),
-      0
-    );
-    const eveningQuantity = eveningRecords.reduce(
-      (sum, record) => sum + Number.parseFloat(record.weight),
-      0
-    );
-    const averageFat =
-      recordsData.length > 0
-        ? recordsData.reduce(
-          (sum, record) => sum + Number.parseFloat(record.fat || "0"),
-          0
-        ) / recordsData.length
-        : 0;
-    const averageSNF =
-      recordsData.length > 0
-        ? recordsData.reduce(
-          (sum, record) => sum + Number.parseFloat(record.snf!),
-          0
-        ) / recordsData.length
-        : 0;
 
-    setSummary({
-      totalQuantity,
-      totalAmount,
-      morningQuantity,
-      eveningQuantity,
-      averageFat,
-      averageSNF,
-      totalEntries: recordsData.length,
-    });
-  };
 
   // Apply filters with button click
   const applyFilters = () => {
@@ -212,11 +142,8 @@ export default function EnhancedCustomerMilkRecords() {
     if (startDate && endDate) {
       filters.startDate = startDate;
       filters.endDate = endDate;
-    } else if (selectedDate) {
-      filters.date = selectedDate;
     }
 
-    if (selectedUser) filters.userId = selectedUser;
     if (selectedShift) filters.shift = selectedShift;
 
     if (Object.keys(filters).length > 0) {
@@ -224,32 +151,20 @@ export default function EnhancedCustomerMilkRecords() {
     }
   };
 
-  // Reset all filters
-  const resetFilters = () => {
-    setSelectedUser("");
-    setSelectedDate("");
-    setStartDate("");
-    setEndDate("");
-    setSelectedShift("");
-    setSearchQuery("");
-
-    // Reset calendar marked dates
-    const today = format(new Date(), "yyyy-MM-dd");
-    setMarkedDates({
-      [today]: { selected: true, selectedColor: "#0ea5e9" },
-    });
-    setSelectedDate(today);
-  };
-
   // Clear all filters and fetch today's data
   const clearFilters = () => {
-    resetFilters();
-    const endDate = format(subDays(new Date(), 1), "yyyy-MM-dd");      // yesterday
-    const startDate = format(subDays(new Date(), 7), "yyyy-MM-dd");    // 7 days ago from today
+    const end = format(subDays(new Date(), 1), "yyyy-MM-dd");
+    const start = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
-    fetchEntries({ startDate, endDate });
+    setSearchQuery("");
+    setSelectedShift("");
+
+    setStartDate(start);
+    setEndDate(end);
+    setMarkedDates(buildMarkedRange(start, end));
+
+    fetchEntries({ startDate: start, endDate: end });
   };
-
   // Refresh functionality
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -258,15 +173,12 @@ export default function EnhancedCustomerMilkRecords() {
     if (startDate && endDate) {
       filters.startDate = startDate;
       filters.endDate = endDate;
-    } else if (selectedDate) {
-      filters.date = selectedDate;
     }
 
-    if (selectedUser) filters.userId = selectedUser;
     if (selectedShift) filters.shift = selectedShift;
 
     fetchEntries(filters);
-  }, [selectedDate, startDate, endDate, selectedUser, selectedShift]);
+  }, [startDate, endDate, selectedShift]);
 
   useFocusEffect(
     useCallback(() => {
@@ -276,217 +188,67 @@ export default function EnhancedCustomerMilkRecords() {
 
   // Handle calendar date selection
   const handleDateSelect = (day: any) => {
-    if (calendarMode === "single") {
-      const selectedDay = day.dateString;
-      setSelectedDate(selectedDay);
-      setStartDate("");
+    // Range selection logic
+    if (!startDate || (startDate && endDate)) {
+      // Start new range
+      setStartDate(day.dateString);
       setEndDate("");
       setMarkedDates({
-        [selectedDay]: { selected: true, selectedColor: "#0ea5e9" },
+        [day.dateString]: {
+          startingDay: true,
+          selected: true,
+          color: "#0ea5e9",
+        },
       });
-      setShowDateModal(false);
     } else {
-      // Range selection logic
-      if (!startDate || (startDate && endDate)) {
-        // Start new range
-        setStartDate(day.dateString);
-        setEndDate("");
-        setMarkedDates({
-          [day.dateString]: {
-            startingDay: true,
-            selected: true,
-            color: "#0ea5e9",
-          },
-        });
-      } else {
-        // Complete the range
-        let start = new Date(startDate);
-        let end = new Date(day.dateString);
+      // Complete the range
+      let start = new Date(startDate);
+      let end = new Date(day.dateString);
 
-        // Swap if end date is before start date
-        if (end < start) {
-          const temp = start;
-          start = end;
-          end = temp;
-          setStartDate(format(start, "yyyy-MM-dd"));
-        }
-
-        setEndDate(format(end, "yyyy-MM-dd"));
-
-        // Mark all days in the range
-        const markedDatesObj: any = {};
-        const currentDate = new Date(start);
-
-        while (currentDate <= end) {
-          const dateString = format(currentDate, "yyyy-MM-dd");
-
-          if (dateString === format(start, "yyyy-MM-dd")) {
-            markedDatesObj[dateString] = {
-              startingDay: true,
-              color: "#0ea5e9",
-              textColor: "white",
-            };
-          } else if (dateString === format(end, "yyyy-MM-dd")) {
-            markedDatesObj[dateString] = {
-              endingDay: true,
-              color: "#0ea5e9",
-              textColor: "white",
-            };
-          } else {
-            markedDatesObj[dateString] = {
-              color: "#bae6fd",
-              textColor: "#0369a1",
-            };
-          }
-
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        setMarkedDates(markedDatesObj);
-        setSelectedDate("");
-        setShowDateRangeModal(false);
+      // Swap if end date is before start date
+      if (end < start) {
+        const temp = start;
+        start = end;
+        end = temp;
+        setStartDate(format(start, "yyyy-MM-dd"));
       }
+
+      setEndDate(format(end, "yyyy-MM-dd"));
+
+      // Mark all days in the range
+      const markedDatesObj: any = {};
+      const currentDate = new Date(start);
+
+      while (currentDate <= end) {
+        const dateString = format(currentDate, "yyyy-MM-dd");
+
+        if (dateString === format(start, "yyyy-MM-dd")) {
+          markedDatesObj[dateString] = {
+            startingDay: true,
+            color: "#0ea5e9",
+            textColor: "white",
+          };
+        } else if (dateString === format(end, "yyyy-MM-dd")) {
+          markedDatesObj[dateString] = {
+            endingDay: true,
+            color: "#0ea5e9",
+            textColor: "white",
+          };
+        } else {
+          markedDatesObj[dateString] = {
+            color: "#bae6fd",
+            textColor: "#0369a1",
+          };
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      setMarkedDates(markedDatesObj);
+      setShowDateRangeModal(false);
     }
   };
 
-
-  // Render compact filter chip
-  const FilterChip = ({
-    title,
-    isActive,
-    onPress,
-    icon,
-  }: {
-    title: string;
-    isActive: boolean;
-    onPress: () => void;
-    icon: string;
-  }) => (
-    <TouchableOpacity
-      style={[styles.filterChip, isActive && styles.activeFilterChip]}
-      onPress={onPress}
-    >
-      <MaterialIcons
-        name={icon as any}
-        size={16}
-        color={isActive ? "#fff" : "#0ea5e9"}
-      />
-      <Text
-        style={[styles.filterChipText, isActive && styles.activeFilterChipText]}
-      >
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-
-
-  // Render entry card with enhanced design
-  const renderEntry = ({
-    item,
-    index,
-  }: {
-    item: MilkRecord;
-    index: number;
-  }) => (
-    <Animated.View
-      entering={FadeInDown.delay(index * 50).duration(400)}
-      style={styles.entryCard}
-    >
-      <View style={styles.entryHeader}>
-        <Text style={styles.entryDate}>
-          {format(new Date(item.date), "dd MMM")}
-        </Text>
-        <View
-          style={[
-            styles.shiftBadge,
-            item.shift === "Morning"
-              ? styles.morningBadge
-              : styles.eveningBadge,
-          ]}
-        >
-          <Text style={styles.shiftText}>{item.shift[0]}</Text>
-        </View>
-      </View>
-
-      <View style={styles.userRow}>
-        <Image
-          source={{
-            uri: item?.byUser?.profilePic ?? "https://ui-avatars.com/api/?name=" +
-              encodeURIComponent(item?.byUser?.name ?? "User")
-          }}
-          style={styles.userAvatar}
-        />
-        <Text style={styles.userName} numberOfLines={1}>
-          {item.byUser.name}
-        </Text>
-      </View>
-
-      <Text style={styles.recordTime}>
-        {format(new Date(item.createdAt), "hh:mm a")}
-      </Text>
-
-      <View style={styles.entryDetails}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailValue}>{item.weight}L</Text>
-          <Text style={styles.detailValue}>{item.fat || "N/A"}%</Text>
-          <Text style={styles.detailValue}>{item.snf}%</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Weight</Text>
-          <Text style={styles.detailLabel}>Fat</Text>
-          <Text style={styles.detailLabel}>SNF</Text>
-        </View>
-      </View>
-
-      <View style={styles.totalContainer}>
-        <Text style={styles.rateText}>₹{item.rate}/L</Text>
-        <Text style={styles.totalText}>₹{item.price}</Text>
-      </View>
-    </Animated.View>
-  );
-
-  // Enhanced summary with more metrics
-  const renderSummary = () => (
-    <Animated.View
-      entering={FadeInDown.delay(100).duration(400)}
-      style={styles.summaryWrapper}
-    >
-      <LinearGradient
-        colors={["#0ea5e9", "#0284c7"]}
-        style={styles.summaryContainer}
-      >
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>{summary.totalEntries}</Text>
-          <Text style={styles.summaryLabel}>Entries</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>
-            ₹{summary.totalAmount.toFixed(0)}
-          </Text>
-          <Text style={styles.summaryLabel}>Amount</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>
-            {summary.totalQuantity.toFixed(1)}L
-          </Text>
-          <Text style={styles.summaryLabel}>Weight</Text>
-        </View>
-      </LinearGradient>
-
-      {/* Additional metrics row */}
-      {/* <View style={styles.additionalMetrics}>
-        <Text style={styles.additionalMetricsText}>
-          M: {summary.morningQuantity.toFixed(1)}L • E:{" "}
-          {summary.eveningQuantity.toFixed(1)}L • Avg Fat:{" "}
-          {summary.averageFat.toFixed(1)}% • Avg SNF:{" "}
-          {summary.averageSNF.toFixed(1)}%
-        </Text>
-      </View> */}
-    </Animated.View>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -521,17 +283,6 @@ export default function EnhancedCustomerMilkRecords() {
         >
           <FilterChip
             title={
-              selectedDate ? format(new Date(selectedDate), "dd MMM") : "Date"
-            }
-            isActive={!!selectedDate}
-            onPress={() => {
-              setCalendarMode("single");
-              setShowDateModal(true);
-            }}
-            icon="today"
-          />
-          <FilterChip
-            title={
               startDate && endDate
                 ? `${format(new Date(startDate), "dd MMM")} - ${format(
                   new Date(endDate),
@@ -541,7 +292,6 @@ export default function EnhancedCustomerMilkRecords() {
             }
             isActive={!!(startDate && endDate)}
             onPress={() => {
-              setCalendarMode("range");
               setShowDateRangeModal(true);
             }}
             icon="date-range"
@@ -569,7 +319,7 @@ export default function EnhancedCustomerMilkRecords() {
       </View>
 
       {/* Enhanced Summary */}
-      {renderSummary()}
+      <RenderSummary filteredEntries={filteredEntries} />
 
       {/* Loading Indicator */}
       {loading && (
@@ -583,7 +333,8 @@ export default function EnhancedCustomerMilkRecords() {
       {!loading && (
         <FlatList
           data={filteredEntries}
-          renderItem={renderEntry}
+          renderItem={({ item }) => <DataCard item={item} />}
+
           keyExtractor={(item) => item._id}
           numColumns={2}
           columnWrapperStyle={styles.entryRow}
@@ -607,38 +358,6 @@ export default function EnhancedCustomerMilkRecords() {
           }
         />
       )}
-
-      {/* Date Selection Modal with Calendar */}
-      <Modal visible={showDateModal} transparent animationType="fade" statusBarTranslucent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.calendarModalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date</Text>
-              <TouchableOpacity onPress={() => setShowDateModal(false)}>
-                <MaterialIcons name="close" size={20} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-
-            <Calendar
-              onDayPress={handleDateSelect}
-              markedDates={markedDates}
-              theme={{
-                todayTextColor: "#0ea5e9",
-                arrowColor: "#0ea5e9",
-                dotColor: "#0ea5e9",
-                selectedDayBackgroundColor: "#0ea5e9",
-              }}
-            />
-
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setShowDateModal(false)}
-            >
-              <Text style={styles.modalButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Date Range Modal with Calendar */}
       <Modal visible={showDateRangeModal} transparent animationType="fade" statusBarTranslucent={true}>
@@ -713,34 +432,8 @@ export default function EnhancedCustomerMilkRecords() {
         </View>
       </Modal>
 
-      {/* Shift Selection Modal */}
-      <Modal visible={showShiftModal} transparent animationType="fade" statusBarTranslucent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Shift</Text>
-              <TouchableOpacity onPress={() => setShowShiftModal(false)}>
-                <MaterialIcons name="close" size={20} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-            {["", "Morning", "Evening"].map((shift) => (
-              <TouchableOpacity
-                key={shift}
-                style={[
-                  styles.optionItem,
-                  selectedShift === shift && styles.selectedOption,
-                ]}
-                onPress={() => {
-                  setSelectedShift(shift as any);
-                  setShowShiftModal(false);
-                }}
-              >
-                <Text style={styles.optionText}>{shift || "All Shifts"}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
+      <ShiftModal selectedShift={selectedShift} setSelectedShift={setSelectedShift} setShowShiftModal={setShowShiftModal} showShiftModal={showShiftModal} />
+
     </SafeAreaView>
   );
 }

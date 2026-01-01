@@ -123,3 +123,24 @@ export const sortByPosition = (list: Customer[]) =>
     if (b.positionNo === undefined) return -1;
     return a.positionNo - b.positionNo;
   });
+
+export const buildMarkedRange = (start: string, end: string) => {
+  const marked: any = {};
+  let current = new Date(start);
+  const last = new Date(end);
+
+  while (current <= last) {
+    const dateStr = format(current, "yyyy-MM-dd");
+
+    marked[dateStr] = {
+      color: "#0ea5e9",
+      textColor: "white",
+      ...(dateStr === start && { startingDay: true }),
+      ...(dateStr === end && { endingDay: true }),
+    };
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return marked;
+};

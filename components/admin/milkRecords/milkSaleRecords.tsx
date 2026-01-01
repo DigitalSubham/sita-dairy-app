@@ -1,17 +1,17 @@
+import FilterChip from "@/components/common/Chips";
 import RenderDeleteModal from "@/components/common/DeleteModal";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
+import { MilkEntry, ShiftType } from "@/constants/types";
 import useCustomers from "@/hooks/useCustomer";
 import { setRecordData } from "@/store/recordSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
     Alert,
-    Dimensions,
     FlatList,
     Image,
     Modal,
@@ -20,31 +20,15 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Toast from "react-native-toast-message";
 import { useDispatch } from "react-redux";
+import RenderSummary from "../../common/RenderSummary";
+import DataCard from "./DataCard";
+import ShiftModal from "./ShiftModal";
 
-const { width } = Dimensions.get("window");
-
-interface MilkEntry {
-    _id: string;
-    byUser: {
-        _id: string;
-        name: string;
-        profilePic?: string;
-    };
-    date: string;
-    shift: "Morning" | "Evening";
-    weight: string;
-    fat?: string;
-    snf: string;
-    rate: string;
-    price: string;
-    onEdit?: (item: MilkEntry) => void;
-    onDelete?: (item: MilkEntry) => void;
-}
 
 interface FilterParams {
     startDate?: string;
@@ -71,7 +55,7 @@ export default function MilkSaleRecords() {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [selectedShift, setSelectedShift] = useState<
-        "Morning" | "Evening" | ""
+        ShiftType | ""
     >("");
 
     // Calendar selection state
@@ -118,7 +102,7 @@ export default function MilkSaleRecords() {
                     .includes(searchLower) ||
                 entry.shift.toLowerCase().includes(searchLower) ||
                 entry.weight.includes(searchQuery) ||
-                entry.snf.includes(searchQuery) ||
+                entry.snf && entry.snf.includes(searchQuery) ||
                 entry.rate.includes(searchQuery) ||
                 entry.price.includes(searchQuery) ||
                 (entry.fat && entry.fat.includes(searchQuery))
@@ -237,8 +221,8 @@ export default function MilkSaleRecords() {
         }
     };
 
-    // Reset all filters
-    const resetFilters = () => {
+    // Clear all filters and fetch today's data
+    const clearFilters = () => {
         setSelectedUser("");
         setSelectedDate("");
         setStartDate("");
@@ -252,12 +236,6 @@ export default function MilkSaleRecords() {
             [today]: { selected: true, selectedColor: "#0ea5e9" },
         });
         setSelectedDate(today);
-    };
-
-    // Clear all filters and fetch today's data
-    const clearFilters = () => {
-        resetFilters();
-        const today = format(new Date(), "yyyy-MM-dd");
         fetchEntries({ date: today });
     };
 
@@ -348,132 +326,6 @@ export default function MilkSaleRecords() {
         return user ? user.name.split(" ")[0] : "User";
     };
 
-    // Render compact filter chip
-    const FilterChip = ({
-        title,
-        isActive,
-        onPress,
-        icon,
-    }: {
-        title: string;
-        isActive: boolean;
-        onPress: () => void;
-        icon: string;
-    }) => (
-        <TouchableOpacity
-            style={[styles.filterChip, isActive && styles.activeFilterChip]}
-            onPress={onPress}
-        >
-            <MaterialIcons
-                name={icon as any}
-                size={16}
-                color={isActive ? "#fff" : "#0ea5e9"}
-            />
-            <Text
-                style={[styles.filterChipText, isActive && styles.activeFilterChipText]}
-            >
-                {title}
-            </Text>
-        </TouchableOpacity>
-    );
-
-
-    // Render entry card
-    const renderEntry = ({ item }: { item: MilkEntry }) => (
-        <View style={styles.entryCard}>
-            <View style={styles.entryHeader}>
-                <Text style={styles.entryDate}>
-                    {format(new Date(item.date), "dd MMM")}
-                </Text>
-                <View
-                    style={[
-                        styles.shiftBadge,
-                        item.shift === "Morning"
-                            ? styles.morningBadge
-                            : styles.eveningBadge,
-                    ]}
-                >
-                    <Text style={styles.shiftText}>{item.shift[0]}</Text>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => {
-                        setSelectedItem(item._id);
-                        setShowDeleteModal(true);
-                    }}
-                >
-                    <MaterialIcons name="delete" size={16} color="#ef4444" />
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.userRow}>
-                <Image
-                    source={{
-                        uri: item?.byUser?.profilePic ?? "https://ui-avatars.com/api/?name=" +
-                            encodeURIComponent(item?.byUser?.name ?? "User"),
-                    }}
-                    style={styles.userAvatar}
-                />
-                <Text style={styles.userName} numberOfLines={1}>
-                    {item.byUser.name}
-                </Text>
-            </View>
-
-            <View style={styles.entryDetails}>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailValue}>{item.weight}L</Text>
-                    {item.fat && <Text style={styles.detailValue}>{item.fat || "N/A"}%</Text>}
-                    {item.snf && <Text style={styles.detailValue}>{item.snf}%</Text>}
-                </View>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Weight</Text>
-                    {item.fat && <Text style={styles.detailLabel}>Fat</Text>}
-                    {item.snf && <Text style={styles.detailLabel}>SNF</Text>}
-                </View>
-            </View>
-
-            <View style={styles.totalContainer}>
-                <Text style={styles.rateText}>₹{item.rate}/L</Text>
-                <Text style={styles.totalText}>₹{item.price}</Text>
-            </View>
-        </View>
-    );
-
-    // Render summary
-    const renderSummary = () => {
-        const totalEntries = filteredEntries.length;
-        const totalAmount = filteredEntries.reduce(
-            (sum, entry) => sum + parseFloat(entry.price),
-            0
-        );
-        const totalWeight = filteredEntries.reduce(
-            (sum, entry) => sum + parseFloat(entry.weight),
-            0
-        );
-
-        return (
-            <LinearGradient
-                colors={["#0ea5e9", "#0284c7"]}
-                style={styles.summaryContainer}
-            >
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>{totalEntries}</Text>
-                    <Text style={styles.summaryLabel}>Entries</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>₹{totalAmount.toFixed(0)}</Text>
-                    <Text style={styles.summaryLabel}>Amount</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>{totalWeight.toFixed(1)}L</Text>
-                    <Text style={styles.summaryLabel}>Weight</Text>
-                </View>
-            </LinearGradient>
-        );
-    };
 
     return (
         < >
@@ -562,7 +414,7 @@ export default function MilkSaleRecords() {
             </View>
 
             {/* Summary */}
-            {renderSummary()}
+            <RenderSummary filteredEntries={filteredEntries} />
 
             {/* Loading Indicator */}
             {loading && (
@@ -576,7 +428,7 @@ export default function MilkSaleRecords() {
             {!loading && (
                 <FlatList
                     data={filteredEntries}
-                    renderItem={renderEntry}
+                    renderItem={({ item }) => <DataCard item={item} setSelectedItem={setSelectedItem} setShowDeleteModal={setShowDeleteModal} />}
                     keyExtractor={(item) => item._id}
                     numColumns={2}
                     columnWrapperStyle={styles.entryRow}
@@ -754,34 +606,7 @@ export default function MilkSaleRecords() {
                 </View>
             </Modal>
 
-            {/* Shift Selection Modal */}
-            <Modal visible={showShiftModal} transparent animationType="fade" statusBarTranslucent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Shift</Text>
-                            <TouchableOpacity onPress={() => setShowShiftModal(false)}>
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
-                        {["", "Morning", "Evening"].map((shift) => (
-                            <TouchableOpacity
-                                key={shift}
-                                style={[
-                                    styles.optionItem,
-                                    selectedShift === shift && styles.selectedOption,
-                                ]}
-                                onPress={() => {
-                                    setSelectedShift(shift as any);
-                                    setShowShiftModal(false);
-                                }}
-                            >
-                                <Text style={styles.optionText}>{shift || "All Shifts"}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            </Modal>
+            <ShiftModal selectedShift={selectedShift} setSelectedShift={setSelectedShift} setShowShiftModal={setShowShiftModal} showShiftModal={showShiftModal} />
 
             {selectedItem && (
                 <RenderDeleteModal
@@ -842,29 +667,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         gap: 8,
     },
-    filterChip: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#f8fafc",
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-        borderRadius: 16,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        gap: 4,
-    },
-    activeFilterChip: {
-        backgroundColor: "#0ea5e9",
-        borderColor: "#0ea5e9",
-    },
-    filterChipText: {
-        fontSize: 12,
-        color: "#64748b",
-        fontWeight: "500",
-    },
-    activeFilterChipText: {
-        color: "#fff",
-    },
+
     actionButtonsContainer: {
         flexDirection: "row",
         paddingHorizontal: 16,
@@ -908,33 +711,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
     },
-    summaryContainer: {
-        flexDirection: "row",
-        marginHorizontal: 16,
-        marginVertical: 12,
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-    },
-    summaryItem: {
-        flex: 1,
-        alignItems: "center",
-    },
-    summaryValue: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    summaryLabel: {
-        color: "rgba(255, 255, 255, 0.9)",
-        fontSize: 10,
-        marginTop: 2,
-    },
-    summaryDivider: {
-        width: 1,
-        backgroundColor: "rgba(255, 255, 255, 0.3)",
-        marginHorizontal: 12,
-    },
+
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
@@ -952,114 +729,6 @@ const styles = StyleSheet.create({
     entryRow: {
         justifyContent: "space-between",
         paddingHorizontal: 4,
-    },
-    entryCard: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 8,
-        width: (width - 32) / 2,
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-    },
-    entryHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 6,
-    },
-    entryDate: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#334155",
-    },
-    shiftBadge: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    morningBadge: {
-        backgroundColor: "#fef3c7",
-    },
-    eveningBadge: {
-        backgroundColor: "#ddd6fe",
-    },
-    shiftText: {
-        fontSize: 10,
-        fontWeight: "bold",
-        color: "#374151",
-    },
-    actionButtons: {
-        flexDirection: "row",
-        marginLeft: "auto",
-    },
-    actionButton: {
-        padding: 6,
-        marginLeft: 8,
-    },
-    actionButtonIcon: {
-        fontSize: 16,
-    },
-    userRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 8,
-        gap: 6,
-    },
-    userAvatar: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-    },
-    userName: {
-        fontSize: 11,
-        color: "#64748b",
-        flex: 1,
-        backgroundColor: "#f1f5f9",
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    entryDetails: {
-        marginBottom: 8,
-    },
-    detailRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-    },
-    detailValue: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: "#334155",
-        flex: 1,
-        textAlign: "center",
-    },
-    detailLabel: {
-        fontSize: 9,
-        color: "#64748b",
-        flex: 1,
-        textAlign: "center",
-        marginTop: 2,
-    },
-    totalContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        backgroundColor: "#ecfdf5",
-        padding: 6,
-        borderRadius: 4,
-    },
-    rateText: {
-        fontSize: 10,
-        color: "#059669",
-        fontWeight: "500",
-    },
-    totalText: {
-        fontSize: 12,
-        fontWeight: "bold",
-        color: "#059669",
     },
     emptyContainer: {
         alignItems: "center",

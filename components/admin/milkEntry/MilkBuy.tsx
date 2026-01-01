@@ -33,8 +33,6 @@ export default function MilkBuyEntry() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [todayEntries, setTodayEntries] = useState<MilkEntry[]>([]);
     const [isLoadingEntries, setIsLoadingEntries] = useState(false);
-    const [showOptionsModal, setShowOptionsModal] = useState(false);
-    const [selectedEntry, setSelectedEntry] = useState<MilkEntry | null>(null);
     const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null);
     const { customers, token } = useCustomers({ role: "Farmer" });
     const weightRef = useRef<TextInput>(null);
@@ -195,24 +193,6 @@ export default function MilkBuyEntry() {
         }
     };
 
-    // Handle edit entry
-    const handleEditEntry = (entry: MilkEntry) => {
-        setEditingEntry(entry);
-        const user = customers.find((c) => c._id === entry.byUser._id);
-        setSelectedUser(user || null);
-        setFormData({
-            userId: entry.byUser._id,
-            weight: entry.weight.toString(),
-            fat: entry.fat?.toString() ?? "",
-            snf: entry.snf?.toString() ?? "",
-            rate: entry.rate.toString(),
-            date: entry.date,
-            shift: entry.shift,
-            milkType: entry.milkType,
-        });
-        setShowOptionsModal(false);
-    };
-
     const existingUserIds: string[] =
         Array.isArray(todayEntries) && todayEntries.length > 0
             ? todayEntries.map((entry) => entry?.byUser?._id)
@@ -240,8 +220,6 @@ export default function MilkBuyEntry() {
                 setShowUserSelector={setShowUserSelector}
                 weightRef={weightRef}
                 handleSubmit={handleSubmit}
-                resetForm={resetForm}
-                calculateTotal={calculateTotal}
                 isSubmitting={isSubmitting}
             />
 

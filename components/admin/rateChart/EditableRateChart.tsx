@@ -1,17 +1,19 @@
-import { Feather, Ionicons } from "@expo/vector-icons"
-import React, { useState } from "react"
+import { editingCell, EditingHeader } from "@/app/(admin)/rateChartScreen"
+import { stringNumber } from "@/constants/types"
+import { Ionicons } from "@expo/vector-icons"
+import React from "react"
 import {
     FlatList,
+    ListRenderItemInfo,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View
 } from "react-native"
 
 export interface RateChartRow {
-    id: string
+    _id: string
     fat: number
     snf8_0: number
     snf8_1: number
@@ -19,7 +21,7 @@ export interface RateChartRow {
     snf8_3: number
     snf8_4: number
     snf8_5: number
-    [key: string]: string | number
+    [key: string]: string | number | boolean
 }
 
 export interface ChartColumn {
@@ -29,63 +31,43 @@ export interface ChartColumn {
     editable: boolean
 }
 
+
 interface EditableRateChartProps {
     rateChart: RateChartRow[]
     columns: ChartColumn[]
-    editingCell: { rowId: string; columnKey: string } | null
-    setEditingCell: (cell: { rowId: string; columnKey: string } | null) => void
-    handleCellEdit: (rowId: string, columnKey: string, value: string) => void
+    setEditingCell: (cell: editingCell | null) => void
     removeRow: (rowId: string) => void
     removeColumn: (columnKey: string) => void
+    editingCell: editingCell
+    setEditingHeader: (val: EditingHeader) => void
 }
 
 interface EditableCellProps {
     value: number
-    rowId: string
+    rowId: stringNumber
     columnKey: string
-    editingCell: { rowId: string; columnKey: string } | null
-    setEditingCell: (cell: { rowId: string; columnKey: string } | null) => void
-    handleCellEdit: (rowId: string, columnKey: string, value: string) => void
-    editable: boolean
+    setEditingCell: (cell: editingCell | null) => void
+    firstColumn: boolean
+    isCellEdited: string | number | boolean
+    fatKey: stringNumber
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
     value,
     rowId,
     columnKey,
-    editingCell,
     setEditingCell,
-    handleCellEdit,
-    editable,
+    firstColumn,
+    isCellEdited,
+    fatKey
 }) => {
-    const [text, setText] = React.useState(value?.toString() || "")
-    const isEditing = editingCell?.rowId === rowId && editingCell?.columnKey === columnKey
-
-    React.useEffect(() => {
-        if (!isEditing) setText(value?.toString() || "")
-    }, [value, isEditing])
-
-    if (isEditing && editable) {
-        return (
-            <TextInput
-                style={styles.cellInput}
-                value={text}
-                onChangeText={setText}
-                onBlur={() => handleCellEdit(rowId, columnKey, text)}
-                keyboardType="decimal-pad"
-                autoFocus
-                selectTextOnFocus
-            />
-        )
-    }
 
     return (
         <TouchableOpacity
-            style={[styles.cellTouchable, !editable && styles.cellDisabled]}
-            // onPress={() => editable && setEditingCell({ rowId, columnKey })}
-            disabled={!editable}
+            style={[styles.cellTouchable, firstColumn && styles.firstColumn]}
+            onPress={() => setEditingCell({ rowId, columnKey, cellValue: value, fatKey: fatKey })}
         >
-            <Text style={[styles.cellText, !editable && styles.cellTextDisabled]}>
+            <Text style={[styles.cellText, firstColumn && styles.headerText, isCellEdited === `${rowId}-${columnKey}` && styles.editedCell]}>
                 {typeof value === "number" ? value.toFixed(2) : value}
             </Text>
         </TouchableOpacity>
@@ -95,15 +77,19 @@ const EditableCell: React.FC<EditableCellProps> = ({
 const EditableRateChart: React.FC<EditableRateChartProps> = ({
     rateChart,
     columns,
-    editingCell,
     setEditingCell,
-    handleCellEdit,
     removeRow,
     removeColumn,
+    editingCell,
+    setEditingHeader
 }) => {
-    const [showColumnActions, setShowColumnActions] = useState<string | null>(null)
 
     const sortedRateChart = React.useMemo(() => {
+        // ⛔ do not sort while editing any cell
+        if (editingCell) {
+            return rateChart;
+        }
+
         if (columns.length === 0) return rateChart;
 
         const firstKey = columns[0].key;
@@ -111,37 +97,39 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
         return [...rateChart].sort((a, b) => {
             const valA = Number(a[firstKey]) || 0;
             const valB = Number(b[firstKey]) || 0;
-            return valA - valB;   // ascending
+            return valA - valB;
         });
-    }, [rateChart, columns]);
+    }, [rateChart, columns, editingCell]);
 
-    const renderRow = ({ item }: { item: any }) => {
+    const RenderRow = ({ item }: ListRenderItemInfo<RateChartRow>) => {
         return (
             <View style={styles.dataRow}>
-                {columns.map((column) => (
+                {columns.map((column, index) => (
                     <EditableCell
-                        key={`${item.id}-${column.key}`}
-                        value={item[column.key]}
-                        rowId={item.id}
+                        key={`${item._id}-${column.key}`}
+                        value={Number(item[column.key])}
+                        firstColumn={index === 0}
+                        rowId={item._id}
                         columnKey={column.key}
-                        editingCell={editingCell}
                         setEditingCell={setEditingCell}
-                        handleCellEdit={handleCellEdit}
-                        editable={column.editable}
+                        isCellEdited={item?.isCellEdited}
+                        fatKey={item.fat}
                     />
                 ))}
 
-                {<View style={styles.actionCell}>
-                    <TouchableOpacity
-                        style={styles.rowActionButton}
-                    // onPress={() => removeRow(item.id)}
-                    >
-                        <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                    </TouchableOpacity>
-                </View>}
+                {(
+                    <View style={styles.actionCell}>
+                        <TouchableOpacity
+                            style={styles.rowActionButton}
+                            onPress={() => removeRow(item._id)}
+                        >
+                            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
-        )
-    }
+        );
+    };
 
     return (
         <View style={styles.boxContainer}>
@@ -150,28 +138,43 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                 <View>
                     {/* HEADER */}
                     <View style={styles.headerRow}>
-                        {columns.map((column) => (
+                        {columns.map((column, index) => (
                             <TouchableOpacity
                                 key={column.key}
-                                style={styles.headerCell}
-                            // onLongPress={() => setShowColumnActions(column.key)}
+                                onPress={() => {
+                                    if (index === 0) return
+                                    setEditingHeader({
+                                        columnKey: column.key,
+                                        value: column.label
+                                    })
+                                }
+                                }
+                                style={index === 0 ? styles.matrixHeaderCell : styles.headerCell}
                             >
-                                <Text style={styles.headerText}>{column.label}</Text>
+                                {index === 0 ? (
+                                    <View style={styles.matrixHeader}>
+                                        <View style={styles.snfHeader}>
+                                            <Text style={styles.headerText}>SNF %</Text>
+                                            <Ionicons name="arrow-forward" size={14} color="white" />
+                                        </View>
 
-                                {showColumnActions === column.key && (
+                                        <View style={styles.fatHeader}>
+                                            <Text style={styles.headerText}>FAT %</Text>
+                                            <Ionicons name="arrow-down" size={14} color="white" />
+                                        </View>
+                                    </View>
+
+                                ) : (
+                                    <Text style={styles.headerText}>{column.label}</Text>
+                                )}
+
+
+                                {index !== 0 && (
                                     <TouchableOpacity
                                         style={styles.removeButton}
-                                    // onPress={() => removeColumn(column.key)}
+                                        onPress={() => removeColumn(column.key)}
                                     >
                                         <Ionicons name="close-circle" size={16} color="#ef4444" />
-                                    </TouchableOpacity>
-                                )}
-                                {column.key === "snf8_5" && (
-                                    <TouchableOpacity
-                                        style={styles.removeButton}
-                                    // onPress={() => removeColumn(column.key)}
-                                    >
-                                        <Feather name="plus-circle" size={16} color="#44ef52ff" />
                                     </TouchableOpacity>
                                 )}
                             </TouchableOpacity>
@@ -185,11 +188,12 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                     {/* VERTICAL LIST (inside fixed-height box) */}
                     <FlatList
                         data={sortedRateChart}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderRow}
+                        keyExtractor={(item) => item._id}
+                        renderItem={RenderRow}
                         nestedScrollEnabled
                         style={styles.list}
                         contentContainerStyle={{ paddingBottom: 20 }}
+                        extraData={sortedRateChart}
                     />
                 </View>
             </ScrollView>
@@ -210,19 +214,52 @@ const styles = StyleSheet.create({
     },
     headerRow: {
         flexDirection: "row",
-        backgroundColor: "#0ea5e9",
     },
     headerCell: {
-        width: 100,
+        width: 90,
         padding: 14,
         borderRightWidth: 1,
         borderRightColor: "#38bdf8",
+        backgroundColor: "#0ea5e9",
         alignItems: "center",
         justifyContent: "center",
+    },
+    matrixHeaderCell: {
+        width: 90,
+        padding: 0,
+        borderRightWidth: 1,
+        borderRightColor: "#38bdf8",
+        backgroundColor: "transparent", // 🔥 no parent background
     },
     headerText: {
         color: "white",
         fontWeight: "600",
+    },
+    matrixHeader: {
+        width: "100%",
+        alignItems: "center",
+    },
+    snfHeader: {
+        width: "100%",
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: "#0ea5e9", // darker blue
+        paddingVertical: 6,
+    },
+    fatHeader: {
+        width: "100%",
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: "#0369a1", // slightly different shade
+        paddingVertical: 6,
+    },
+    firstColumn: {
+        backgroundColor: "#0369a1",
+        color: "white"
     },
     removeButton: {
         position: "absolute",
@@ -238,7 +275,7 @@ const styles = StyleSheet.create({
         borderBottomColor: "#e5e7eb",
     },
     cellTouchable: {
-        width: 100,
+        width: 90,
         padding: 14,
         alignItems: "center",
         justifyContent: "center",
@@ -252,20 +289,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#1e293b",
     },
-    cellTextDisabled: {
-        color: "#94a3b8",
-    },
-    cellInput: {
-        width: 100,
-        padding: 14,
+    editedCell: {
+        width: 90,
+        // padding: 14,
         fontSize: 14,
-        backgroundColor: "#f0f9ff",
         textAlign: "center",
         borderWidth: 2,
-        borderColor: "#0ea5e9",
+        borderColor: "#dd0a0aff",
     },
     actionCell: {
-        width: 100,
+        width: 90,
         justifyContent: "center",
         alignItems: "center",
         borderLeftWidth: 1,

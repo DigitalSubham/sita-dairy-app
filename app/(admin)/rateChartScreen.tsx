@@ -1,6 +1,8 @@
 import EditableRateChart from "@/components/admin/rateChart/EditableRateChart"
+import RateModal from "@/components/admin/RateModal"
 import { RateChartHeader } from "@/components/common/HeaderVarients"
 import { api } from "@/constants/api"
+import { stringNumber } from "@/constants/types"
 import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useFocusEffect } from "expo-router"
@@ -9,7 +11,7 @@ import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } fr
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export interface RateChartRow {
-    id: string
+    _id: string
     fat: number
     snf8_0: number
     snf8_1: number
@@ -17,7 +19,7 @@ export interface RateChartRow {
     snf8_3: number
     snf8_4: number
     snf8_5: number
-    [key: string]: string | number
+    [key: string]: string | number | boolean
 }
 
 export interface ChartColumn {
@@ -34,24 +36,37 @@ export interface ApiResponse {
     message?: string
 }
 
+export type editingCell = {
+    rowId: stringNumber;
+    columnKey: stringNumber;
+    fatKey: stringNumber;
+    cellValue: stringNumber;
+} | null;
+
+export type EditingHeader = {
+    columnKey: string
+    value: string
+} | null
+
 
 const RateChartScreen = () => {
     const [rateChart, setRateChart] = useState<RateChartRow[]>([])
     const [columns, setColumns] = useState<ChartColumn[]>([])
-
+    const [showColumnModal, setShowColumnModal] = useState(false);
     const [loading, setLoading] = useState(false)
-    const [editingCell, setEditingCell] = useState<{
-        rowId: string
-        columnKey: string
-    } | null>(null)
+    const [editingCell, setEditingCell] = useState<editingCell>(null)
+    const [editingHeader, setEditingHeader] = useState<EditingHeader>(null)
+
 
     // Handle cell edit
-    const handleCellEdit = (rowId: string, columnKey: string, value: string) => {
+    const handleCellEdit = (editingCell: editingCell, value: stringNumber) => {
+        if (!editingCell) return
         const newChart = rateChart.map((row) => {
-            if (row.id === rowId) {
+            if (row._id === editingCell.rowId) {
                 return {
                     ...row,
-                    [columnKey]: Number.parseFloat(value) || 0,
+                    [editingCell.columnKey]: value,
+                    isCellEdited: `${editingCell.rowId}-${editingCell.columnKey}`
                 }
             }
             return row
@@ -60,95 +75,147 @@ const RateChartScreen = () => {
         setEditingCell(null)
     }
 
-    // Add new row
-    const addRow = () => {
-        const lastRow = rateChart[rateChart.length - 1]
-        const newId = (Number.parseInt(lastRow.id) + 1).toString()
+    const handleHeaderEdit = (columnKey: string, value: string) => {
+        setColumns(prev =>
+            prev.map(col =>
+                col.key === columnKey
+                    ? { ...col, label: value }
+                    : col
+            )
+        )
 
-        const newRow: RateChartRow = {
-            id: newId,
-            fat: lastRow.fat + 0.1,
-            snf8_0: lastRow.snf8_0 + 1,
-            snf8_1: lastRow.snf8_1 + 1,
-            snf8_2: lastRow.snf8_2 + 1,
-            snf8_3: lastRow.snf8_3 + 1,
-            snf8_4: lastRow.snf8_4 + 1,
-            snf8_5: lastRow.snf8_5 + 1,
-        }
-
-        setRateChart([...rateChart, newRow])
+        setEditingHeader(null)
     }
 
-    // Remove row
-    const removeRow = (rowId: string) => {
-        if (rateChart.length > 1) {
-            setRateChart(rateChart.filter((row) => row.id !== rowId))
-        } else {
-            Alert.alert("Error", "Cannot remove the last row")
-        }
-    }
-
-    // Add new column
-    const addColumn = () => {
-        Alert.prompt(
-            "Add Column",
-            "Enter column label:",
+    const confirmAddRow = () => {
+        Alert.alert(
+            "Add Row",
+            "Do you want to add a new row?",
             [
                 { text: "Cancel", style: "cancel" },
                 {
                     text: "Add",
-                    onPress: (label: any) => {
-                        if (label && label.trim()) {
-                            const newKey = `custom_${Date.now()}`
-                            const newColumn: ChartColumn = {
-                                key: newKey,
-                                label: label.trim(),
-                                type: "number",
-                                editable: true,
-                            }
+                    onPress: addRow,
+                },
+            ]
+        );
+    };
+    // Add new row
+    const addRow = () => {
+        if (!rateChart.length) return;
+        const firstKey = columns[0].key;
+        const sortedChart = [...rateChart].sort((a, b) => {
+            const valA = Number(a[firstKey]) || 0;
+            const valB = Number(b[firstKey]) || 0;
+            return valA - valB;
+        });
 
-                            setColumns([...columns, newColumn])
+        const lastRow = sortedChart[rateChart.length - 1];
 
-                            // Add the new column to all existing rows
-                            const updatedChart = rateChart.map((row) => ({
-                                ...row,
-                                [newKey]: 0,
-                            }))
-                            setRateChart(updatedChart)
-                        }
+        const newRow: RateChartRow = {
+            _id: Date.now().toString(),
+        } as RateChartRow;
+
+        columns.forEach(col => {
+            if (col.key === "_id") return;
+
+            newRow[col.key] =
+                typeof lastRow[col.key] === "number"
+                    ? Number(lastRow[col.key]) + 1
+                    : 0;
+        });
+
+        setRateChart(prev => [...prev, newRow]);
+    };
+
+    const confirmRemoveRow = (rowId: string) => {
+        if (rateChart.length <= 1) {
+            Alert.alert("Not allowed", "At least one row must remain.");
+            return;
+        }
+
+        Alert.alert(
+            "Delete Row",
+            "This row will be permanently removed.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => {
+                        setRateChart(prev => prev.filter(row => row._id !== rowId));
                     },
                 },
-            ],
-            "plain-text",
-        )
-    }
+            ]
+        );
+    };
+
 
     // Remove column
     const removeColumn = (columnKey: string) => {
-        if (columns.length > 1) {
-            Alert.alert("Remove Column", "Are you sure you want to remove this column?", [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Remove",
-                    style: "destructive",
-                    onPress: () => {
-                        // remove from columns
-                        setColumns((prev) => prev.filter((col) => col.key !== columnKey))
-
-                        // remove from rows
-                        const updatedChart: RateChartRow[] = rateChart.map((row) => {
-                            const { [columnKey]: _, ...rest } = row
-                            return rest as RateChartRow
-                        })
-                        setRateChart(updatedChart)
-                    },
-                },
-            ])
-        } else {
-            Alert.alert("Error", "Cannot remove the last column")
+        if (columns[0]?.key === columnKey) {
+            Alert.alert("Not allowed", "Cannot remove primary column");
+            return;
         }
-    }
 
+        if (columns.length <= 1) {
+            Alert.alert("Error", "Cannot remove the last column");
+            return;
+        }
+
+        Alert.alert("Remove Column", "Are you sure?", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Remove",
+                style: "destructive",
+                onPress: () => {
+                    setColumns(prev => prev.filter(col => col.key !== columnKey));
+
+                    setRateChart(prev =>
+                        prev.map(row => {
+                            const { [columnKey]: _, ...rest } = row;
+                            return rest as RateChartRow;
+                        })
+                    );
+                },
+            },
+        ]);
+    };
+
+
+    const addColumn = () => {
+        setShowColumnModal(true);
+    };
+
+    const confirmAddColumn = (label: string) => {
+        const trimmed = label.trim();
+        if (!trimmed) return;
+
+        if (columns.some(col => col.label === trimmed)) {
+            Alert.alert("Duplicate", "Column already exists");
+            return;
+        }
+
+        const key = `col_${crypto.randomUUID()}`;
+
+        const newColumn: ChartColumn = {
+            key,
+            label: trimmed,
+            type: "number",
+            editable: true,
+        };
+
+        setColumns(prev => [...prev, newColumn]);
+
+        setRateChart(prev =>
+            prev.map(row => ({
+                ...row,
+                [key]: 0,
+            }))
+        );
+
+        setShowColumnModal(false);
+    };
 
     const fetchDataFromServer = async () => {
         const token = await AsyncStorage.getItem("token");
@@ -218,12 +285,13 @@ const RateChartScreen = () => {
         fetchDataFromServer()
     }, []))
 
+
     return (
         <SafeAreaView style={styles.container}>
             <RateChartHeader fetchDataFromServer={fetchDataFromServer} saveDataToServer={saveDataToServer} />
 
             <View style={styles.controls}>
-                <TouchableOpacity style={styles.controlButton} onPress={addRow}>
+                <TouchableOpacity style={styles.controlButton} onPress={confirmAddRow}>
                     <Ionicons name="add-circle-outline" size={20} color="#0ea5e9" />
                     <Text style={styles.controlButtonText}>Row</Text>
                 </TouchableOpacity>
@@ -247,12 +315,22 @@ const RateChartScreen = () => {
                     columns={columns}
                     editingCell={editingCell}
                     setEditingCell={setEditingCell}
-                    handleCellEdit={handleCellEdit}
-                    removeRow={removeRow}
+                    removeRow={confirmRemoveRow}
                     removeColumn={removeColumn}
+                    setEditingHeader={setEditingHeader}
                 />
             ) : null}
-
+            <RateModal
+                visible={!!editingHeader}
+                modalheadertext="Edit Column Name"
+                textValue={editingHeader?.value}
+                setVisible={() => setEditingHeader(null)}
+                submitFn={(value: string) =>
+                    handleHeaderEdit(editingHeader!.columnKey, value)
+                }
+            />
+            <RateModal visible={showColumnModal} setVisible={setShowColumnModal} submitFn={confirmAddColumn} modalheadertext={"Add Column"} />
+            <RateModal modalheadertext={`Edit Cell fat${Number(editingCell?.fatKey)?.toFixed(2)} - ${editingCell?.columnKey}`} visible={!!editingCell} setVisible={(value: boolean) => setEditingCell(null)} textValue={editingCell?.cellValue} submitFn={(value: stringNumber) => handleCellEdit(editingCell, value)} />
         </SafeAreaView>
     )
 }

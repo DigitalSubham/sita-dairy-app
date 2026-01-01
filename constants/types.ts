@@ -41,7 +41,7 @@ interface BaseUserRef {
   };
 }
 
-interface BaseUser {
+export interface BaseUser {
   _id: string;
   id: string;
   name: string;
@@ -94,7 +94,7 @@ export interface Farmer extends BaseUser {
 
 export interface User extends BaseUser {
   role?: string;
-  collectionCenter: string;
+  collectionCenter?: string;
   milkRate?: string;
   morningMilk?: string;
   eveningMilk?: string;

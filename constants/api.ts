@@ -8,6 +8,7 @@ export const api = {
   dashboard: `${BASE_URL}/user/dashboard`,
   changePosition: `${BASE_URL}/user/change-position`,
   milkEntry: `${BASE_URL}/milk/create`,
+  updateMilkEntry: `${BASE_URL}/milk/update`,
   milkSales: `${BASE_URL}/milk/sell`,
   getUser: `${BASE_URL}/user/getSingleCustomerDetail`,
   updateUser: `${BASE_URL}/user/update`,

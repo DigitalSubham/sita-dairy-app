@@ -1,18 +1,20 @@
 import FilterChip from "@/components/common/Chips";
 import RenderDeleteModal from "@/components/common/DeleteModal";
+import ModalWrapper from "@/components/common/ModalWrapper";
+import EntryForm from "@/components/forms/EntryForm";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
+import { MilkEntry, MilkEntryFormData, MilkRecord, MilkType, ShiftType } from "@/constants/types";
 import useCustomers from "@/hooks/useCustomer";
 import { setRecordData } from "@/store/recordSlice";
+import { calculateTotal } from "@/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     Alert,
-    Dimensions,
     FlatList,
     Image,
     Modal,
@@ -21,32 +23,15 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Toast from "react-native-toast-message";
 import { useDispatch } from "react-redux";
+import RenderSummary from "../../common/RenderSummary";
+import DataCard from "./DataCard";
+import ShiftModal from "./ShiftModal";
 
-const { width } = Dimensions.get("window");
-
-
-export interface MilkEntry {
-    _id: string;
-    byUser: {
-        _id: string;
-        name: string;
-        profilePic?: string;
-    };
-    date: string;
-    shift: "Morning" | "Evening";
-    weight: string;
-    fat?: string;
-    snf: string;
-    rate: string;
-    price: string;
-    onEdit?: (item: MilkEntry) => void;
-    onDelete?: (item: MilkEntry) => void;
-}
 
 interface FilterParams {
     startDate?: string;
@@ -60,10 +45,7 @@ export default function MilkBuyRecords() {
     const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
     const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
     const { customers } = useCustomers({ role: "Farmer" });
-
     const [loading, setLoading] = useState(false);
-
-    // Search state
     const [searchQuery, setSearchQuery] = useState("");
 
     // Filter states
@@ -72,16 +54,13 @@ export default function MilkBuyRecords() {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [selectedShift, setSelectedShift] = useState<
-        "Morning" | "Evening" | ""
+        ShiftType | ""
     >("");
-
-    // Calendar selection state
     const [calendarMode, setCalendarMode] = useState<"single" | "range">(
         "single"
     );
     const [markedDates, setMarkedDates] = useState<any>({});
-
-    // Modal states
+    const [isEditing, setIsEditing] = useState<string | null>(null);
     const [showUserModal, setShowUserModal] = useState(false);
     const [showDateModal, setShowDateModal] = useState(false);
     const [showShiftModal, setShowShiftModal] = useState(false);
@@ -90,6 +69,18 @@ export default function MilkBuyRecords() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const dispatch = useDispatch();
+    const [formData, setFormData] = useState<MilkEntryFormData>({
+        userId: "",
+        weight: "",
+        fat: "",
+        snf: "",
+        rate: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+        shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+        milkType: MilkType.Cow,
+    });
+    const weightRef = useRef<TextInput>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     // Initialize with today's date
     useEffect(() => {
@@ -120,10 +111,10 @@ export default function MilkBuyRecords() {
                     .includes(searchLower) ||
                 entry.shift.toLowerCase().includes(searchLower) ||
                 entry.weight.includes(searchQuery) ||
-                entry.snf.includes(searchQuery) ||
+                entry?.snf?.includes(searchQuery) ||
                 entry.rate.includes(searchQuery) ||
                 entry.price.includes(searchQuery) ||
-                (entry.fat && entry.fat.includes(searchQuery))
+                entry?.fat?.includes(searchQuery)
             );
         });
 
@@ -163,6 +154,7 @@ export default function MilkBuyRecords() {
             setFilteredEntries(data.data || []);
             dispatch(setRecordData(data.data)); // Update Redux store with filtered data
         } catch (error) {
+            console.error("Error fetching entries:", error);
             Alert.alert("Error", "Failed to fetch entries");
         } finally {
             setLoading(false);
@@ -213,12 +205,29 @@ export default function MilkBuyRecords() {
                 setSelectedItem("");
             }
         } catch (error) {
+            console.error("Error deleting entry:", error);
             Alert.alert("Error", "Failed to delete entries");
         } finally {
             setIsDeleting(false);
             setShowDeleteModal(false);
             setSelectedItem("");
         }
+    };
+
+    const handleEditEntry = (entry: MilkEntry | MilkRecord) => {
+        setIsEditing(entry._id);
+        setFormData({
+            userId: entry.byUser._id,
+            weight: entry.weight,
+            fat: entry.fat || "",
+            snf: entry.snf,
+            rate: entry.rate,
+            date: entry.date,
+            shift: entry.shift,
+            milkType: 'milkType' in entry ? entry.milkType : MilkType.Cow,
+        });
+
+        setSelectedUser(entry.byUser._id);
     };
 
     // Apply filters with button click
@@ -240,14 +249,15 @@ export default function MilkBuyRecords() {
         }
     };
 
-    // Reset all filters
-    const resetFilters = () => {
+    // Clear all filters and fetch today's data
+    const clearFilters = () => {
         setSelectedUser("");
         setSelectedDate("");
         setStartDate("");
         setEndDate("");
         setSelectedShift("");
         setSearchQuery("");
+        setIsEditing(null);
 
         // Reset calendar marked dates
         const today = format(new Date(), "yyyy-MM-dd");
@@ -255,12 +265,16 @@ export default function MilkBuyRecords() {
             [today]: { selected: true, selectedColor: "#0ea5e9" },
         });
         setSelectedDate(today);
-    };
-
-    // Clear all filters and fetch today's data
-    const clearFilters = () => {
-        resetFilters();
-        const today = format(new Date(), "yyyy-MM-dd");
+        setFormData({
+            userId: "",
+            weight: "",
+            fat: "",
+            snf: "",
+            rate: "",
+            date: format(new Date(), "yyyy-MM-dd"),
+            shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+            milkType: MilkType.Cow,
+        });
         fetchEntries({ date: today });
     };
 
@@ -351,104 +365,73 @@ export default function MilkBuyRecords() {
         return user ? user.name.split(" ")[0] : "User";
     };
 
+    const handleSubmit = async () => {
+        if (!formData.userId) {
+            Alert.alert("Error", "Please select a user");
+            return;
+        }
 
+        if (!formData.weight || !formData.fat || !formData.snf || !formData.rate) {
+            Alert.alert("Error", "Please fill in all required fields");
+            return;
+        }
 
-    // Render entry card
-    const renderEntry = ({ item }: { item: MilkEntry }) => (
-        <View style={styles.entryCard}>
-            <View style={styles.entryHeader}>
-                <Text style={styles.entryDate}>
-                    {format(new Date(item.date), "dd MMM")}
-                </Text>
-                <View
-                    style={[
-                        styles.shiftBadge,
-                        item.shift === "Morning"
-                            ? styles.morningBadge
-                            : styles.eveningBadge,
-                    ]}
-                >
-                    <Text style={styles.shiftText}>{item.shift[0]}</Text>
-                </View>
+        setIsUpdating(true);
 
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => {
-                        setSelectedItem(item._id);
-                        setShowDeleteModal(true);
-                    }}
-                >
-                    <MaterialIcons name="delete" size={16} color="#ef4444" />
-                </TouchableOpacity>
-            </View>
+        try {
+            const storedToken = await AsyncStorage.getItem("token");
+            if (!storedToken) {
+                Toast.show({
+                    type: "error",
+                    text1: "Authentication token not found",
+                });
+                return;
+            }
+            const entryData = {
+                userId: formData.userId,
+                date: formData.date,
+                shift: formData.shift,
+                weight: formData.weight,
+                fat: formData.fat,
+                snf: formData.snf,
+                rate: formData.rate,
+                price: calculateTotal(formData.weight, formData.rate),
+                milkType: formData.milkType,
+            };
+            const parsedToken = JSON.parse(storedToken);
+            const response = await fetch(`${api.updateMilkEntry}/${isEditing}`, {
+                method: "PUT",
+                body: JSON.stringify(entryData),
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${parsedToken}`,
+                },
+            });
 
-            <View style={styles.userRow}>
-                <Image
-                    source={{
-                        uri: item?.byUser?.profilePic ?? "https://ui-avatars.com/api/?name=" +
-                            encodeURIComponent(item?.byUser?.name ?? "User")
-                    }}
-                    style={styles.userAvatar}
-                />
-                <Text style={styles.userName} numberOfLines={1}>
-                    {item.byUser.name}
-                </Text>
-            </View>
+            const data = await response.json();
 
-            <View style={styles.entryDetails}>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailValue}>{item.weight}L</Text>
-                    <Text style={styles.detailValue}>{item.fat || "N/A"}%</Text>
-                    <Text style={styles.detailValue}>{item.snf}%</Text>
-                </View>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Weight</Text>
-                    <Text style={styles.detailLabel}>Fat</Text>
-                    <Text style={styles.detailLabel}>SNF</Text>
-                </View>
-            </View>
+            if (data.success) {
 
-            <View style={styles.totalContainer}>
-                <Text style={styles.rateText}>₹{item.rate}/L</Text>
-                <Text style={styles.totalText}>₹{item.price}</Text>
-            </View>
-        </View>
-    );
-
-    // Render summary
-    const renderSummary = () => {
-        const totalEntries = filteredEntries.length;
-        const totalAmount = filteredEntries.reduce(
-            (sum, entry) => sum + parseFloat(entry.price),
-            0
-        );
-        const totalWeight = filteredEntries.reduce(
-            (sum, entry) => sum + parseFloat(entry.weight),
-            0
-        );
-
-        return (
-            <LinearGradient
-                colors={["#0ea5e9", "#0284c7"]}
-                style={styles.summaryContainer}
-            >
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>{totalEntries}</Text>
-                    <Text style={styles.summaryLabel}>Entries</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>₹{totalAmount.toFixed(0)}</Text>
-                    <Text style={styles.summaryLabel}>Amount</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryValue}>{totalWeight.toFixed(1)}L</Text>
-                    <Text style={styles.summaryLabel}>Weight</Text>
-                </View>
-            </LinearGradient>
-        );
+                Alert.alert("Success", data.message);
+                clearFilters();
+            } else {
+                Alert.alert("Error", data.message);
+            }
+        } catch (error) {
+            console.error("Submit Error:", error);
+            Alert.alert("Error", "Failed to update milk entry");
+        } finally {
+            setIsUpdating(false);
+        }
     };
+    const updateFormData = (field: string, value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+
 
     return (
         < >
@@ -538,7 +521,7 @@ export default function MilkBuyRecords() {
             </View>
 
             {/* Summary */}
-            {renderSummary()}
+            <RenderSummary filteredEntries={filteredEntries} />
 
             {/* Loading Indicator */}
             {loading && (
@@ -552,7 +535,7 @@ export default function MilkBuyRecords() {
             {!loading && (
                 <FlatList
                     data={filteredEntries}
-                    renderItem={renderEntry}
+                    renderItem={({ item }) => <DataCard handleEdit={handleEditEntry} item={item} setSelectedItem={setSelectedItem} setShowDeleteModal={setShowDeleteModal} />}
                     keyExtractor={(item) => item._id}
                     numColumns={2}
                     columnWrapperStyle={styles.entryRow}
@@ -730,34 +713,7 @@ export default function MilkBuyRecords() {
                 </View>
             </Modal>
 
-            {/* Shift Selection Modal */}
-            <Modal visible={showShiftModal} transparent animationType="fade" statusBarTranslucent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Shift</Text>
-                            <TouchableOpacity onPress={() => setShowShiftModal(false)}>
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
-                        {["", "Morning", "Evening"].map((shift) => (
-                            <TouchableOpacity
-                                key={shift}
-                                style={[
-                                    styles.optionItem,
-                                    selectedShift === shift && styles.selectedOption,
-                                ]}
-                                onPress={() => {
-                                    setSelectedShift(shift as any);
-                                    setShowShiftModal(false);
-                                }}
-                            >
-                                <Text style={styles.optionText}>{shift || "All Shifts"}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            </Modal>
+            <ShiftModal selectedShift={selectedShift} setSelectedShift={setSelectedShift} setShowShiftModal={setShowShiftModal} showShiftModal={showShiftModal} />
 
             {!!selectedItem && (
                 <RenderDeleteModal
@@ -769,6 +725,19 @@ export default function MilkBuyRecords() {
                     handleDelete={handleDeleteEntry}
                 />
             )}
+
+            <ModalWrapper visible={!!isEditing} setVisibility={() => setIsEditing(null)} headerText="Edit Entry" >
+                <EntryForm
+                    editingEntry={!!isEditing}
+                    formData={formData}
+                    selectedUser={customers.find((u) => u._id === selectedUser) || null}
+                    updateFormData={updateFormData}
+                    setShowUserSelector={setShowUserModal}
+                    weightRef={weightRef}
+                    handleSubmit={handleSubmit}
+                    isSubmitting={isUpdating}
+                />
+            </ModalWrapper>
         </>
     );
 }
@@ -862,33 +831,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
     },
-    summaryContainer: {
-        flexDirection: "row",
-        marginHorizontal: 16,
-        marginVertical: 12,
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-    },
-    summaryItem: {
-        flex: 1,
-        alignItems: "center",
-    },
-    summaryValue: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    summaryLabel: {
-        color: "rgba(255, 255, 255, 0.9)",
-        fontSize: 10,
-        marginTop: 2,
-    },
-    summaryDivider: {
-        width: 1,
-        backgroundColor: "rgba(255, 255, 255, 0.3)",
-        marginHorizontal: 12,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: "center",
@@ -907,114 +849,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         paddingHorizontal: 4,
     },
-    entryCard: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 8,
-        width: (width - 32) / 2,
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-    },
-    entryHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 6,
-    },
-    entryDate: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#334155",
-    },
-    shiftBadge: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    morningBadge: {
-        backgroundColor: "#fef3c7",
-    },
-    eveningBadge: {
-        backgroundColor: "#ddd6fe",
-    },
-    shiftText: {
-        fontSize: 10,
-        fontWeight: "bold",
-        color: "#374151",
-    },
-    actionButtons: {
-        flexDirection: "row",
-        marginLeft: "auto",
-    },
-    actionButton: {
-        padding: 6,
-        marginLeft: 8,
-    },
-    actionButtonIcon: {
-        fontSize: 16,
-    },
-    userRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 8,
-        gap: 6,
-    },
-    userAvatar: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-    },
-    userName: {
-        fontSize: 11,
-        color: "#64748b",
-        flex: 1,
-        backgroundColor: "#f1f5f9",
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    entryDetails: {
-        marginBottom: 8,
-    },
-    detailRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-    },
-    detailValue: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: "#334155",
-        flex: 1,
-        textAlign: "center",
-    },
-    detailLabel: {
-        fontSize: 9,
-        color: "#64748b",
-        flex: 1,
-        textAlign: "center",
-        marginTop: 2,
-    },
-    totalContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        backgroundColor: "#ecfdf5",
-        padding: 6,
-        borderRadius: 4,
-    },
-    rateText: {
-        fontSize: 10,
-        color: "#059669",
-        fontWeight: "500",
-    },
-    totalText: {
-        fontSize: 12,
-        fontWeight: "bold",
-        color: "#059669",
-    },
+
     emptyContainer: {
         alignItems: "center",
         paddingVertical: 40,

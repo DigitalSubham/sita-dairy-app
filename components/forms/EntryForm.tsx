@@ -1,4 +1,5 @@
 import { MilkEntry, MilkEntryFormData, MilkType, ShiftType, User } from '@/constants/types'
+import { calculateTotal } from '@/utils/helper'
 import { Feather, FontAwesome } from '@expo/vector-icons'
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { format } from 'date-fns'
@@ -9,7 +10,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 
 
 type EntryFormProps = {
-    editingEntry: MilkEntry | null
+    editingEntry: MilkEntry | boolean | null
     formData: MilkEntryFormData
 
     /** Selected farmer/user */
@@ -29,15 +30,13 @@ type EntryFormProps = {
 
     /** Actions */
     handleSubmit: () => void
-    resetForm: () => void
-    calculateTotal: (w: string, r: string) => number | string
 
     isSubmitting: boolean
 }
 
 
 
-const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedUser, updateFormData, setShowUserSelector, weightRef, handleSubmit, resetForm, calculateTotal, isSubmitting }) => {
+const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedUser, updateFormData, setShowUserSelector, weightRef, handleSubmit, isSubmitting }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const fatRef = useRef<TextInput>(null);
     const snfRef = useRef<TextInput>(null);
@@ -54,15 +53,6 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
     return (
         <View style={styles.formSection}>
             <LinearGradient colors={["#f0f9ff", "#e0f2fe"]} style={styles.formCard}>
-                {editingEntry && (
-                    <View style={styles.editingBanner}>
-                        <Feather name="edit" size={14} color="#0ea5e9" />
-                        <Text style={styles.editingBannerText}>{t("entry.editing")}: {selectedUser?.name}</Text>
-                        <TouchableOpacity onPress={resetForm}>
-                            <Feather name="x" size={14} color="#64748b" />
-                        </TouchableOpacity>
-                    </View>
-                )}
 
                 {/* Date, Shift and Milk Type in one row */}
                 <View style={styles.topRow}>
