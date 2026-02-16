@@ -73,13 +73,13 @@ const DataCard = ({ item, setSelectedItem, setShowDeleteModal, handleEdit }: pro
             <View style={styles.entryDetails}>
                 <View style={styles.detailRow}>
                     <Text style={styles.detailValue}>{item.weight}L</Text>
-                    <Text style={styles.detailValue}>{item.fat || "N/A"}%</Text>
-                    <Text style={styles.detailValue}>{item.snf}%</Text>
+                    {item.fat && <Text style={styles.detailValue}>{item.fat || "N/A"}%</Text>}
+                    {item.snf && <Text style={styles.detailValue}>{item.snf}%</Text>}
                 </View>
                 <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Weight</Text>
-                    <Text style={styles.detailLabel}>Fat</Text>
-                    <Text style={styles.detailLabel}>SNF</Text>
+                    {item.fat && <Text style={styles.detailLabel}>Fat</Text>}
+                    {item.snf && <Text style={styles.detailLabel}>SNF</Text>}
                 </View>
             </View>
 

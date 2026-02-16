@@ -12,7 +12,9 @@ export const api = {
   milkSales: `${BASE_URL}/milk/sell`,
   getUser: `${BASE_URL}/user/getSingleCustomerDetail`,
   updateUser: `${BASE_URL}/user/update`,
+
   getRecords: `${BASE_URL}/milk/get`,
+
   getAllCustomers: `${BASE_URL}/user/all-customers`,
   deleteRecord: `${BASE_URL}/milk/delete`,
   deleteAccount: `${BASE_URL}/user/delete-account`,

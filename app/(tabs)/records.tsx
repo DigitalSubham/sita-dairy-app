@@ -111,7 +111,6 @@ export default function EnhancedCustomerMilkRecords() {
       if (filters.date) queryParams.append("date", filters.date);
       if (filters.userId) queryParams.append("userId", filters.userId);
       if (filters.shift) queryParams.append("shift", filters.shift);
-      console.log("filters", filters)
 
       const response = await fetch(`${api.getRecords}?${queryParams}`, {
         method: "GET",

@@ -59,16 +59,6 @@ const SettingsComponent: React.FC<SettingsProps> = ({
               value={notifications}
               onValueChange={setNotifications}
             />
-
-            <View style={styles.divider} />
-
-            <SettingItem
-              icon={<Feather name="mail" size={20} color="#6b7280" />}
-              label="Email Updates"
-              description="Get the latest news via email"
-              value={emailUpdates}
-              onValueChange={setEmailUpdates}
-            />
           </View>
         </View>
 

@@ -121,10 +121,7 @@ export default function Rearrange() {
                         });
 
                         // NEW: inspect the new positions
-                        // console.log(
-                        //     "🆕 updatedUsers positions:",
-                        //     updatedUsers.map(u => ({ _id: u._id, positionNo: u.positionNo }))
-                        // );
+
 
                         setUsers(updatedUsers);
                     }}

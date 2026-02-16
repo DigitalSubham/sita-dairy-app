@@ -171,7 +171,6 @@ const WalletModal: React.FC = () => {
       );
 
       const data = await response.json();
-      console.log("data", data)
       if (data.success) {
         setTransactions(data.data);
         setTotalAmount(data.totalAmount || 0);

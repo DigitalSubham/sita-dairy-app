@@ -1,164 +1,10 @@
 import { FarmerRateChartHeader } from "@/components/common/HeaderVarients";
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { api } from "@/constants/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Default rate chart data based on the images
-const defaultRateChart = [
-  {
-    fat: 3.0,
-    snf8_0: 32.0,
-    snf8_1: 32.26,
-    snf8_2: 32.51,
-    snf8_3: 32.77,
-    snf8_4: 33.02,
-    snf8_5: 33.28,
-  },
-  {
-    fat: 3.1,
-    snf8_0: 32.38,
-    snf8_1: 32.64,
-    snf8_2: 32.9,
-    snf8_3: 33.15,
-    snf8_4: 33.41,
-    snf8_5: 33.66,
-  },
-  {
-    fat: 3.2,
-    snf8_0: 32.77,
-    snf8_1: 33.02,
-    snf8_2: 33.28,
-    snf8_3: 33.54,
-    snf8_4: 33.79,
-    snf8_5: 34.05,
-  },
-  {
-    fat: 3.3,
-    snf8_0: 33.15,
-    snf8_1: 33.41,
-    snf8_2: 33.66,
-    snf8_3: 33.92,
-    snf8_4: 34.18,
-    snf8_5: 34.43,
-  },
-  {
-    fat: 3.4,
-    snf8_0: 33.54,
-    snf8_1: 33.79,
-    snf8_2: 34.05,
-    snf8_3: 34.3,
-    snf8_4: 34.56,
-    snf8_5: 34.82,
-  },
-  {
-    fat: 3.5,
-    snf8_0: 33.92,
-    snf8_1: 34.18,
-    snf8_2: 34.43,
-    snf8_3: 34.69,
-    snf8_4: 34.94,
-    snf8_5: 35.2,
-  },
-  {
-    fat: 3.6,
-    snf8_0: 34.3,
-    snf8_1: 34.56,
-    snf8_2: 34.82,
-    snf8_3: 35.07,
-    snf8_4: 35.33,
-    snf8_5: 35.58,
-  },
-  {
-    fat: 3.7,
-    snf8_0: 34.69,
-    snf8_1: 34.94,
-    snf8_2: 35.2,
-    snf8_3: 35.46,
-    snf8_4: 35.71,
-    snf8_5: 35.97,
-  },
-  {
-    fat: 3.8,
-    snf8_0: 35.07,
-    snf8_1: 35.33,
-    snf8_2: 35.58,
-    snf8_3: 35.84,
-    snf8_4: 36.1,
-    snf8_5: 36.35,
-  },
-  {
-    fat: 3.9,
-    snf8_0: 35.46,
-    snf8_1: 35.71,
-    snf8_2: 35.97,
-    snf8_3: 36.22,
-    snf8_4: 36.48,
-    snf8_5: 36.74,
-  },
-  {
-    fat: 4.0,
-    snf8_0: 35.84,
-    snf8_1: 36.1,
-    snf8_2: 36.35,
-    snf8_3: 36.61,
-    snf8_4: 36.86,
-    snf8_5: 37.12,
-  },
-  {
-    fat: 4.5,
-    snf8_0: 37.76,
-    snf8_1: 38.02,
-    snf8_2: 38.27,
-    snf8_3: 38.53,
-    snf8_4: 38.78,
-    snf8_5: 39.04,
-  },
-  {
-    fat: 5.0,
-    snf8_0: 39.68,
-    snf8_1: 39.94,
-    snf8_2: 40.19,
-    snf8_3: 40.45,
-    snf8_4: 40.7,
-    snf8_5: 40.96,
-  },
-  {
-    fat: 5.5,
-    snf8_0: 41.6,
-    snf8_1: 41.85,
-    snf8_2: 42.11,
-    snf8_3: 42.36,
-    snf8_4: 42.62,
-    snf8_5: 42.87,
-  },
-  {
-    fat: 6.0,
-    snf8_0: 43.52,
-    snf8_1: 43.77,
-    snf8_2: 44.03,
-    snf8_3: 44.28,
-    snf8_4: 44.54,
-    snf8_5: 44.79,
-  },
-  {
-    fat: 6.5,
-    snf8_0: 45.44,
-    snf8_1: 45.69,
-    snf8_2: 45.95,
-    snf8_3: 46.2,
-    snf8_4: 46.46,
-    snf8_5: 46.71,
-  },
-  {
-    fat: 7.0,
-    snf8_0: 47.36,
-    snf8_1: 47.61,
-    snf8_2: 47.87,
-    snf8_3: 48.12,
-    snf8_4: 48.38,
-    snf8_5: 48.63,
-  },
-];
 
 interface RateChartRow {
   fat: number;
@@ -171,7 +17,42 @@ interface RateChartRow {
 }
 
 export default function MilkEntry() {
-  const [rateChart] = useState<RateChartRow[]>(defaultRateChart);
+  const [rateChart, setRateChart] = useState<RateChartRow[]>();
+
+  const fetchDataFromServer = async () => {
+    const token = await AsyncStorage.getItem("token");
+    const parsedToken = token ? JSON.parse(token) : null;
+    try {
+      // setLoading(true)
+
+      // Replace with your actual API endpoint
+      const response = await fetch(api.rateChart, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${parsedToken}`
+        },
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setRateChart(data.row)
+      } else {
+        Alert.alert("Error", data.message || "Failed to fetch data")
+      }
+
+    } catch (error) {
+      Alert.alert("Error", "Failed to fetch data from server")
+      console.error("Fetch error:", error)
+    } finally {
+      // setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDataFromServer()
+  }, [])
 
   const renderEditableCell = (value: number) => {
     return (
@@ -202,7 +83,7 @@ export default function MilkEntry() {
 
           {/* Data Rows */}
           <ScrollView style={styles.chartScrollView}>
-            {rateChart.map((row, index) => (
+            {rateChart?.map((row, index) => (
               <View key={index} style={styles.chartRow}>
                 {renderEditableCell(row.fat)}
                 {renderEditableCell(row.snf8_0)}

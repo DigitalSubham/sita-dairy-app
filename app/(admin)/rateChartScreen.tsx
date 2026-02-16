@@ -3,11 +3,10 @@ import RateModal from "@/components/admin/RateModal"
 import { RateChartHeader } from "@/components/common/HeaderVarients"
 import { api } from "@/constants/api"
 import { stringNumber } from "@/constants/types"
-import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useState } from "react"
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { ActivityIndicator, Alert, StyleSheet, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export interface RateChartRow {
@@ -79,7 +78,7 @@ const RateChartScreen = () => {
         setColumns(prev =>
             prev.map(col =>
                 col.key === columnKey
-                    ? { ...col, label: value }
+                    ? { ...col, label: value, isEdited: columnKey }
                     : col
             )
         )
@@ -125,7 +124,7 @@ const RateChartScreen = () => {
                     : 0;
         });
 
-        setRateChart(prev => [...prev, newRow]);
+        setRateChart(prev => [...prev, { ...newRow, isCellEdited: `new-${newRow._id}` }]);
     };
 
     const confirmRemoveRow = (rowId: string) => {
@@ -249,31 +248,34 @@ const RateChartScreen = () => {
         }
     }
 
+
     // Save data to server
     const saveDataToServer = async () => {
+        const token = await AsyncStorage.getItem("token");
+        const parsedToken = token ? JSON.parse(token) : null;
         try {
             setLoading(true)
 
-            const payload = {
-                chart: rateChart,
-                columns: columns,
-            }
-
+            const data = rateChart.filter(row => row.isCellEdited)
             // Replace with your actual API endpoint
-            const response = await fetch("YOUR_API_ENDPOINT/rate-chart", {
+            const response = await fetch(`${api.rateChart}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${parsedToken}`
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(data),
             })
 
             if (response.ok) {
                 Alert.alert("Success", "Data saved successfully!")
+                fetchDataFromServer()
             } else {
                 throw new Error("Save failed")
             }
-        } catch (error) {
+        }
+
+        catch (error) {
             Alert.alert("Error", "Failed to save data")
             console.error("Save error:", error)
         } finally {
@@ -291,7 +293,7 @@ const RateChartScreen = () => {
             <RateChartHeader fetchDataFromServer={fetchDataFromServer} saveDataToServer={saveDataToServer} />
 
             <View style={styles.controls}>
-                <TouchableOpacity style={styles.controlButton} onPress={confirmAddRow}>
+                {/* <TouchableOpacity style={styles.controlButton} onPress={confirmAddRow}>
                     <Ionicons name="add-circle-outline" size={20} color="#0ea5e9" />
                     <Text style={styles.controlButtonText}>Row</Text>
                 </TouchableOpacity>
@@ -299,15 +301,15 @@ const RateChartScreen = () => {
                 <TouchableOpacity style={styles.controlButton} onPress={addColumn}>
                     <Ionicons name="add-circle-outline" size={20} color="#0ea5e9" />
                     <Text style={styles.controlButtonText}>Column</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
+                {loading && (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#0ea5e9" />
+                    </View>
+                )}
             </View>
-            {loading && (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0ea5e9" />
-                    <Text style={styles.loadingText}>Processing...</Text>
-                </View>
-            )}
+
             {/* Editable Chart */}
             {rateChart.length > 0 ? (
                 <EditableRateChart
@@ -342,10 +344,8 @@ const styles = StyleSheet.create({
     },
     loadingContainer: {
         alignItems: "center",
-        padding: 20,
     },
     loadingText: {
-        marginTop: 8,
         color: "#64748b",
         fontSize: 14,
     },

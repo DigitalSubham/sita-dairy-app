@@ -1,4 +1,4 @@
-import { CustomerRole } from '@/constants/types'
+import { CustomerRole, MilkEntry } from '@/constants/types'
 import { onExportPDF } from '@/utils/pdf'
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { DrawerActions, useNavigation } from "@react-navigation/native"
@@ -6,7 +6,6 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import Animated, { FadeInDown } from 'react-native-reanimated'
-import { MilkEntry } from '../admin/milkRecords/milkBuyRecords'
 import { CustomHeader, type HeaderAction } from "./CustomHeader"
 
 type ExtendedCustomerRole = CustomerRole | "All";

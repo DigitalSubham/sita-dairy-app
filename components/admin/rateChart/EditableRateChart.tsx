@@ -117,7 +117,7 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                     />
                 ))}
 
-                {(
+                {/* {(
                     <View style={styles.actionCell}>
                         <TouchableOpacity
                             style={styles.rowActionButton}
@@ -126,7 +126,7 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                             <Ionicons name="trash-outline" size={18} color="#ef4444" />
                         </TouchableOpacity>
                     </View>
-                )}
+                )} */}
             </View>
         );
     };
@@ -169,20 +169,20 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
                                 )}
 
 
-                                {index !== 0 && (
+                                {/* {index !== 0 && (
                                     <TouchableOpacity
                                         style={styles.removeButton}
                                         onPress={() => removeColumn(column.key)}
                                     >
                                         <Ionicons name="close-circle" size={16} color="#ef4444" />
                                     </TouchableOpacity>
-                                )}
+                                )} */}
                             </TouchableOpacity>
                         ))}
 
-                        <View style={styles.headerCell}>
+                        {/* <View style={styles.headerCell}>
                             <Text style={styles.headerText}>Actions</Text>
-                        </View>
+                        </View> */}
                     </View>
 
                     {/* VERTICAL LIST (inside fixed-height box) */}

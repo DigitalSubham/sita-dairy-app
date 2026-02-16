@@ -94,7 +94,6 @@ export default function EnhancedCustomerMilkRecords() {
 
     // Fetch entries with filters
     const fetchEntries = async (filters: FilterParams) => {
-        console.log("filters", filters)
         setLoading(true);
         try {
             const storedToken = await AsyncStorage.getItem("token");
@@ -112,7 +111,7 @@ export default function EnhancedCustomerMilkRecords() {
             if (filters.endDate) queryParams.append("endDate", filters.endDate);
             if (user?.id) queryParams.append("userId", user?.id || "");
             if (filters.shift) queryParams.append("shift", filters.shift);
-
+            queryParams.append("entryType", "Sell");
             const response = await fetch(`${api.getRecords}?${queryParams}`, {
                 method: "GET",
                 headers: {
@@ -120,7 +119,6 @@ export default function EnhancedCustomerMilkRecords() {
                 },
             });
             const data = await response.json();
-            console.log("data", data, queryParams)
             const recordsData = data.data || [];
 
             setAllEntries(recordsData);
@@ -252,7 +250,7 @@ export default function EnhancedCustomerMilkRecords() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <BuyerDashboardHeader title="Subcription" desc="Subscribed to products" />
+            <BuyerDashboardHeader title="Subscription" desc="Subscribed to products" />
             <View style={styles.header}>
                 <View style={styles.searchContainer}>
                     <MaterialIcons name="search" size={20} color="#64748b" />
@@ -304,7 +302,7 @@ export default function EnhancedCustomerMilkRecords() {
                     />
                 </ScrollView>
             </View>
-
+            {/* 8340544833 */}
             {/* Filter Action Buttons */}
             <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity style={styles.resetButton} onPress={clearFilters}>
