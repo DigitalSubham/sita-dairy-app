@@ -55,7 +55,7 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
 
                     <View style={styles.footerContainer}>
                         <Text style={styles.footerText}>
-                            © 2025 {t("auth.sita_dairy_management_system")}
+                            © 2026 {t("auth.sita_dairy_management_system")}
                         </Text>
                     </View>
                 </ScrollView>
