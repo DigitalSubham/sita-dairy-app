@@ -2,24 +2,26 @@
 import MilkBuyRecords from '@/components/admin/milkRecords/milkBuyRecords'
 import MilkSaleRecords from '@/components/admin/milkRecords/milkSaleRecords'
 import { RecordsHeader } from '@/components/common/HeaderVarients'
+import { MilkEntry } from '@/constants/types'
 import React, { useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useSelector } from 'react-redux'
 
-const MilkEntry = () => {
+const RecordScreen = () => {
   const [entryType, setEntryType] = useState("Milk Buy")
-  const recordData = useSelector((state: any) => state.record.recordData)
+  const [recordData, setRecordData] = useState<MilkEntry[]>([])
   return (
     <SafeAreaView style={styles.container}>
       <RecordsHeader entryType={entryType} setEntryType={setEntryType} entryData={recordData} />
-      {entryType === "Milk Buy" ? <MilkBuyRecords /> : <MilkSaleRecords />}
+      {entryType === "Milk Buy"
+        ? <MilkBuyRecords onEntriesChange={setRecordData} />
+        : <MilkSaleRecords onEntriesChange={setRecordData} />}
     </SafeAreaView>
 
   )
 }
 
-export default MilkEntry
+export default RecordScreen
 
 const styles = StyleSheet.create({
   container: {

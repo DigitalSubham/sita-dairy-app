@@ -1,6 +1,5 @@
 import { api } from "@/constants/api";
-import type { RootState } from "@/store/store";
-import { setReduxUser } from "@/store/userSlice";
+import { useAuth } from "@/context/AuthContext";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -23,7 +22,6 @@ import {
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import Toast from "react-native-toast-message";
-import { useDispatch, useSelector } from "react-redux";
 
 interface ProfileProps {
   isEditing: boolean;
@@ -32,25 +30,24 @@ interface ProfileProps {
 
 const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) => {
   const { t } = useTranslation();
+  const { user, updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const user = useSelector((store: RootState) => store.user);
   const [editedUser, setEditedUser] = useState({
-    id: user.id || "82102",
-    name: user.name || "Good Boy",
-    mobile: user.mobile || "8210243998",
-    collectionCenter: user.collectionCenter || "Bad Boy",
-    dailryName: user.dailryName || "dailryName",
-    fatherName: user.fatherName || "fatherName",
-    role: user.role || "Admin",
-    isVerified: user.isVerified || false,
-    createdAt: user.createdAt || "2026-05-20T17:07:32.815Z",
+    id: user?.id || "82102",
+    name: user?.name || "Good Boy",
+    mobile: user?.mobile || "8210243998",
+    collectionCenter: user?.collectionCenter || "Bad Boy",
+    dailryName: user?.dailryName || "dailryName",
+    fatherName: user?.fatherName || "fatherName",
+    role: user?.role || "Admin",
+    isVerified: user?.isVerified || false,
+    createdAt: user?.createdAt || "2026-05-20T17:07:32.815Z",
     profilePic:
-      user.profilePic ||
+      user?.profilePic ||
       "https://res.cloudinary.com/dskra60sa/image/upload/v1743086699/man_rqv4zk.png",
-    address: user.address || "",
+    address: user?.address || "",
   });
   const [imageFile, setImageFile] = useState<any>(null);
-  const dispatch = useDispatch();
   const [validationErrors, setValidationErrors] = useState({
     name: "",
     mobile: "",
@@ -63,19 +60,19 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
       // Reset editing state when screen comes into focus
       setIsEditing(false);
       setEditedUser({
-        id: user.id || "82102",
-        name: user.name || "Good Boy",
-        mobile: user.mobile || "8210243998",
-        collectionCenter: user.collectionCenter || "Bad Boy",
-        dailryName: user.dailryName || "dailryName",
-        fatherName: user.fatherName || "fatherName",
-        role: user.role || "Admin",
-        isVerified: user.isVerified || false,
-        createdAt: user.createdAt || "2026-05-20T17:07:32.815Z",
+        id: user?.id || "82102",
+        name: user?.name || "Good Boy",
+        mobile: user?.mobile || "8210243998",
+        collectionCenter: user?.collectionCenter || "Bad Boy",
+        dailryName: user?.dailryName || "dailryName",
+        fatherName: user?.fatherName || "fatherName",
+        role: user?.role || "Admin",
+        isVerified: user?.isVerified || false,
+        createdAt: user?.createdAt || "2026-05-20T17:07:32.815Z",
         profilePic:
-          user.profilePic ||
+          user?.profilePic ||
           "https://res.cloudinary.com/dskra60sa/image/upload/v1743086699/man_rqv4zk.png",
-        address: user.address || "",
+        address: user?.address || "",
       });
     }, [user])
   );
@@ -190,7 +187,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             ...responseData.user,
             profilePic: responseData.user.profilePic,
           }));
-          dispatch(setReduxUser(responseData.user));
+          updateUser(responseData.user);
         }
       } else {
         Toast.show({
@@ -211,19 +208,19 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
   const handleCancel = () => {
     // Reset to original values
     setEditedUser({
-      id: user.id || "82102",
-      name: user.name || "Good Boy",
-      mobile: user.mobile || "8210243998",
-      collectionCenter: user.collectionCenter || "Bad Boy",
-      dailryName: user.dailryName || "dailryName",
-      fatherName: user.fatherName || "fatherName",
-      role: user.role || "Admin",
-      isVerified: user.isVerified || false,
-      createdAt: user.createdAt || "2026-05-20T17:07:32.815Z",
+      id: user?.id || "82102",
+      name: user?.name || "Good Boy",
+      mobile: user?.mobile || "8210243998",
+      collectionCenter: user?.collectionCenter || "Bad Boy",
+      dailryName: user?.dailryName || "dailryName",
+      fatherName: user?.fatherName || "fatherName",
+      role: user?.role || "Admin",
+      isVerified: user?.isVerified || false,
+      createdAt: user?.createdAt || "2026-05-20T17:07:32.815Z",
       profilePic:
-        user.profilePic ||
+        user?.profilePic ||
         "https://res.cloudinary.com/dskra60sa/image/upload/v1743086699/man_rqv4zk.png",
-      address: user.address || "",
+      address: user?.address || "",
     });
     setImageFile(null);
     setValidationErrors({

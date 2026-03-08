@@ -1,6 +1,5 @@
 import { AuthProvider } from "@/context/AuthContext";
 import i18n from "@/i18n";
-import store from "@/store/store";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
@@ -9,7 +8,6 @@ import { LogBox, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { Provider } from "react-redux";
 
 
 LogBox.ignoreAllLogs()
@@ -45,19 +43,17 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <I18nextProvider i18n={i18n}>
-          <Provider store={store}>
-            <AuthProvider>
-              <StatusBar barStyle="dark-content" />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(auth)" options={{ animation: "none" }} />
-                <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-                <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
-                <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
-                <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
-              </Stack>
-              <Toast />
-            </AuthProvider>
-          </Provider>
+          <AuthProvider>
+            <StatusBar barStyle="dark-content" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" options={{ animation: "none" }} />
+              <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+              <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
+              <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
+              <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
+            </Stack>
+            <Toast />
+          </AuthProvider>
         </I18nextProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

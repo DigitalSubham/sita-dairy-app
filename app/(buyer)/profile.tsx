@@ -1,18 +1,17 @@
 import { ProfileHeader } from "@/components/common/HeaderVarients";
 import ProfileComponent from "@/components/common/Profile";
 import { api } from "@/constants/api";
-import { setReduxUser } from "@/store/userSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 
 export default function ProfileScreen() {
     const [token, setToken] = useState<string>("");
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState<boolean>(true);
-    const dispatch = useDispatch();
+    const { updateUser } = useAuth();
 
     useEffect(() => {
         const fetchToken = async () => {
@@ -39,7 +38,7 @@ export default function ProfileScreen() {
                 const responseData = await response.json();
 
                 if (responseData.success) {
-                    dispatch(setReduxUser(responseData.user));
+                    updateUser(responseData.user);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);

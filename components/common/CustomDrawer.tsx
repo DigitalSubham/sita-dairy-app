@@ -1,5 +1,4 @@
 import { useAuth } from "@/context/AuthContext";
-import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
 import {
   DrawerContentScrollView,
@@ -16,12 +15,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSelector } from "react-redux";
 
 export function CustomDrawer(props: any) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const router = useRouter();
-  const user = useSelector((store: RootState) => store.user);
 
   // Multiple animations for staggered effect
   const [profileAnim] = React.useState(new Animated.Value(0));
@@ -97,9 +94,9 @@ export function CustomDrawer(props: any) {
                 <Image
                   source={{
                     uri:
-                      user.profilePic ??
+                      user?.profilePic ??
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        user.name ?? "User"
+                        user?.name ?? "User"
                       )}&background=random`,
                   }}
                   style={styles.profileImage}

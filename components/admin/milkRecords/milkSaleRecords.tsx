@@ -4,7 +4,6 @@ import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import { MilkEntry, ShiftType } from "@/constants/types";
 import useCustomers from "@/hooks/useCustomer";
-import { setRecordData } from "@/store/recordSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
@@ -25,7 +24,6 @@ import {
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Toast from "react-native-toast-message";
-import { useDispatch } from "react-redux";
 import RenderSummary from "../../common/RenderSummary";
 import DataCard from "./DataCard";
 import ShiftModal from "./ShiftModal";
@@ -39,12 +37,15 @@ interface FilterParams {
     shift?: "Morning" | "Evening";
 }
 
-export default function MilkSaleRecords() {
+type MilkSaleRecordsProps = {
+    onEntriesChange?: (entries: MilkEntry[]) => void;
+}
+
+export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProps) {
     const { t } = useTranslation();
     const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
     const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
     const { customers } = useCustomers({ role: "Buyer" });
-    const dispatch = useDispatch()
 
     const [loading, setLoading] = useState(false);
 
@@ -144,7 +145,7 @@ export default function MilkSaleRecords() {
             const data = await response.json();
             setAllEntries(data.data || []);
             setFilteredEntries(data.data || []);
-            dispatch(setRecordData(data.data)); // Update Redux store with filtered data
+            onEntriesChange?.(data.data || []);
         } catch {
             Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
         } finally {

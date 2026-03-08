@@ -95,6 +95,11 @@ export interface Farmer extends BaseUser {
 export interface User extends BaseUser {
   role?: string;
   collectionCenter?: string;
+  dailryName?: string;
+  fatherName?: string;
+  isVerified?: boolean;
+  createdAt?: string;
+  address?: string;
   milkRate?: string;
   morningMilk?: string;
   eveningMilk?: string;
@@ -149,9 +154,10 @@ export type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
+  updateUser: (user: User | null) => Promise<void>;
   signIn: (mobile: string, password: string) => Promise<any>;
   signUp: (name: string, mobile: string, role?: string) => Promise<any>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (
     email: string,

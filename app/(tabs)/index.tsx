@@ -4,7 +4,7 @@ import Summary from "@/components/customer/Summary";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
 import { FarmerDashboardData } from "@/constants/types";
-import { RootState } from "@/store/store";
+import { useAuth } from "@/context/AuthContext";
 import {
   AntDesign,
   MaterialCommunityIcons
@@ -32,7 +32,6 @@ import Animated, {
   withSpring
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useSelector } from "react-redux";
 
 
 export default function SellerDashboard() {
@@ -43,7 +42,7 @@ export default function SellerDashboard() {
   const [data, setData] = useState<FarmerDashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const user = useSelector((store: RootState) => store.user);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -148,9 +147,9 @@ export default function SellerDashboard() {
 
   return (
     <SafeAreaView style={[styles.container]}>
-      <FarmerDashboardHeader name={user?.name?.split(" ")[0] || "Farmer"} profilePic={user.profilePic ||
+      <FarmerDashboardHeader name={user?.name?.split(" ")[0] || "Farmer"} profilePic={user?.profilePic ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          user.name || "Dairy Farmer"
+          user?.name || "Dairy Farmer"
         )}&background=3b82f6&color=fff`} />
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}

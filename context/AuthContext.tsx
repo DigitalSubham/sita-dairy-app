@@ -1,6 +1,5 @@
 import { api } from "@/constants/api";
 import { AuthContextType, User } from "@/constants/types";
-import { logout, setReduxUser } from "@/store/userSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import {
@@ -12,7 +11,6 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
-import { useDispatch } from "react-redux";
 
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +19,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const dispatch = useDispatch();
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -35,7 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setIsAuthenticated(true);
-          dispatch(setReduxUser(parsedUser));
         } else {
           setIsAuthenticated(false);
         }
@@ -51,6 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkAuthStatus();
   }, []);
+
+  const updateUser = async (nextUser: User | null) => {
+    if (nextUser) {
+      await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+      setUser(nextUser);
+      setIsAuthenticated(true);
+      return;
+    }
+
+    await AsyncStorage.removeItem("user");
+    setUser(null);
+    setIsAuthenticated(false);
+  };
 
   const signIn = async (mobile: string, password: string): Promise<any> => {
     try {
@@ -79,9 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
         await AsyncStorage.setItem("token", JSON.stringify(data.token));
-        dispatch(setReduxUser(data.user));
-        setUser(data.user);
-        setIsAuthenticated(true);
+        await updateUser(data.user);
         return data;
       } else {
         Toast.show({
@@ -142,9 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Store user data in AsyncStorage (React Native does not support localStorage)
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
         await AsyncStorage.setItem("token", JSON.stringify(data.token));
-        dispatch(setReduxUser(data.user));
-        setUser(data.user);
-        setIsAuthenticated(true);
+        await updateUser(data.user);
         return data;
       } else {
         // Error toast for failed login
@@ -225,9 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       text1: t("auth.logout_successful"), // "Logged out successfully!"
       text2: t("auth.come_back_soon"),
     });
-    dispatch(logout());
-    setUser(null);
-    setIsAuthenticated(false);
+    await updateUser(null);
     router.replace("/login");
   };
 
@@ -237,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isLoading,
         user,
+        updateUser,
         signIn,
         signUp,
         signOut,
