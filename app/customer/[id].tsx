@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Image,
   Linking,
@@ -41,6 +42,7 @@ interface User {
 }
 
 export default function CustomerDetailsScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [userData, setUserData] = useState<User | null>(null);
@@ -102,7 +104,7 @@ export default function CustomerDetailsScreen() {
 
   if (loading) {
     return (
-      <DairyLoadingScreen loading loadingText="loading Customer..." />
+      <DairyLoadingScreen loading loadingText={t("users.loading_customer")} />
     );
   }
 
@@ -114,9 +116,9 @@ export default function CustomerDetailsScreen() {
           size={64}
           color="#ef4444"
         />
-        <Text style={styles.errorText}>Failed to load customer data</Text>
+        <Text style={styles.errorText}>{t("users.failed_load_customer_data")}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchUserData}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -129,7 +131,7 @@ export default function CustomerDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CustomHeader title="Customer Details" showBackButton showMenuButton={false} />
+      <CustomHeader title={t("users.customer_details")} showBackButton showMenuButton={false} />
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -207,7 +209,7 @@ export default function CustomerDetailsScreen() {
             <View style={[styles.actionIcon, { backgroundColor: "#8b5cf6" }]}>
               <MaterialCommunityIcons name="cow" size={24} color="#ffffff" />
             </View>
-            <Text style={styles.actionText}>Records</Text>
+            <Text style={styles.actionText}>{t("navigation.milk_records")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton}>

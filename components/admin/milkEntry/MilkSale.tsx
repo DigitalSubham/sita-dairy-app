@@ -104,12 +104,12 @@ export default function MilkSaleEntry() {
     // Handle submit
     const handleSubmit = async () => {
         if (!formData.userId) {
-            Alert.alert("Error", "Please select a user")
+            Alert.alert(t("common.error"), t("validation.user"))
             return
         }
 
         if (!formData.weight || !formData.rate) {
-            Alert.alert("Error", "Please fill in all required fields")
+            Alert.alert(t("common.error"), t("validation.all_fields_required"))
             return
         }
 
@@ -141,16 +141,16 @@ export default function MilkSaleEntry() {
             const data = await response.json()
 
             if (data.success) {
-                Alert.alert("Success", data.message)
+                Alert.alert(t("common.success"), data.message)
                 resetForm()
                 fetchTodayEntries(api.milkSales, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
 
             } else {
-                Alert.alert("Error", data.message)
+                Alert.alert(t("common.error"), data.message)
             }
         } catch (error) {
             console.error("Submit Error:", error)
-            Alert.alert("Error", "Failed to add milk entry")
+            Alert.alert(t("common.error"), t("records.failed_update_entry"))
         } finally {
             setIsSubmitting(false)
         }
@@ -255,7 +255,7 @@ export default function MilkSaleEntry() {
                             }}
                         >
                             <Text style={styles.compactFieldText}>
-                                {formData.shift === "Morning" ? "🌅" : "🌙"} {formData.shift}
+                                {formData.shift === "Morning" ? "🌅" : "🌙"} {formData.shift === "Morning" ? t("entry.morning") : t("entry.evening")}
                             </Text>
                         </TouchableOpacity>
 
@@ -289,7 +289,7 @@ export default function MilkSaleEntry() {
                             <TextInput
                                 ref={weightRef}
                                 style={styles.input}
-                                placeholder="Weight"
+                                placeholder={t("entry.weight")}
                                 placeholderTextColor="#93c5fd"
                                 value={formData.weight}
                                 onChangeText={(value) => updateFormData("weight", value)}
@@ -306,7 +306,7 @@ export default function MilkSaleEntry() {
                             <TextInput
                                 ref={rateRef}
                                 style={styles.input}
-                                placeholder="Rate"
+                                placeholder={t("records.rate")}
                                 placeholderTextColor="#93c5fd"
                                 value={formData.rate}
                                 onChangeText={(value) => updateFormData("rate", value)}
@@ -331,17 +331,9 @@ export default function MilkSaleEntry() {
                         >
                             <LinearGradient colors={["#0ea5e9", "#0284c7"]} style={styles.submitGradient}>
                                 <FontAwesome name={editingEntry ? "save" : "plus"} size={16} color="white" />
-                                {(() => {
-                                    let buttonText;
-                                    if (isSubmitting) {
-                                        buttonText = "...";
-                                    } else if (editingEntry) {
-                                        buttonText = "Update";
-                                    } else {
-                                        buttonText = "Add";
-                                    }
-                                    return <Text style={styles.submitButtonText}>{buttonText}</Text>;
-                                })()}
+                                <Text style={styles.submitButtonText}>
+                                    {isSubmitting ? t("common.saving") : editingEntry ? t("common.update") : t("common.add")}
+                                </Text>
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>

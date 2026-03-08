@@ -5,9 +5,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Toast from "react-native-toast-message";
 export default function SettingsScreen() {
   const { signOut } = useAuth();
+  const { t } = useTranslation();
 
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
@@ -25,7 +27,7 @@ export default function SettingsScreen() {
       if (!storedToken) {
         Toast.show({
           type: "error",
-          text1: "Authentication token not found",
+          text1: t("records.authentication_token_not_found"),
         });
         return;
       }
@@ -55,15 +57,15 @@ export default function SettingsScreen() {
         console.error("Failed to delete account:", data);
         Toast.show({
           type: "error",
-          text1: "Account deletion failed",
-          text2: data.message || "Something went wrong",
+          text1: t("settings.account_deletion_failed"),
+          text2: data.message || t("common.something_wrong_retry"),
         });
       }
     } catch (error) {
       console.error("Error deleting account:", error);
       Toast.show({
         type: "error",
-        text1: "An unexpected error occurred",
+        text1: t("settings.unexpected_error_occurred"),
       });
     }
   };

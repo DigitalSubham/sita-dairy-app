@@ -25,15 +25,15 @@ const SettingsComponent: React.FC<SettingsProps> = ({
   const { t } = useTranslation()
   const showDeleteAccountAlert = () => {
     Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
+      t("settings.delete_account"),
+      t("settings.delete_account_confirmation"),
       [
         {
-          text: "Cancel",
+          text: t("common.cancel"),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: handleDeleteAccount,
         },
@@ -54,8 +54,8 @@ const SettingsComponent: React.FC<SettingsProps> = ({
           <View style={styles.card}>
             <SettingItem
               icon={<FontAwesome name="bell" size={20} color="#6b7280" />}
-              label="Push Notifications"
-              description="Receive notifications about activity"
+              label={t("settings.push_notifications")}
+              description={t("settings.receive_notifications_about_activity")}
               value={notifications}
               onValueChange={setNotifications}
             />
@@ -98,7 +98,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
               <Feather name="info" size={20} color="#6b7280" style={styles.aboutIcon} />
               <View>
                 <Text style={styles.aboutTitle}>{t("settings.version")}</Text>
-                <Text style={styles.aboutDescription}>1.1.7</Text>
+                <Text style={styles.aboutDescription}>1.1.8</Text>
               </View>
             </View>
 

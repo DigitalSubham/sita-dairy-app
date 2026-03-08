@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
@@ -17,6 +18,7 @@ type props = {
 
 const DataCard = ({ item, setSelectedItem, setShowDeleteModal, handleEdit }: props) => {
     const { user } = useAuth()
+    const { t } = useTranslation()
     return (
         <View style={styles.entryCard}>
             <View style={styles.entryHeader}>
@@ -77,9 +79,9 @@ const DataCard = ({ item, setSelectedItem, setShowDeleteModal, handleEdit }: pro
                     {item.snf && <Text style={styles.detailValue}>{item.snf}%</Text>}
                 </View>
                 <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Weight</Text>
-                    {item.fat && <Text style={styles.detailLabel}>Fat</Text>}
-                    {item.snf && <Text style={styles.detailLabel}>SNF</Text>}
+                    <Text style={styles.detailLabel}>{t("entry.weight")}</Text>
+                    {item.fat && <Text style={styles.detailLabel}>{t("entry.fat")}</Text>}
+                    {item.snf && <Text style={styles.detailLabel}>{t("entry.snf")}</Text>}
                 </View>
             </View>
 

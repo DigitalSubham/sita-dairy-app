@@ -9,6 +9,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "expo-router";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -34,6 +35,7 @@ const { width } = Dimensions.get("window");
 
 
 export default function AdminProductsScreen(): React.ReactElement {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -113,7 +115,7 @@ export default function AdminProductsScreen(): React.ReactElement {
       setLoading(true);
 
       if (!currentProduct.title || !currentProduct.price) {
-        Alert.alert("Validation Error", "Please fill in all required fields");
+        Alert.alert(t("common.error"), t("validation.all_fields_required"));
         setLoading(false);
         return;
       }
@@ -161,7 +163,7 @@ export default function AdminProductsScreen(): React.ReactElement {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to save product");
+        throw new Error(result.message || t("products.failed_save_product"));
       }
 
       if (result.success) {
@@ -186,14 +188,14 @@ export default function AdminProductsScreen(): React.ReactElement {
     } catch (error) {
       console.error('Error saving product:', error);
 
-      let errorMessage = "Failed to save product";
+      let errorMessage = t("products.failed_save_product");
 
       if (error instanceof Error) {
         errorMessage = error.message;
       }
 
       setLoading(false);
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
     }
   };
 
@@ -220,7 +222,7 @@ export default function AdminProductsScreen(): React.ReactElement {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to delete product");
+        throw new Error(result.message || t("products.failed_delete_product"));
       }
 
       if (result.success) {
@@ -240,13 +242,13 @@ export default function AdminProductsScreen(): React.ReactElement {
     } catch (error) {
       console.error('Error deleting product:', error);
 
-      let errorMessage = "Failed to delete product";
+      let errorMessage = t("products.failed_delete_product");
       if (error instanceof Error) {
         errorMessage = error.message;
       }
 
       setLoading(false);
-      Alert.alert("Error", errorMessage);
+      Alert.alert(t("common.error"), errorMessage);
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
@@ -260,8 +262,8 @@ export default function AdminProductsScreen(): React.ReactElement {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Denied",
-          "We need camera roll permissions to change your profile picture"
+          t("common.error"),
+          t("products.permission_gallery_required")
         );
         return;
       }
@@ -284,7 +286,7 @@ export default function AdminProductsScreen(): React.ReactElement {
       }
     } catch (error) {
       console.error('Error picking thumbnail:', error);
-      Alert.alert("Error", "Failed to select thumbnail");
+      Alert.alert(t("common.error"), t("products.failed_select_thumbnail"));
     }
   };
 
@@ -350,7 +352,8 @@ export default function AdminProductsScreen(): React.ReactElement {
           <View style={styles.productMeta}>
             {item.isFeatured && (
               <View style={styles.featuredBadge}>
-                <Text style={styles.featuredText}>Featured</Text>
+                <Text style={styles.featuredText}>{t("products.featured")}</Text>
+                
               </View>
             )}
           </View>
@@ -372,7 +375,7 @@ export default function AdminProductsScreen(): React.ReactElement {
             onPress={() => editProduct(item)}
           >
             <FontAwesome name="edit" size={16} color="#ffffff" />
-            <Text style={styles.actionButtonText}>Edit</Text>
+            <Text style={styles.actionButtonText}>{t("common.edit")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -380,7 +383,7 @@ export default function AdminProductsScreen(): React.ReactElement {
             onPress={() => confirmDeleteProduct(item._id)}
           >
             <FontAwesome name="trash" size={16} color="#ffffff" />
-            <Text style={styles.actionButtonText}>Delete</Text>
+            <Text style={styles.actionButtonText}>{t("common.delete")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -393,7 +396,7 @@ export default function AdminProductsScreen(): React.ReactElement {
 
 
       <RenderDeleteModal
-        text="product"
+        text={t("navigation.products")}
         showDeleteModal={showDeleteModal}
         setShowDeleteModal={setShowDeleteModal}
         isDeleting={isDeleting}
@@ -413,7 +416,7 @@ export default function AdminProductsScreen(): React.ReactElement {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products..."
+            placeholder={t("products.search_products")}
             placeholderTextColor="#6b7280"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -425,7 +428,7 @@ export default function AdminProductsScreen(): React.ReactElement {
       {loading && products.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4A00E0" />
-          <Text style={styles.loadingText}>Loading products...</Text>
+          <Text style={styles.loadingText}>{t("products.loading_products")}</Text>
         </View>
       ) : (
         <FlatList
@@ -446,8 +449,8 @@ export default function AdminProductsScreen(): React.ReactElement {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
                 {searchQuery
-                  ? "No products match your search"
-                  : "No products found"}
+                  ? t("products.no_products_match_search")
+                  : t("products.no_products_found")}
               </Text>
             </View>
           }
@@ -466,7 +469,7 @@ export default function AdminProductsScreen(): React.ReactElement {
           <Animated.View style={[styles.drawer, drawerAnimatedStyle]}>
             <View style={styles.drawerHeader}>
               <Text style={styles.drawerTitle}>
-                {isEditing ? "Edit Product" : "Add New Product"}
+                {isEditing ? t("products.edit_product") : t("products.add_new_product")}
               </Text>
               <TouchableOpacity
                 onPress={() => toggleDrawer(false)}
@@ -495,7 +498,7 @@ export default function AdminProductsScreen(): React.ReactElement {
                   <View style={styles.imagePlaceholder}>
                     <FontAwesome name="camera" size={40} color="#6b7280" />
                     <Text style={styles.imagePlaceholderText}>
-                      Tap to select product image
+                      {t("common.tap_to_select_product_image")}
                     </Text>
                   </View>
                 )}
@@ -503,10 +506,10 @@ export default function AdminProductsScreen(): React.ReactElement {
 
               {/* Form Fields */}
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Product Title *</Text>
+                <Text style={styles.fieldLabel}>{t("common.product_title")} *</Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Enter product title"
+                  placeholder={t("products.enter_product_title")}
                   placeholderTextColor="#6b7280"
                   value={currentProduct.title}
                   onChangeText={(text) =>
@@ -517,7 +520,7 @@ export default function AdminProductsScreen(): React.ReactElement {
 
               <View style={styles.formRow}>
                 <View style={[styles.formField, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.fieldLabel}>Price *</Text>
+                  <Text style={styles.fieldLabel}>{t("products.price")} *</Text>
                   <TextInput
                     style={styles.textInput}
                     placeholder="0.00"
@@ -532,10 +535,10 @@ export default function AdminProductsScreen(): React.ReactElement {
               </View>
 
               <View style={styles.formField}>
-                <Text style={styles.fieldLabel}>Description</Text>
+                <Text style={styles.fieldLabel}>{t("common.description")}</Text>
                 <TextInput
                   style={[styles.textInput, styles.textArea]}
-                  placeholder="Enter product description"
+                  placeholder={t("products.enter_product_description")}
                   placeholderTextColor="#6b7280"
                   multiline={true}
                   numberOfLines={4}
@@ -568,7 +571,7 @@ export default function AdminProductsScreen(): React.ReactElement {
                       <FontAwesome name="check" size={16} color="#ffffff" />
                     )}
                   </TouchableOpacity>
-                  <Text style={styles.checkboxLabel}>Featured Product</Text>
+                  <Text style={styles.checkboxLabel}>{t("products.featured_product")}</Text>
                 </View>
               </View>
 
@@ -581,7 +584,7 @@ export default function AdminProductsScreen(): React.ReactElement {
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <Text style={styles.saveButtonText}>
-                    {isEditing ? "Update Product" : "Add Product"}
+                    {isEditing ? t("products.update_product") : t("products.add_product")}
                   </Text>
                 )}
               </TouchableOpacity>

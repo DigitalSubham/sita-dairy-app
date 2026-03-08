@@ -164,15 +164,15 @@ const ImprovedCustomersList: React.FC = () => {
         setHasChanges(false)
         refresh()
       } else {
-        Alert.alert("Error", data.message)
+        Alert.alert(t("common.error"), data.message)
       }
     } catch (error) {
       console.error("Failed to update customer roles:", error)
       const errorMessage =
         typeof error === "object" && error !== null && "message" in error && typeof (error as any).message === "string"
           ? (error as any).message
-          : "Failed to save changes"
-      Alert.alert("Error", errorMessage)
+          : t("users.failed_to_save_changes")
+      Alert.alert(t("common.error"), errorMessage)
     } finally {
       setIsSaving(false)
     }
@@ -180,13 +180,13 @@ const ImprovedCustomersList: React.FC = () => {
 
   // Cancel all changes
   const handleCancelChanges = useCallback(() => {
-    Alert.alert("Cancel Changes", "Are you sure you want to discard all changes?", [
+    Alert.alert(t("users.cancel_changes"), t("users.discard_all_changes_confirm"), [
       {
-        text: "Keep Editing",
+        text: t("users.keep_editing"),
         style: "cancel",
       },
       {
-        text: "Discard",
+        text: t("users.discard"),
         style: "destructive",
         onPress: () => {
           setModifiedCustomers({})
@@ -277,9 +277,9 @@ const ImprovedCustomersList: React.FC = () => {
           <View style={styles.roleSection}>
             <Text style={styles.roleSectionTitle}>{t("admin.role_assignment")}</Text>
             <View style={styles.roleCheckboxes}>
-              {renderRoleCheckbox(item, "User", "User")}
-              {renderRoleCheckbox(item, "Farmer", "Farmer")}
-              {renderRoleCheckbox(item, "Buyer", "Buyer")}
+              {renderRoleCheckbox(item, "User", t("users.user"))}
+              {renderRoleCheckbox(item, "Farmer", t("entry.farmer"))}
+              {renderRoleCheckbox(item, "Buyer", t("entry.buyer"))}
             </View>
           </View>
         </View>
@@ -288,7 +288,7 @@ const ImprovedCustomersList: React.FC = () => {
   }
 
   if (loading) {
-    return <DairyLoadingScreen loading={loading} loadingText="Syncing your Customer data..." />
+    return <DairyLoadingScreen loading={loading} loadingText={t("users.syncing_customer_data")} />
   }
 
   return (

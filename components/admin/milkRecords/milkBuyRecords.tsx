@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
     FlatList,
@@ -42,6 +43,7 @@ interface FilterParams {
 }
 
 export default function MilkBuyRecords() {
+    const { t } = useTranslation();
     const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
     const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
     const { customers } = useCustomers({ role: "Farmer" });
@@ -49,7 +51,7 @@ export default function MilkBuyRecords() {
     const [searchQuery, setSearchQuery] = useState("");
 
     // Filter states
-    const [selectedUser, setSelectedUser] = useState<string>("");
+    const [selectedFilterUser, setSelectedFilterUser] = useState<string>("");
     const [selectedDate, setSelectedDate] = useState<string>("");
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
@@ -130,7 +132,7 @@ export default function MilkBuyRecords() {
             if (!storedToken) {
                 Toast.show({
                     type: "error",
-                    text1: "Authentication token not found",
+                    text1: t("records.authentication_token_not_found"),
                 });
                 return;
             }
@@ -155,7 +157,7 @@ export default function MilkBuyRecords() {
             dispatch(setRecordData(data.data)); // Update Redux store with filtered data
         } catch (error) {
             console.error("Error fetching entries:", error);
-            Alert.alert("Error", "Failed to fetch entries");
+            Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
         } finally {
             setLoading(false);
         }
@@ -168,7 +170,7 @@ export default function MilkBuyRecords() {
             if (!storedToken) {
                 Toast.show({
                     type: "error",
-                    text1: "Authentication token not found",
+                    text1: t("records.authentication_token_not_found"),
                 });
                 return;
             }
@@ -192,21 +194,21 @@ export default function MilkBuyRecords() {
                 );
                 Toast.show({
                     type: "success",
-                    text1: "Entry deleted successfully",
+                    text1: t("records.entry_deleted_successfully"),
                 });
                 setShowDeleteModal(false);
                 setSelectedItem("");
             } else {
                 Toast.show({
                     type: "error",
-                    text1: "Failed to delete entry",
+                    text1: t("records.failed_delete_entry"),
                 });
                 setShowDeleteModal(false);
                 setSelectedItem("");
             }
         } catch (error) {
             console.error("Error deleting entry:", error);
-            Alert.alert("Error", "Failed to delete entries");
+            Alert.alert(t("common.error"), t("records.failed_delete_entries"));
         } finally {
             setIsDeleting(false);
             setShowDeleteModal(false);
@@ -227,7 +229,6 @@ export default function MilkBuyRecords() {
             milkType: 'milkType' in entry ? entry.milkType : MilkType.Cow,
         });
 
-        setSelectedUser(entry.byUser._id);
     };
 
     // Apply filters with button click
@@ -241,7 +242,7 @@ export default function MilkBuyRecords() {
             filters.date = selectedDate;
         }
 
-        if (selectedUser) filters.userId = selectedUser;
+        if (selectedFilterUser) filters.userId = selectedFilterUser;
         if (selectedShift) filters.shift = selectedShift;
 
         if (Object.keys(filters).length > 0) {
@@ -251,7 +252,7 @@ export default function MilkBuyRecords() {
 
     // Clear all filters and fetch today's data
     const clearFilters = () => {
-        setSelectedUser("");
+        setSelectedFilterUser("");
         setSelectedDate("");
         setStartDate("");
         setEndDate("");
@@ -361,18 +362,18 @@ export default function MilkBuyRecords() {
 
     // Get selected user name
     const getSelectedUserName = () => {
-        const user = customers.find((u) => u._id === selectedUser);
-        return user ? user.name.split(" ")[0] : "User";
+        const user = customers.find((u) => u._id === selectedFilterUser);
+        return user ? user.name.split(" ")[0] : t("records.user");
     };
 
     const handleSubmit = async () => {
         if (!formData.userId) {
-            Alert.alert("Error", "Please select a user");
+            Alert.alert(t("common.error"), t("validation.user"));
             return;
         }
 
         if (!formData.weight || !formData.fat || !formData.snf || !formData.rate) {
-            Alert.alert("Error", "Please fill in all required fields");
+            Alert.alert(t("common.error"), t("validation.all_fields_required"));
             return;
         }
 
@@ -383,7 +384,7 @@ export default function MilkBuyRecords() {
             if (!storedToken) {
                 Toast.show({
                     type: "error",
-                    text1: "Authentication token not found",
+                    text1: t("records.authentication_token_not_found"),
                 });
                 return;
             }
@@ -412,14 +413,14 @@ export default function MilkBuyRecords() {
 
             if (data.success) {
 
-                Alert.alert("Success", data.message);
+                Alert.alert(t("common.success"), data.message);
                 clearFilters();
             } else {
-                Alert.alert("Error", data.message);
+                Alert.alert(t("common.error"), data.message);
             }
         } catch (error) {
             console.error("Submit Error:", error);
-            Alert.alert("Error", "Failed to update milk entry");
+            Alert.alert(t("common.error"), t("records.failed_update_entry"));
         } finally {
             setIsUpdating(false);
         }
@@ -442,7 +443,7 @@ export default function MilkBuyRecords() {
                     <MaterialIcons name="search" size={20} color="#64748b" />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search entries..."
+                        placeholder={t("records.search_entries")}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         placeholderTextColor="#94a3b8"
@@ -466,14 +467,14 @@ export default function MilkBuyRecords() {
                     contentContainerStyle={styles.filtersScroll}
                 >
                     <FilterChip
-                        title={selectedUser ? getSelectedUserName() : "Farmer"}
-                        isActive={!!selectedUser}
+                        title={selectedFilterUser ? getSelectedUserName() : t("entry.farmer")}
+                        isActive={!!selectedFilterUser}
                         onPress={() => setShowUserModal(true)}
                         icon="person"
                     />
                     <FilterChip
                         title={
-                            selectedDate ? format(new Date(selectedDate), "dd MMM") : "Date"
+                            selectedDate ? format(new Date(selectedDate), "dd MMM") : t("records.date")
                         }
                         isActive={!!selectedDate}
                         onPress={() => {
@@ -489,7 +490,7 @@ export default function MilkBuyRecords() {
                                     new Date(endDate),
                                     "dd MMM"
                                 )}`
-                                : "Range"
+                                : t("records.range")
                         }
                         isActive={!!(startDate && endDate)}
                         onPress={() => {
@@ -499,7 +500,7 @@ export default function MilkBuyRecords() {
                         icon="date-range"
                     />
                     <FilterChip
-                        title={selectedShift ? selectedShift[0] : "Shift"}
+                        title={selectedShift ? selectedShift[0] : t("records.shift")}
                         isActive={!!selectedShift}
                         onPress={() => setShowShiftModal(true)}
                         icon="schedule"
@@ -511,12 +512,12 @@ export default function MilkBuyRecords() {
             <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity style={styles.resetButton} onPress={clearFilters}>
                     <MaterialIcons name="clear-all" size={16} color="#ef4444" />
-                    <Text style={styles.resetButtonText}>Reset</Text>
+                    <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
                     <MaterialIcons name="filter-list" size={16} color="#fff" />
-                    <Text style={styles.applyButtonText}>Apply Filters</Text>
+                    <Text style={styles.applyButtonText}>{t("entry.apply_filters")}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -527,7 +528,7 @@ export default function MilkBuyRecords() {
             {loading && (
                 <DairyLoadingScreen
                     loading={loading}
-                    loadingText="Syncing your Milk Entries..."
+                    loadingText={t("records.syncing_milk_entries")}
                 />
             )}
 
@@ -545,7 +546,7 @@ export default function MilkBuyRecords() {
                         <View style={styles.emptyContainer}>
                             <MaterialIcons name="inbox" size={48} color="#cbd5e1" />
                             <Text style={styles.emptyText}>
-                                {searchQuery ? "No matching entries" : "No entries found"}
+                                {searchQuery ? t("records.no_matching_entries") : t("records.no_entries_found")}
                             </Text>
                         </View>
                     }
@@ -557,7 +558,7 @@ export default function MilkBuyRecords() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Farmer</Text>
+                            <Text style={styles.modalTitle}>{t("entry.select_farmer")}</Text>
                             <TouchableOpacity onPress={() => setShowUserModal(false)}>
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -565,14 +566,18 @@ export default function MilkBuyRecords() {
                         <TouchableOpacity
                             style={[
                                 styles.optionItem,
-                                !selectedUser && styles.selectedOption,
+                                !(isEditing ? formData.userId : selectedFilterUser) && styles.selectedOption,
                             ]}
                             onPress={() => {
-                                setSelectedUser("");
+                                if (isEditing) {
+                                    updateFormData("userId", "");
+                                } else {
+                                    setSelectedFilterUser("");
+                                }
                                 setShowUserModal(false);
                             }}
                         >
-                            <Text style={styles.optionText}>All Farmers</Text>
+                            <Text style={styles.optionText}>{t("records.all_farmers")}</Text>
                         </TouchableOpacity>
                         <FlatList
                             data={customers}
@@ -581,10 +586,14 @@ export default function MilkBuyRecords() {
                                 <TouchableOpacity
                                     style={[
                                         styles.optionItem,
-                                        selectedUser === item._id && styles.selectedOption,
+                                        (isEditing ? formData.userId : selectedFilterUser) === item._id && styles.selectedOption,
                                     ]}
                                     onPress={() => {
-                                        setSelectedUser(item._id);
+                                        if (isEditing) {
+                                            updateFormData("userId", item._id);
+                                        } else {
+                                            setSelectedFilterUser(item._id);
+                                        }
                                         setShowUserModal(false);
                                     }}
                                 >
@@ -613,7 +622,7 @@ export default function MilkBuyRecords() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarModalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Date</Text>
+                            <Text style={styles.modalTitle}>{t("common.select_date")}</Text>
                             <TouchableOpacity onPress={() => setShowDateModal(false)}>
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -634,7 +643,7 @@ export default function MilkBuyRecords() {
                             style={styles.modalButton}
                             onPress={() => setShowDateModal(false)}
                         >
-                            <Text style={styles.modalButtonText}>Done</Text>
+                            <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -645,7 +654,7 @@ export default function MilkBuyRecords() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarModalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Date Range</Text>
+                            <Text style={styles.modalTitle}>{t("records.select_date_range")}</Text>
                             <TouchableOpacity onPress={() => setShowDateRangeModal(false)}>
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -653,10 +662,10 @@ export default function MilkBuyRecords() {
 
                         <Text style={styles.calendarInstructions}>
                             {!startDate
-                                ? "Select start date"
+                                ? t("records.select_start_date")
                                 : !endDate
-                                    ? "Select end date"
-                                    : "Date range selected"}
+                                    ? t("records.select_end_date")
+                                    : t("records.date_range_selected")}
                         </Text>
 
                         <Calendar
@@ -673,19 +682,19 @@ export default function MilkBuyRecords() {
 
                         <View style={styles.rangeDisplayContainer}>
                             <View style={styles.rangeDisplayItem}>
-                                <Text style={styles.rangeDisplayLabel}>Start Date:</Text>
+                                <Text style={styles.rangeDisplayLabel}>{t("entry.start_date")}:</Text>
                                 <Text style={styles.rangeDisplayValue}>
                                     {startDate
                                         ? format(new Date(startDate), "dd MMM yyyy")
-                                        : "Not selected"}
+                                        : t("records.not_selected")}
                                 </Text>
                             </View>
                             <View style={styles.rangeDisplayItem}>
-                                <Text style={styles.rangeDisplayLabel}>End Date:</Text>
+                                <Text style={styles.rangeDisplayLabel}>{t("entry.end_date")}:</Text>
                                 <Text style={styles.rangeDisplayValue}>
                                     {endDate
                                         ? format(new Date(endDate), "dd MMM yyyy")
-                                        : "Not selected"}
+                                        : t("records.not_selected")}
                                 </Text>
                             </View>
                         </View>
@@ -699,14 +708,14 @@ export default function MilkBuyRecords() {
                                     setMarkedDates({});
                                 }}
                             >
-                                <Text style={styles.modalSecondaryButtonText}>Clear</Text>
+                                <Text style={styles.modalSecondaryButtonText}>{t("entry.clear")}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 style={styles.modalButton}
                                 onPress={() => setShowDateRangeModal(false)}
                             >
-                                <Text style={styles.modalButtonText}>Done</Text>
+                                <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -717,7 +726,7 @@ export default function MilkBuyRecords() {
 
             {!!selectedItem && (
                 <RenderDeleteModal
-                    text="entry"
+                    text={t("records.entry")}
                     showDeleteModal={showDeleteModal}
                     setShowDeleteModal={setShowDeleteModal}
                     isDeleting={isDeleting}
@@ -726,11 +735,11 @@ export default function MilkBuyRecords() {
                 />
             )}
 
-            <ModalWrapper visible={!!isEditing} setVisibility={() => setIsEditing(null)} headerText="Edit Entry" >
+            <ModalWrapper visible={!!isEditing} setVisibility={() => setIsEditing(null)} headerText={t("entry.edit_entry")} >
                 <EntryForm
                     editingEntry={!!isEditing}
                     formData={formData}
-                    selectedUser={customers.find((u) => u._id === selectedUser) || null}
+                    selectedUser={customers.find((u) => u._id === formData.userId) || null}
                     updateFormData={updateFormData}
                     setShowUserSelector={setShowUserModal}
                     weightRef={weightRef}

@@ -1,6 +1,7 @@
 import { User } from '@/constants/types';
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
@@ -17,12 +18,13 @@ type UserModalProps = {
 };
 
 const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSelector, filteredUser, selectedUser, setSelectedUser, updateFormData, weightRef, title }) => {
+    const { t } = useTranslation();
     return (
         <Modal visible={showUserSelector} animationType="slide" transparent statusBarTranslucent={true}>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Select {title} - {filteredUser.length}</Text>
+                        <Text style={styles.modalTitle}>{t("records.select_user_count", { title, count: filteredUser.length })}</Text>
                         <TouchableOpacity onPress={() => {
                             setShowUserSelector(false)
                             setSelectedUser(null)
@@ -39,7 +41,7 @@ const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSele
                                 onPress={() => {
                                     setSelectedUser(item)
                                     updateFormData("userId", item._id)
-                                    if (title === "Buyer" && item.milkRate && item.morningMilk && item.eveningMilk) {
+                                    if (item.role === "Buyer" && item.milkRate && item.morningMilk && item.eveningMilk) {
                                         updateFormData("rate", item.milkRate)
                                         updateFormData("weight", new Date().getHours() < 12 ? item.morningMilk : item.eveningMilk)
                                     }

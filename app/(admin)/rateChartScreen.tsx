@@ -6,6 +6,7 @@ import { stringNumber } from "@/constants/types"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ActivityIndicator, Alert, StyleSheet, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
@@ -49,6 +50,7 @@ export type EditingHeader = {
 
 
 const RateChartScreen = () => {
+    const { t } = useTranslation()
     const [rateChart, setRateChart] = useState<RateChartRow[]>([])
     const [columns, setColumns] = useState<ChartColumn[]>([])
     const [showColumnModal, setShowColumnModal] = useState(false);
@@ -88,12 +90,12 @@ const RateChartScreen = () => {
 
     const confirmAddRow = () => {
         Alert.alert(
-            "Add Row",
-            "Do you want to add a new row?",
+            t("rate.add_row"),
+            t("rate.add_row_confirmation"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("common.cancel"), style: "cancel" },
                 {
-                    text: "Add",
+                    text: t("common.add"),
                     onPress: addRow,
                 },
             ]
@@ -129,17 +131,17 @@ const RateChartScreen = () => {
 
     const confirmRemoveRow = (rowId: string) => {
         if (rateChart.length <= 1) {
-            Alert.alert("Not allowed", "At least one row must remain.");
+            Alert.alert(t("common.error"), t("rate.at_least_one_row"));
             return;
         }
 
         Alert.alert(
-            "Delete Row",
-            "This row will be permanently removed.",
+            t("rate.delete_row"),
+            t("rate.delete_row_confirmation"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("common.cancel"), style: "cancel" },
                 {
-                    text: "Delete",
+                    text: t("common.delete"),
                     style: "destructive",
                     onPress: () => {
                         setRateChart(prev => prev.filter(row => row._id !== rowId));
@@ -153,19 +155,19 @@ const RateChartScreen = () => {
     // Remove column
     const removeColumn = (columnKey: string) => {
         if (columns[0]?.key === columnKey) {
-            Alert.alert("Not allowed", "Cannot remove primary column");
+            Alert.alert(t("common.error"), t("rate.cannot_remove_primary_column"));
             return;
         }
 
         if (columns.length <= 1) {
-            Alert.alert("Error", "Cannot remove the last column");
+            Alert.alert(t("common.error"), t("rate.cannot_remove_last_column"));
             return;
         }
 
-        Alert.alert("Remove Column", "Are you sure?", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("rate.remove_column"), t("rate.are_you_sure"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Remove",
+                text: t("common.delete"),
                 style: "destructive",
                 onPress: () => {
                     setColumns(prev => prev.filter(col => col.key !== columnKey));
@@ -191,7 +193,7 @@ const RateChartScreen = () => {
         if (!trimmed) return;
 
         if (columns.some(col => col.label === trimmed)) {
-            Alert.alert("Duplicate", "Column already exists");
+            Alert.alert(t("common.error"), t("rate.column_already_exists"));
             return;
         }
 
@@ -237,11 +239,11 @@ const RateChartScreen = () => {
                 setRateChart(data.row)
                 setColumns(data.column)
             } else {
-                Alert.alert("Error", data.message || "Failed to fetch data")
+                Alert.alert(t("common.error"), data.message || t("records.failed_fetch_entries"))
             }
 
         } catch (error) {
-            Alert.alert("Error", "Failed to fetch data from server")
+            Alert.alert(t("common.error"), t("records.failed_fetch_entries"))
             console.error("Fetch error:", error)
         } finally {
             setLoading(false)
@@ -268,7 +270,7 @@ const RateChartScreen = () => {
             })
 
             if (response.ok) {
-                Alert.alert("Success", "Data saved successfully!")
+                Alert.alert(t("common.success"), t("rate.data_saved_successfully"))
                 fetchDataFromServer()
             } else {
                 throw new Error("Save failed")
@@ -276,7 +278,7 @@ const RateChartScreen = () => {
         }
 
         catch (error) {
-            Alert.alert("Error", "Failed to save data")
+            Alert.alert(t("common.error"), t("rate.failed_to_save_data"))
             console.error("Save error:", error)
         } finally {
             setLoading(false)
@@ -324,15 +326,15 @@ const RateChartScreen = () => {
             ) : null}
             <RateModal
                 visible={!!editingHeader}
-                modalheadertext="Edit Column Name"
+                modalheadertext={t("rate.edit_column_name")}
                 textValue={editingHeader?.value}
                 setVisible={() => setEditingHeader(null)}
                 submitFn={(value: string) =>
                     handleHeaderEdit(editingHeader!.columnKey, value)
                 }
             />
-            <RateModal visible={showColumnModal} setVisible={setShowColumnModal} submitFn={confirmAddColumn} modalheadertext={"Add Column"} />
-            <RateModal modalheadertext={`Edit Cell fat${Number(editingCell?.fatKey)?.toFixed(2)} - ${editingCell?.columnKey}`} visible={!!editingCell} setVisible={(value: boolean) => setEditingCell(null)} textValue={editingCell?.cellValue} submitFn={(value: stringNumber) => handleCellEdit(editingCell, value)} />
+            <RateModal visible={showColumnModal} setVisible={setShowColumnModal} submitFn={confirmAddColumn} modalheadertext={t("rate.add_column")} />
+            <RateModal modalheadertext={`${t("rate.edit_cell")} fat${Number(editingCell?.fatKey)?.toFixed(2)} - ${editingCell?.columnKey}`} visible={!!editingCell} setVisible={(value: boolean) => setEditingCell(null)} textValue={editingCell?.cellValue} submitFn={(value: stringNumber) => handleCellEdit(editingCell, value)} />
         </SafeAreaView>
     )
 }

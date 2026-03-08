@@ -104,11 +104,11 @@ export default function MilkBuyEntry() {
             if (data.success) {
                 setRateChart(data.row)
             } else {
-                Alert.alert("Error", data.message || "Failed to fetch data")
+                Alert.alert(t("common.error"), data.message || t("records.failed_fetch_entries"))
             }
 
         } catch (error) {
-            Alert.alert("Error", "Failed to fetch data from server")
+            Alert.alert(t("common.error"), t("records.failed_fetch_entries"))
             console.error("Fetch error:", error)
         } finally {
             // setLoading(false)
@@ -163,12 +163,12 @@ export default function MilkBuyEntry() {
     // Handle submit
     const handleSubmit = async () => {
         if (!formData.userId) {
-            Alert.alert("Error", "Please select a user");
+            Alert.alert(t("common.error"), t("validation.user"));
             return;
         }
 
         if (!formData.weight || !formData.fat || !formData.snf || !formData.rate) {
-            Alert.alert("Error", "Please fill in all required fields");
+            Alert.alert(t("common.error"), t("validation.all_fields_required"));
             return;
         }
 
@@ -204,7 +204,7 @@ export default function MilkBuyEntry() {
             const data = await response.json();
 
             if (data.success) {
-                Alert.alert("Success", data.message);
+                Alert.alert(t("common.success"), data.message);
                 resetForm();
                 fetchTodayEntries(
                     api.getRecords,
@@ -214,11 +214,11 @@ export default function MilkBuyEntry() {
                     setTodayEntries
                 );
             } else {
-                Alert.alert("Error", data.message);
+                Alert.alert(t("common.error"), data.message);
             }
         } catch (error) {
             console.error("Submit Error:", error);
-            Alert.alert("Error", "Failed to add milk entry");
+            Alert.alert(t("common.error"), t("records.failed_update_entry"));
         } finally {
             setIsSubmitting(false);
         }
@@ -271,7 +271,7 @@ export default function MilkBuyEntry() {
 
 
             <UserModal
-                title={t("entry.buyer")}
+                title={t("entry.farmer")}
                 showUserSelector={showUserSelector}
                 setShowUserSelector={setShowUserSelector}
                 filteredUser={filteredUser}

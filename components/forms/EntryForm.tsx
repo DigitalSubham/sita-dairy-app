@@ -103,7 +103,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
                         <TextInput
                             ref={weightRef}
                             style={styles.input}
-                            placeholder="Weight"
+                            placeholder={t("entry.weight")}
                             placeholderTextColor="#93c5fd"
                             value={formData.weight}
                             onChangeText={(value) => updateFormData("weight", value)}
@@ -119,7 +119,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
                         <TextInput
                             ref={fatRef}
                             style={styles.input}
-                            placeholder="Fat"
+                            placeholder={t("entry.fat")}
                             placeholderTextColor="#93c5fd"
                             value={formData.fat}
                             onChangeText={(value) => updateFormData("fat", value)}
@@ -136,7 +136,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
                         <TextInput
                             ref={snfRef}
                             style={styles.input}
-                            placeholder="SNF"
+                            placeholder={t("entry.snf")}
                             placeholderTextColor="#93c5fd"
                             value={formData.snf}
                             onChangeText={(value) => updateFormData("snf", value)}
@@ -170,7 +170,9 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
                     >
                         <LinearGradient colors={["#0ea5e9", "#0284c7"]} style={styles.submitGradient}>
                             <FontAwesome name={editingEntry ? "save" : "plus"} size={16} color="white" />
-                            <Text style={styles.submitButtonText}>{isSubmitting ? "..." : editingEntry ? t("common.update") : t("common.add")}</Text>
+                            <Text style={styles.submitButtonText}>
+                                {isSubmitting ? t("common.saving") : editingEntry ? t("common.update") : t("common.add")}
+                            </Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>

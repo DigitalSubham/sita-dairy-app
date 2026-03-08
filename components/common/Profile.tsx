@@ -7,6 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import type React from "react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -30,6 +31,7 @@ interface ProfileProps {
 }
 
 const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((store: RootState) => store.user);
   const [editedUser, setEditedUser] = useState({
@@ -99,7 +101,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
     if (!nameRegex.test(editedUser.name)) {
       setValidationErrors((prev) => ({
         ...prev,
-        name: "Please enter a valid name (at least 2 characters)",
+        name: t("validation.name"),
       }));
       hasErrors = true;
     }
@@ -107,7 +109,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
     if (!phoneRegex.test(editedUser.mobile)) {
       setValidationErrors((prev) => ({
         ...prev,
-        mobile: "Please enter a valid 10-digit mobile number",
+        mobile: t("validation.mobile"),
       }));
       hasErrors = true;
     }
@@ -115,7 +117,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
     if (!textRegex.test(editedUser.fatherName)) {
       setValidationErrors((prev) => ({
         ...prev,
-        fatherName: "Please enter a valid father's name",
+        fatherName: t("users.enter_valid_fathers_name"),
       }));
       hasErrors = true;
     }
@@ -123,7 +125,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
     if (editedUser.address && !textRegex.test(editedUser.address)) {
       setValidationErrors((prev) => ({
         ...prev,
-        address: "Please enter a valid address",
+        address: t("users.enter_valid_address"),
       }));
       hasErrors = true;
     }
@@ -138,7 +140,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
       if (!storedToken) {
         Toast.show({
           type: "error",
-          text1: "Authentication token not found",
+          text1: t("records.authentication_token_not_found"),
         });
         return;
       }
@@ -178,7 +180,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
       if (response.ok) {
         Toast.show({
           type: "success",
-          text1: responseData.message || "Profile updated successfully",
+          text1: responseData.message || t("users.profile_updated_successfully"),
         });
         setIsEditing(false);
         setImageFile(null);
@@ -193,13 +195,13 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
       } else {
         Toast.show({
           type: "error",
-          text1: responseData.message || "Failed to update profile",
+          text1: responseData.message || t("users.failed_to_update_profile"),
         });
       }
     } catch (err) {
       Toast.show({
         type: "error",
-        text1: "Something went wrong. Please try again.",
+        text1: t("common.something_wrong_retry"),
       });
     } finally {
       setIsLoading(false);
@@ -239,8 +241,8 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Denied",
-          "We need camera roll permissions to change your profile picture"
+          t("common.error"),
+          t("products.permission_gallery_required")
         );
         return;
       }
@@ -261,7 +263,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
         });
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to select image");
+      Alert.alert(t("common.error"), t("users.failed_to_select_image"));
     }
   };
 
@@ -322,7 +324,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             entering={FadeInUp.duration(300)}
             style={styles.userIdContainer}
           >
-            <Text style={styles.userIdLabel}>User ID</Text>
+            <Text style={styles.userIdLabel}>{t("users.user_id")}</Text>
             <View style={styles.userIdBadge}>
               <FontAwesome name="id-card" size={16} color="#dc2626" />
               <Text style={styles.userIdText}>#{editedUser.id}</Text>
@@ -343,7 +345,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                 onChangeText={(text) =>
                   setEditedUser({ ...editedUser, name: text })
                 }
-                placeholder="Your Name"
+                placeholder={t("users.your_name")}
                 placeholderTextColor="#6b7280"
               />
               {validationErrors.name ? (
@@ -367,14 +369,14 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             {editedUser.isVerified && (
               <View style={styles.verifiedBadge}>
                 <FontAwesome name="check-circle" size={14} color="#10b981" />
-                <Text style={styles.verifiedText}>Verified</Text>
+                <Text style={styles.verifiedText}>{t("users.verified")}</Text>
               </View>
             )}
           </View>
         </View>
 
         <Animated.View entering={FadeInUp.delay(300)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <Text style={styles.sectionTitle}>{t("users.personal_info")}</Text>
 
           {/* User ID - Also in section for emphasis */}
           <View style={styles.infoItem}>
@@ -385,7 +387,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               style={styles.infoIcon}
             />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>User ID (Non-editable)</Text>
+              <Text style={styles.infoLabel}>{t("users.user_id")} ({t("users.non_editable")})</Text>
               <View style={styles.idDisplayContainer}>
                 <Text style={styles.idDisplayText}>#{editedUser.id}</Text>
                 <View style={styles.lockIcon}>
@@ -403,7 +405,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               style={styles.infoIcon}
             />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Mobile Number</Text>
+              <Text style={styles.infoLabel}>{t("common.mobile_number")}</Text>
               {isEditing ? (
                 <TextInput
                   style={[
@@ -414,7 +416,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                   onChangeText={(text) =>
                     setEditedUser({ ...editedUser, mobile: text })
                   }
-                  placeholder="Your Phone"
+                  placeholder={t("users.your_phone")}
                   placeholderTextColor="#6b7280"
                   keyboardType="phone-pad"
                 />
@@ -435,7 +437,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               style={styles.infoIcon}
             />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Father's Name</Text>
+              <Text style={styles.infoLabel}>{t("users.father_name")}</Text>
               {isEditing ? (
                 <TextInput
                   style={[
@@ -446,7 +448,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                   onChangeText={(text) =>
                     setEditedUser({ ...editedUser, fatherName: text })
                   }
-                  placeholder="Father's Name"
+                  placeholder={t("users.father_name")}
                   placeholderTextColor="#6b7280"
                 />
               ) : (
@@ -469,7 +471,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               style={styles.infoIcon}
             />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Address</Text>
+              <Text style={styles.infoLabel}>{t("users.address")}</Text>
               {isEditing ? (
                 <TextInput
                   style={[
@@ -481,14 +483,14 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                   onChangeText={(text) =>
                     setEditedUser({ ...editedUser, address: text })
                   }
-                  placeholder="Enter your address"
+                  placeholder={t("users.enter_your_address")}
                   placeholderTextColor="#6b7280"
                   multiline={true}
                   numberOfLines={3}
                 />
               ) : (
                 <Text style={styles.infoValue}>
-                  {editedUser.address || "Data is coming..."}
+                  {editedUser.address || t("users.data_is_coming")}
                 </Text>
               )}
               {validationErrors.address ? (
@@ -505,7 +507,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               style={styles.infoIcon}
             />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Member Since (Non-editable)</Text>
+              <Text style={styles.infoLabel}>{t("users.member_since")} ({t("users.non_editable")})</Text>
               <View style={styles.nonEditableContainer}>
                 <Text style={styles.infoValue}>
                   {formatDate(editedUser.createdAt)}
@@ -520,7 +522,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
 
         <Animated.View entering={FadeInUp.delay(400)} style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Business Information (Non-editable)
+            {t("users.business_info_non_editable")}
           </Text>
 
           <View style={styles.infoItem}>
@@ -531,7 +533,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               style={styles.infoIcon}
             />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Dairy Name (Non-editable)</Text>
+              <Text style={styles.infoLabel}>{t("users.dairy_name")} ({t("users.non_editable")})</Text>
               <View style={styles.nonEditableContainer}>
                 <Text style={styles.infoValue}>{editedUser.dailryName}</Text>
                 <View style={styles.lockIcon}>
@@ -550,7 +552,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>
-                Collection Center (Non-editable)
+                {t("users.collection_center")} ({t("users.non_editable")})
               </Text>
               <View style={styles.nonEditableContainer}>
                 <Text style={styles.infoValue}>
@@ -585,7 +587,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                       color="#fff"
                       style={styles.buttonIcon}
                     />
-                    <Text style={styles.buttonText}>Save Changes</Text>
+                    <Text style={styles.buttonText}>{t("common.save_changes")}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -601,7 +603,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                   color="#fff"
                   style={styles.buttonIcon}
                 />
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.buttonText}>{t("common.cancel")}</Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -615,7 +617,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                 color="#fff"
                 style={styles.buttonIcon}
               />
-              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+              <Text style={styles.editProfileButtonText}>{t("users.edit_profile")}</Text>
             </TouchableOpacity>
           )}
         </Animated.View>

@@ -318,7 +318,7 @@ const WalletModal: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader title="Payments" />
+      <CustomHeader title={t("navigation.payments")} />
 
       <ScrollView
         style={styles.content}

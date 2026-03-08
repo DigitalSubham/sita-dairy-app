@@ -1,6 +1,7 @@
 import ModalWrapper from '@/components/common/ModalWrapper'
 import { ShiftType } from '@/constants/types'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, TouchableOpacity } from 'react-native'
 
 type Props = {
@@ -11,10 +12,10 @@ type Props = {
 }
 
 
-const shifts: { label: string; value: '' | ShiftType.Morning | ShiftType.Evening }[] = [
-    { label: 'All Shifts', value: '' },
-    { label: 'Morning', value: ShiftType.Morning },
-    { label: 'Evening', value: ShiftType.Evening },
+const shifts: { value: '' | ShiftType.Morning | ShiftType.Evening }[] = [
+    { value: '' },
+    { value: ShiftType.Morning },
+    { value: ShiftType.Evening },
 ]
 
 const ShiftModal = ({
@@ -23,14 +24,15 @@ const ShiftModal = ({
     setSelectedShift,
     setShowShiftModal,
 }: Props) => {
+    const { t } = useTranslation()
     return (
         <ModalWrapper
-            headerText="Select Shift"
+            headerText={t("entry.select_shift")}
             visible={showShiftModal}
             setVisibility={setShowShiftModal}
         >
             <>
-                {shifts.map(({ label, value }) => (
+                {shifts.map(({ value }) => (
                     <TouchableOpacity
                         key={value || 'all'}
                         style={[
@@ -42,7 +44,13 @@ const ShiftModal = ({
                             setShowShiftModal(false)
                         }}
                     >
-                        <Text style={styles.optionText}>{label}</Text>
+                        <Text style={styles.optionText}>
+                            {value === ""
+                                ? t("records.all_shifts")
+                                : value === ShiftType.Morning
+                                    ? t("entry.morning")
+                                    : t("entry.evening")}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </>

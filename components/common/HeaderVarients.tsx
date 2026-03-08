@@ -310,7 +310,7 @@ export const UsersHeader: React.FC<UsersHeaderProps> = ({
                         <Feather name="search" size={16} color="#64748b" style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Search by name, mobile, or dairy name..."
+                            placeholder={t("users.search_name_mobile_dairy")}
                             value={searchText}
                             onChangeText={handleSearchChange}
                             autoFocus

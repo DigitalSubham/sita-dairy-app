@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format, subDays } from "date-fns";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Dimensions,
@@ -34,6 +35,7 @@ const { width } = Dimensions.get("window");
 
 
 export default function EnhancedCustomerMilkRecords() {
+  const { t } = useTranslation();
   const [allEntries, setAllEntries] = useState<MilkRecord[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<MilkRecord[]>([]);
 
@@ -99,7 +101,7 @@ export default function EnhancedCustomerMilkRecords() {
       if (!storedToken) {
         Toast.show({
           type: "error",
-          text1: "Authentication token not found",
+          text1: t("records.authentication_token_not_found"),
         });
         return;
       }
@@ -125,7 +127,7 @@ export default function EnhancedCustomerMilkRecords() {
       setFilteredEntries(recordsData);
     } catch (error) {
       console.error("Failed to fetch entries:", error);
-      Alert.alert("Error", "Failed to fetch entries");
+      Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -257,7 +259,7 @@ export default function EnhancedCustomerMilkRecords() {
           <MaterialIcons name="search" size={20} color="#64748b" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search entries..."
+            placeholder={t("records.search_entries")}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#94a3b8"
@@ -287,7 +289,7 @@ export default function EnhancedCustomerMilkRecords() {
                   new Date(endDate),
                   "dd MMM"
                 )}`
-                : "Range"
+                : t("records.range")
             }
             isActive={!!(startDate && endDate)}
             onPress={() => {
@@ -296,7 +298,7 @@ export default function EnhancedCustomerMilkRecords() {
             icon="date-range"
           />
           <FilterChip
-            title={selectedShift ? selectedShift[0] : "Shift"}
+            title={selectedShift ? selectedShift[0] : t("records.shift")}
             isActive={!!selectedShift}
             onPress={() => setShowShiftModal(true)}
             icon="schedule"
@@ -308,12 +310,12 @@ export default function EnhancedCustomerMilkRecords() {
       <View style={styles.actionButtonsContainer}>
         <TouchableOpacity style={styles.resetButton} onPress={clearFilters}>
           <MaterialIcons name="clear-all" size={16} color="#ef4444" />
-          <Text style={styles.resetButtonText}>Reset</Text>
+          <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
           <MaterialIcons name="filter-list" size={16} color="#fff" />
-          <Text style={styles.applyButtonText}>Apply Filters</Text>
+          <Text style={styles.applyButtonText}>{t("entry.apply_filters")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -324,7 +326,7 @@ export default function EnhancedCustomerMilkRecords() {
       {loading && (
         <DairyLoadingScreen
           loading={loading}
-          loadingText="Syncing your Milk Entries..."
+          loadingText={t("records.syncing_milk_entries")}
         />
       )}
 
@@ -351,7 +353,7 @@ export default function EnhancedCustomerMilkRecords() {
             <View style={styles.emptyContainer}>
               <MaterialIcons name="inbox" size={48} color="#cbd5e1" />
               <Text style={styles.emptyText}>
-                {searchQuery ? "No matching entries" : "No entries found"}
+                {searchQuery ? t("records.no_matching_entries") : t("records.no_entries_found")}
               </Text>
             </View>
           }
@@ -363,7 +365,7 @@ export default function EnhancedCustomerMilkRecords() {
         <View style={styles.modalOverlay}>
           <View style={styles.calendarModalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date Range</Text>
+              <Text style={styles.modalTitle}>{t("records.select_date_range")}</Text>
               <TouchableOpacity onPress={() => setShowDateRangeModal(false)}>
                 <MaterialIcons name="close" size={20} color="#64748b" />
               </TouchableOpacity>
@@ -371,10 +373,10 @@ export default function EnhancedCustomerMilkRecords() {
 
             <Text style={styles.calendarInstructions}>
               {!startDate
-                ? "Select start date"
+                ? t("records.select_start_date")
                 : !endDate
-                  ? "Select end date"
-                  : "Date range selected"}
+                  ? t("records.select_end_date")
+                  : t("records.date_range_selected")}
             </Text>
 
             <Calendar
@@ -391,19 +393,19 @@ export default function EnhancedCustomerMilkRecords() {
 
             <View style={styles.rangeDisplayContainer}>
               <View style={styles.rangeDisplayItem}>
-                <Text style={styles.rangeDisplayLabel}>Start Date:</Text>
+                <Text style={styles.rangeDisplayLabel}>{t("entry.start_date")}:</Text>
                 <Text style={styles.rangeDisplayValue}>
                   {startDate
                     ? format(new Date(startDate), "dd MMM yyyy")
-                    : "Not selected"}
+                    : t("records.not_selected")}
                 </Text>
               </View>
               <View style={styles.rangeDisplayItem}>
-                <Text style={styles.rangeDisplayLabel}>End Date:</Text>
+                <Text style={styles.rangeDisplayLabel}>{t("entry.end_date")}:</Text>
                 <Text style={styles.rangeDisplayValue}>
                   {endDate
                     ? format(new Date(endDate), "dd MMM yyyy")
-                    : "Not selected"}
+                    : t("records.not_selected")}
                 </Text>
               </View>
             </View>
@@ -417,14 +419,14 @@ export default function EnhancedCustomerMilkRecords() {
                   setMarkedDates({});
                 }}
               >
-                <Text style={styles.modalSecondaryButtonText}>Clear</Text>
+                <Text style={styles.modalSecondaryButtonText}>{t("entry.clear")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.modalButton}
                 onPress={() => setShowDateRangeModal(false)}
               >
-                <Text style={styles.modalButtonText}>Done</Text>
+                <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -5,6 +5,7 @@ import { AntDesign, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     Alert,
@@ -26,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 
 export default function ProductsScreen() {
+    const { t } = useTranslation();
     const [token, setToken] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(true);
     const [products, setProducts] = useState<Product[]>([]);
@@ -113,11 +115,11 @@ export default function ProductsScreen() {
                     data?.product && data?.product.length > 0 ? data?.product : []
                 );
             } else {
-                Alert.alert("Error", data.message || "Failed to load products");
+                Alert.alert(t("common.error"), data.message || t("products.failed_load_products"));
             }
         } catch (error) {
             console.error('Error fetching products:', error);
-            Alert.alert("Error", "Failed to load products. Please try again.");
+            Alert.alert(t("common.error"), t("products.failed_load_products_retry"));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -152,8 +154,8 @@ export default function ProductsScreen() {
                     return Linking.openURL(url);
                 } else {
                     Alert.alert(
-                        "WhatsApp Not Installed",
-                        "Please install WhatsApp to contact us about this product."
+                        t("products.whatsapp_not_installed"),
+                        t("products.install_whatsapp_to_contact")
                     );
                 }
             })
@@ -213,7 +215,7 @@ export default function ProductsScreen() {
                         onPress={() => openWhatsApp(item)}
                     >
                         <AntDesign name="message" size={18} color="#ffffff" />
-                        <Text style={styles.buyButtonText}>Buy on WhatsApp</Text>
+                        <Text style={styles.buyButtonText}>{t("products.buy_on_whatsapp")}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -234,9 +236,9 @@ export default function ProductsScreen() {
                     color="#6366F1"
                     opacity={0.5}
                 />
-                <Text style={styles.emptyText}>No products found</Text>
+                <Text style={styles.emptyText}>{t("products.no_products_found")}</Text>
                 <TouchableOpacity style={styles.retryButton} onPress={fetchProducts}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
+                    <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -245,14 +247,14 @@ export default function ProductsScreen() {
     return (
         <SafeAreaView style={styles.container}>
 
-            <BuyerDashboardHeader title="Products" desc="Discover our exclusive collection" />
+            <BuyerDashboardHeader title={t("navigation.products")} desc={t("products.discover_exclusive_collection")} />
 
 
 
             {loading && !refreshing ? (
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color="#6366F1" />
-                    <Text style={styles.loadingText}>Loading products...</Text>
+                    <Text style={styles.loadingText}>{t("products.loading_products")}</Text>
                 </View>
             ) : (
                 <FlatList
@@ -268,7 +270,7 @@ export default function ProductsScreen() {
                             onRefresh={onRefresh}
                             tintColor="#6366F1"
                             colors={["#6366F1"]}
-                            title="Pull to refresh"
+                            title={t("common.pull_to_refresh")}
                             titleColor="#6B7280"
                         />
                     }

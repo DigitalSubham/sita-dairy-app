@@ -1,5 +1,6 @@
 import { stringNumber } from '@/constants/types'
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { TextInput } from 'react-native-gesture-handler'
 
@@ -18,6 +19,7 @@ const RateModal = ({
     submitFn,
     modalheadertext
 }: props) => {
+    const { t } = useTranslation()
     const [text, setText] = useState<stringNumber>("")
     useEffect(() => { if (textValue) setText(textValue) }, [textValue])
     return (
@@ -39,7 +41,7 @@ const RateModal = ({
                     </Text>
 
                     <TextInput
-                        placeholder="Enter column name"
+                        placeholder={t("rate.enter_column_name")}
                         value={String(text)}
                         onChangeText={setText}
                         style={{
@@ -53,14 +55,14 @@ const RateModal = ({
 
                     <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10 }}>
                         <TouchableOpacity onPress={() => setVisible(false)}>
-                            <Text style={{ color: "#64748b" }}>Cancel</Text>
+                            <Text style={{ color: "#64748b" }}>{t("common.cancel")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => {
                             submitFn(String(text))
                             setText("")
                         }}>
-                            <Text style={{ color: "#0ea5e9", fontWeight: "600" }}>Add</Text>
+                            <Text style={{ color: "#0ea5e9", fontWeight: "600" }}>{t("common.add")}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

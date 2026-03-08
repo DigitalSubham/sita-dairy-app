@@ -185,7 +185,7 @@ export function CustomDrawer(props: any) {
           </LinearGradient>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>App Version 1.0.0</Text>
+        <Text style={styles.versionText}>App Version 1.0.8</Text>
       </Animated.View>
     </View>
   );

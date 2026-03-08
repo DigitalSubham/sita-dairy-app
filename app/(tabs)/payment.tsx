@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Animated,
@@ -120,6 +121,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
 
 
 const WalletModal: React.FC = () => {
+  const { t } = useTranslation();
   const [token, setToken] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Payment[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
@@ -320,7 +322,7 @@ const WalletModal: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader title="Payments" />
+      <CustomHeader title={t("navigation.payments")} />
 
       <ScrollView
         style={styles.content}

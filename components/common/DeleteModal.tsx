@@ -1,5 +1,6 @@
 import { Entypo, Feather, FontAwesome } from "@expo/vector-icons";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Modal,
@@ -25,8 +26,11 @@ const RenderDeleteModal = ({
   selectedItem,
   handleDelete,
   text,
-}: RenderDeleteModalProps) => (
-  <Modal
+}: RenderDeleteModalProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <Modal
     visible={showDeleteModal}
     statusBarTranslucent={true}
     transparent
@@ -39,10 +43,11 @@ const RenderDeleteModal = ({
           <Feather name="alert-triangle" size={40} color="#FF3B30" />
         </View>
 
-        <Text style={styles.modalTitle}>Delete {text}</Text>
+        <Text style={styles.modalTitle}>
+          {t("common.delete_item_title", { item: text })}
+        </Text>
         <Text style={styles.modalText}>
-          Are you sure you want to delete this {text}? This action cannot be
-          undone.
+          {t("common.delete_item_confirmation", { item: text })}
         </Text>
 
         <View style={styles.modalActions}>
@@ -52,7 +57,7 @@ const RenderDeleteModal = ({
             disabled={isDeleting}
           >
             <Entypo name="cross" size={18} color="#374151" />
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.modalButton, styles.deleteButton]}
@@ -64,7 +69,7 @@ const RenderDeleteModal = ({
             ) : (
               <>
                 <FontAwesome name="trash" size={18} color="#ffffff" />
-                <Text style={styles.deleteButtonText}>Delete</Text>
+                <Text style={styles.deleteButtonText}>{t("common.delete")}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -72,7 +77,8 @@ const RenderDeleteModal = ({
       </View>
     </View>
   </Modal>
-);
+  );
+};
 
 export default RenderDeleteModal;
 

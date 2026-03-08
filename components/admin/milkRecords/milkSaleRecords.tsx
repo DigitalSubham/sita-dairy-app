@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Alert,
     FlatList,
@@ -39,6 +40,7 @@ interface FilterParams {
 }
 
 export default function MilkSaleRecords() {
+    const { t } = useTranslation();
     const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
     const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
     const { customers } = useCustomers({ role: "Buyer" });
@@ -120,7 +122,7 @@ export default function MilkSaleRecords() {
             if (!storedToken) {
                 Toast.show({
                     type: "error",
-                    text1: "Authentication token not found",
+                    text1: t("records.authentication_token_not_found"),
                 });
                 return;
             }
@@ -143,8 +145,8 @@ export default function MilkSaleRecords() {
             setAllEntries(data.data || []);
             setFilteredEntries(data.data || []);
             dispatch(setRecordData(data.data)); // Update Redux store with filtered data
-        } catch (error) {
-            Alert.alert("Error", "Failed to fetch entries");
+        } catch {
+            Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
         } finally {
             setLoading(false);
         }
@@ -157,7 +159,7 @@ export default function MilkSaleRecords() {
             if (!storedToken) {
                 Toast.show({
                     type: "error",
-                    text1: "Authentication token not found",
+                    text1: t("records.authentication_token_not_found"),
                 });
                 return;
             }
@@ -181,20 +183,20 @@ export default function MilkSaleRecords() {
                 );
                 Toast.show({
                     type: "success",
-                    text1: "Entry deleted successfully",
+                    text1: t("records.entry_deleted_successfully"),
                 });
                 setShowDeleteModal(false);
                 setSelectedItem("");
             } else {
                 Toast.show({
                     type: "error",
-                    text1: "Failed to delete entry",
+                    text1: t("records.failed_delete_entry"),
                 });
                 setShowDeleteModal(false);
                 setSelectedItem("");
             }
-        } catch (error) {
-            Alert.alert("Error", "Failed to delete entries");
+        } catch {
+            Alert.alert(t("common.error"), t("records.failed_delete_entries"));
         } finally {
             setIsDeleting(false);
             setShowDeleteModal(false);
@@ -323,7 +325,7 @@ export default function MilkSaleRecords() {
     // Get selected user name
     const getSelectedUserName = () => {
         const user = customers.find((u) => u._id === selectedUser);
-        return user ? user.name.split(" ")[0] : "User";
+        return user ? user.name.split(" ")[0] : t("records.user");
     };
 
 
@@ -335,7 +337,7 @@ export default function MilkSaleRecords() {
                     <MaterialIcons name="search" size={20} color="#64748b" />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search entries..."
+                        placeholder={t("records.search_entries")}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         placeholderTextColor="#94a3b8"
@@ -359,14 +361,14 @@ export default function MilkSaleRecords() {
                     contentContainerStyle={styles.filtersScroll}
                 >
                     <FilterChip
-                        title={selectedUser ? getSelectedUserName() : "Buyer"}
+                        title={selectedUser ? getSelectedUserName() : t("entry.buyer")}
                         isActive={!!selectedUser}
                         onPress={() => setShowUserModal(true)}
                         icon="person"
                     />
                     <FilterChip
                         title={
-                            selectedDate ? format(new Date(selectedDate), "dd MMM") : "Date"
+                            selectedDate ? format(new Date(selectedDate), "dd MMM") : t("records.date")
                         }
                         isActive={!!selectedDate}
                         onPress={() => {
@@ -382,7 +384,7 @@ export default function MilkSaleRecords() {
                                     new Date(endDate),
                                     "dd MMM"
                                 )}`
-                                : "Range"
+                                : t("records.range")
                         }
                         isActive={!!(startDate && endDate)}
                         onPress={() => {
@@ -392,7 +394,7 @@ export default function MilkSaleRecords() {
                         icon="date-range"
                     />
                     <FilterChip
-                        title={selectedShift ? selectedShift[0] : "Shift"}
+                        title={selectedShift ? selectedShift[0] : t("records.shift")}
                         isActive={!!selectedShift}
                         onPress={() => setShowShiftModal(true)}
                         icon="schedule"
@@ -404,12 +406,12 @@ export default function MilkSaleRecords() {
             <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity style={styles.resetButton} onPress={clearFilters}>
                     <MaterialIcons name="clear-all" size={16} color="#ef4444" />
-                    <Text style={styles.resetButtonText}>Reset</Text>
+                    <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
                     <MaterialIcons name="filter-list" size={16} color="#fff" />
-                    <Text style={styles.applyButtonText}>Apply Filters</Text>
+                    <Text style={styles.applyButtonText}>{t("entry.apply_filters")}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -418,10 +420,10 @@ export default function MilkSaleRecords() {
 
             {/* Loading Indicator */}
             {loading && (
-                <DairyLoadingScreen
-                    loading={loading}
-                    loadingText="Syncing your Milk Entries..."
-                />
+                    <DairyLoadingScreen
+                        loading={loading}
+                        loadingText={t("records.syncing_milk_entries")}
+                    />
             )}
 
             {/* Entries List */}
@@ -438,7 +440,7 @@ export default function MilkSaleRecords() {
                         <View style={styles.emptyContainer}>
                             <MaterialIcons name="inbox" size={48} color="#cbd5e1" />
                             <Text style={styles.emptyText}>
-                                {searchQuery ? "No matching entries" : "No entries found"}
+                                {searchQuery ? t("records.no_matching_entries") : t("records.no_entries_found")}
                             </Text>
                         </View>
                     }
@@ -450,7 +452,7 @@ export default function MilkSaleRecords() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Buyer</Text>
+                            <Text style={styles.modalTitle}>{t("entry.select_buyer")}</Text>
                             <TouchableOpacity onPress={() => setShowUserModal(false)}>
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -465,7 +467,7 @@ export default function MilkSaleRecords() {
                                 setShowUserModal(false);
                             }}
                         >
-                            <Text style={styles.optionText}>All Buyers</Text>
+                            <Text style={styles.optionText}>{t("records.all_buyers")}</Text>
                         </TouchableOpacity>
                         <FlatList
                             data={customers}
@@ -506,7 +508,7 @@ export default function MilkSaleRecords() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarModalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Date</Text>
+                            <Text style={styles.modalTitle}>{t("common.select_date")}</Text>
                             <TouchableOpacity onPress={() => setShowDateModal(false)}>
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -527,7 +529,7 @@ export default function MilkSaleRecords() {
                             style={styles.modalButton}
                             onPress={() => setShowDateModal(false)}
                         >
-                            <Text style={styles.modalButtonText}>Done</Text>
+                            <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -538,7 +540,7 @@ export default function MilkSaleRecords() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarModalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Date Range</Text>
+                            <Text style={styles.modalTitle}>{t("records.select_date_range")}</Text>
                             <TouchableOpacity onPress={() => setShowDateRangeModal(false)}>
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -546,10 +548,10 @@ export default function MilkSaleRecords() {
 
                         <Text style={styles.calendarInstructions}>
                             {!startDate
-                                ? "Select start date"
+                                ? t("records.select_start_date")
                                 : !endDate
-                                    ? "Select end date"
-                                    : "Date range selected"}
+                                    ? t("records.select_end_date")
+                                    : t("records.date_range_selected")}
                         </Text>
 
                         <Calendar
@@ -566,19 +568,19 @@ export default function MilkSaleRecords() {
 
                         <View style={styles.rangeDisplayContainer}>
                             <View style={styles.rangeDisplayItem}>
-                                <Text style={styles.rangeDisplayLabel}>Start Date:</Text>
+                                <Text style={styles.rangeDisplayLabel}>{t("entry.start_date")}:</Text>
                                 <Text style={styles.rangeDisplayValue}>
                                     {startDate
                                         ? format(new Date(startDate), "dd MMM yyyy")
-                                        : "Not selected"}
+                                        : t("records.not_selected")}
                                 </Text>
                             </View>
                             <View style={styles.rangeDisplayItem}>
-                                <Text style={styles.rangeDisplayLabel}>End Date:</Text>
+                                <Text style={styles.rangeDisplayLabel}>{t("entry.end_date")}:</Text>
                                 <Text style={styles.rangeDisplayValue}>
                                     {endDate
                                         ? format(new Date(endDate), "dd MMM yyyy")
-                                        : "Not selected"}
+                                        : t("records.not_selected")}
                                 </Text>
                             </View>
                         </View>
@@ -592,14 +594,14 @@ export default function MilkSaleRecords() {
                                     setMarkedDates({});
                                 }}
                             >
-                                <Text style={styles.modalSecondaryButtonText}>Clear</Text>
+                                <Text style={styles.modalSecondaryButtonText}>{t("entry.clear")}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 style={styles.modalButton}
                                 onPress={() => setShowDateRangeModal(false)}
                             >
-                                <Text style={styles.modalButtonText}>Done</Text>
+                                <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -610,7 +612,7 @@ export default function MilkSaleRecords() {
 
             {selectedItem && (
                 <RenderDeleteModal
-                    text="entry"
+                    text={t("records.entry")}
                     showDeleteModal={showDeleteModal}
                     setShowDeleteModal={setShowDeleteModal}
                     isDeleting={isDeleting}
