@@ -4,7 +4,13 @@ import ModalWrapper from "@/components/common/ModalWrapper";
 import EntryForm from "@/components/forms/EntryForm";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
-import { MilkEntry, MilkEntryFormData, MilkRecord, MilkType, ShiftType } from "@/constants/types";
+import {
+    MilkEntry,
+    MilkEntryFormData,
+    MilkRecord,
+    MilkType,
+    ShiftType,
+} from "@/constants/types";
 import useCustomers from "@/hooks/useCustomer";
 import { calculateTotal } from "@/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -23,7 +29,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import Toast from "react-native-toast-message";
@@ -31,965 +37,1007 @@ import RenderSummary from "../../common/RenderSummary";
 import DataCard from "./DataCard";
 import ShiftModal from "./ShiftModal";
 
-
 interface FilterParams {
-    startDate?: string;
-    endDate?: string;
-    date?: string;
-    userId?: string;
-    shift?: "Morning" | "Evening";
+  startDate?: string;
+  endDate?: string;
+  date?: string;
+  userId?: string;
+  shift?: "Morning" | "Evening";
 }
 
 type MilkBuyRecordsProps = {
-    onEntriesChange?: (entries: MilkEntry[]) => void;
-}
+  onEntriesChange?: (entries: MilkEntry[]) => void;
+};
 
-export default function MilkBuyRecords({ onEntriesChange }: MilkBuyRecordsProps) {
-    const { t } = useTranslation();
-    const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
-    const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
-    const { customers } = useCustomers({ role: "Farmer" });
-    const [loading, setLoading] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
+export default function MilkBuyRecords({
+  onEntriesChange,
+}: Readonly<MilkBuyRecordsProps>) {
+  const { t } = useTranslation();
+  const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
+  const { customers } = useCustomers({ role: "Farmer" });
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-    // Filter states
-    const [selectedFilterUser, setSelectedFilterUser] = useState<string>("");
-    const [selectedDate, setSelectedDate] = useState<string>("");
-    const [startDate, setStartDate] = useState<string>("");
-    const [endDate, setEndDate] = useState<string>("");
-    const [selectedShift, setSelectedShift] = useState<
-        ShiftType | ""
-    >("");
-    const [calendarMode, setCalendarMode] = useState<"single" | "range">(
-        "single"
-    );
-    const [markedDates, setMarkedDates] = useState<any>({});
-    const [isEditing, setIsEditing] = useState<string | null>(null);
-    const [showUserModal, setShowUserModal] = useState(false);
-    const [showDateModal, setShowDateModal] = useState(false);
-    const [showShiftModal, setShowShiftModal] = useState(false);
-    const [showDateRangeModal, setShowDateRangeModal] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<string>("");
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [formData, setFormData] = useState<MilkEntryFormData>({
-        userId: "",
-        weight: "",
-        fat: "",
-        snf: "",
-        rate: "",
-        date: format(new Date(), "yyyy-MM-dd"),
-        shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
-        milkType: MilkType.Cow,
+  // Filter states
+  const [selectedFilterUser, setSelectedFilterUser] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [selectedShift, setSelectedShift] = useState<ShiftType | "">("");
+  const [calendarMode, setCalendarMode] = useState<"single" | "range">(
+    "single",
+  );
+  const [markedDates, setMarkedDates] = useState<any>({});
+  const [isEditing, setIsEditing] = useState<string | null>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showDateRangeModal, setShowDateRangeModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<string>("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [formData, setFormData] = useState<MilkEntryFormData>({
+    userId: "",
+    weight: "",
+    fat: "",
+    snf: "",
+    rate: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+    milkType: MilkType.Cow,
+  });
+  const weightRef = useRef<TextInput>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Initialize with today's date
+  useEffect(() => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    setSelectedDate(today);
+
+    // Mark today's date in calendar
+    setMarkedDates({
+      [today]: { selected: true, selectedColor: "#0ea5e9" },
     });
-    const weightRef = useRef<TextInput>(null);
-    const [isUpdating, setIsUpdating] = useState(false);
 
-    // Initialize with today's date
-    useEffect(() => {
-        const today = format(new Date(), "yyyy-MM-dd");
-        setSelectedDate(today);
+    fetchEntries({ date: today });
+  }, []);
 
-        // Mark today's date in calendar
-        setMarkedDates({
-            [today]: { selected: true, selectedColor: "#0ea5e9" },
+  // Client-side search on current data
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredEntries(allEntries);
+      return;
+    }
+
+    const filtered = allEntries.filter((entry) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        entry.byUser.name.toLowerCase().includes(searchLower) ||
+        format(new Date(entry.date), "dd MMM")
+          .toLowerCase()
+          .includes(searchLower) ||
+        entry.shift.toLowerCase().includes(searchLower) ||
+        entry.weight.includes(searchQuery) ||
+        entry?.snf?.includes(searchQuery) ||
+        entry.rate.includes(searchQuery) ||
+        entry.price.includes(searchQuery) ||
+        entry?.fat?.includes(searchQuery)
+      );
+    });
+
+    setFilteredEntries(filtered);
+  }, [searchQuery, allEntries]);
+
+  // Fetch entries with filters
+  const fetchEntries = async (filters: FilterParams) => {
+    setLoading(true);
+    try {
+      const storedToken = await AsyncStorage.getItem("token");
+      if (!storedToken) {
+        Toast.show({
+          type: "error",
+          text1: t("records.authentication_token_not_found"),
         });
+        return;
+      }
 
-        fetchEntries({ date: today });
-    }, []);
+      const parsedToken = JSON.parse(storedToken);
+      const queryParams = new URLSearchParams();
+      if (filters.startDate) queryParams.append("startDate", filters.startDate);
+      if (filters.endDate) queryParams.append("endDate", filters.endDate);
+      if (filters.date) queryParams.append("date", filters.date);
+      if (filters.userId) queryParams.append("userId", filters.userId);
+      if (filters.shift) queryParams.append("shift", filters.shift);
 
-    // Client-side search on current data
-    useEffect(() => {
-        if (!searchQuery.trim()) {
-            setFilteredEntries(allEntries);
-            return;
-        }
+      const response = await fetch(`${api.getRecords}?${queryParams}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${parsedToken}`,
+        },
+      });
+      const data = await response.json();
+      setAllEntries(data.data || []);
+      setFilteredEntries(data.data || []);
+      onEntriesChange?.(data.data || []);
+    } catch (error) {
+      console.error("Error fetching entries:", error);
+      Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const filtered = allEntries.filter((entry) => {
-            const searchLower = searchQuery.toLowerCase();
-            return (
-                entry.byUser.name.toLowerCase().includes(searchLower) ||
-                format(new Date(entry.date), "dd MMM")
-                    .toLowerCase()
-                    .includes(searchLower) ||
-                entry.shift.toLowerCase().includes(searchLower) ||
-                entry.weight.includes(searchQuery) ||
-                entry?.snf?.includes(searchQuery) ||
-                entry.rate.includes(searchQuery) ||
-                entry.price.includes(searchQuery) ||
-                entry?.fat?.includes(searchQuery)
-            );
+  const handleDeleteEntry = async (entryId: string) => {
+    setIsDeleting(true);
+    try {
+      const storedToken = await AsyncStorage.getItem("token");
+      if (!storedToken) {
+        Toast.show({
+          type: "error",
+          text1: t("records.authentication_token_not_found"),
         });
+        return;
+      }
+      const parsedToken = JSON.parse(storedToken);
+      const response = await fetch(`${api.deleteRecord}/${entryId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${parsedToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete entry");
+      }
 
-        setFilteredEntries(filtered);
-
-    }, [searchQuery, allEntries]);
-
-    // Fetch entries with filters
-    const fetchEntries = async (filters: FilterParams) => {
-        setLoading(true);
-        try {
-            const storedToken = await AsyncStorage.getItem("token");
-            if (!storedToken) {
-                Toast.show({
-                    type: "error",
-                    text1: t("records.authentication_token_not_found"),
-                });
-                return;
-            }
-
-            const parsedToken = JSON.parse(storedToken);
-            const queryParams = new URLSearchParams();
-            if (filters.startDate) queryParams.append("startDate", filters.startDate);
-            if (filters.endDate) queryParams.append("endDate", filters.endDate);
-            if (filters.date) queryParams.append("date", filters.date);
-            if (filters.userId) queryParams.append("userId", filters.userId);
-            if (filters.shift) queryParams.append("shift", filters.shift);
-
-            const response = await fetch(`${api.getRecords}?${queryParams}`, {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${parsedToken}`,
-                },
-            });
-            const data = await response.json();
-            setAllEntries(data.data || []);
-            setFilteredEntries(data.data || []);
-            onEntriesChange?.(data.data || []);
-        } catch (error) {
-            console.error("Error fetching entries:", error);
-            Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDeleteEntry = async (entryId: string) => {
-        setIsDeleting(true);
-        try {
-            const storedToken = await AsyncStorage.getItem("token");
-            if (!storedToken) {
-                Toast.show({
-                    type: "error",
-                    text1: t("records.authentication_token_not_found"),
-                });
-                return;
-            }
-            const parsedToken = JSON.parse(storedToken);
-            const response = await fetch(`${api.deleteRecord}/${entryId}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${parsedToken}`,
-                },
-            });
-            if (!response.ok) {
-                throw new Error("Failed to delete entry");
-            }
-
-            const data = await response.json();
-            // Filter out the deleted entry from allEntries and filteredEntries
-            if (data.success) {
-                setAllEntries((prev) => prev.filter((entry) => entry._id !== entryId));
-                setFilteredEntries((prev) =>
-                    prev.filter((entry) => entry._id !== entryId)
-                );
-                Toast.show({
-                    type: "success",
-                    text1: t("records.entry_deleted_successfully"),
-                });
-                setShowDeleteModal(false);
-                setSelectedItem("");
-            } else {
-                Toast.show({
-                    type: "error",
-                    text1: t("records.failed_delete_entry"),
-                });
-                setShowDeleteModal(false);
-                setSelectedItem("");
-            }
-        } catch (error) {
-            console.error("Error deleting entry:", error);
-            Alert.alert(t("common.error"), t("records.failed_delete_entries"));
-        } finally {
-            setIsDeleting(false);
-            setShowDeleteModal(false);
-            setSelectedItem("");
-        }
-    };
-
-    const handleEditEntry = (entry: MilkEntry | MilkRecord) => {
-        setIsEditing(entry._id);
-        setFormData({
-            userId: entry.byUser._id,
-            weight: entry.weight,
-            fat: entry.fat || "",
-            snf: entry.snf,
-            rate: entry.rate,
-            date: entry.date,
-            shift: entry.shift,
-            milkType: 'milkType' in entry ? entry.milkType : MilkType.Cow,
+      const data = await response.json();
+      // Filter out the deleted entry from allEntries and filteredEntries
+      if (data.success) {
+        setAllEntries((prev) => prev.filter((entry) => entry._id !== entryId));
+        setFilteredEntries((prev) =>
+          prev.filter((entry) => entry._id !== entryId),
+        );
+        Toast.show({
+          type: "success",
+          text1: t("records.entry_deleted_successfully"),
         });
+        setShowDeleteModal(false);
+        setSelectedItem("");
+      } else {
+        Toast.show({
+          type: "error",
+          text1: t("records.failed_delete_entry"),
+        });
+        setShowDeleteModal(false);
+        setSelectedItem("");
+      }
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      Alert.alert(t("common.error"), t("records.failed_delete_entries"));
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setSelectedItem("");
+    }
+  };
 
-    };
+  const handleEditEntry = (entry: MilkEntry | MilkRecord) => {
+    setIsEditing(entry._id);
+    setFormData({
+      userId: entry.byUser._id,
+      weight: entry.weight,
+      fat: entry.fat || "",
+      snf: entry.snf,
+      rate: entry.rate,
+      date: entry.date,
+      shift: entry.shift,
+      milkType: "milkType" in entry ? entry.milkType : MilkType.Cow,
+    });
+  };
 
-    // Apply filters with button click
-    const applyFilters = () => {
-        const filters: FilterParams = {};
+  // Apply filters with button click
+  const applyFilters = () => {
+    const filters: FilterParams = {};
 
-        if (startDate && endDate) {
-            filters.startDate = startDate;
-            filters.endDate = endDate;
-        } else if (selectedDate) {
-            filters.date = selectedDate;
-        }
+    if (startDate && endDate) {
+      filters.startDate = startDate;
+      filters.endDate = endDate;
+    } else if (selectedDate) {
+      filters.date = selectedDate;
+    }
 
-        if (selectedFilterUser) filters.userId = selectedFilterUser;
-        if (selectedShift) filters.shift = selectedShift;
+    if (selectedFilterUser) filters.userId = selectedFilterUser;
+    if (selectedShift) filters.shift = selectedShift;
 
-        if (Object.keys(filters).length > 0) {
-            fetchEntries(filters);
-        }
-    };
+    if (Object.keys(filters).length > 0) {
+      fetchEntries(filters);
+    }
+  };
 
-    // Clear all filters and fetch today's data
-    const clearFilters = () => {
-        setSelectedFilterUser("");
-        setSelectedDate("");
-        setStartDate("");
+  // Clear all filters and fetch today's data
+  const clearFilters = () => {
+    setSelectedFilterUser("");
+    setSelectedDate("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedShift("");
+    setSearchQuery("");
+    setIsEditing(null);
+
+    // Reset calendar marked dates
+    const today = format(new Date(), "yyyy-MM-dd");
+    setMarkedDates({
+      [today]: { selected: true, selectedColor: "#0ea5e9" },
+    });
+    setSelectedDate(today);
+    setFormData({
+      userId: "",
+      weight: "",
+      fat: "",
+      snf: "",
+      rate: "",
+      date: format(new Date(), "yyyy-MM-dd"),
+      shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+      milkType: MilkType.Cow,
+    });
+    fetchEntries({ date: today });
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      clearFilters();
+    }, []),
+  );
+
+  // Handle calendar date selection
+  const handleDateSelect = (day: any) => {
+    if (calendarMode === "single") {
+      const selectedDay = day.dateString;
+      setSelectedDate(selectedDay);
+      setStartDate("");
+      setEndDate("");
+      setMarkedDates({
+        [selectedDay]: { selected: true, selectedColor: "#0ea5e9" },
+      });
+      setShowDateModal(false);
+    } else {
+      // Range selection logic
+      if (!startDate || (startDate && endDate)) {
+        // Start new range
+        setStartDate(day.dateString);
         setEndDate("");
-        setSelectedShift("");
-        setSearchQuery("");
-        setIsEditing(null);
-
-        // Reset calendar marked dates
-        const today = format(new Date(), "yyyy-MM-dd");
         setMarkedDates({
-            [today]: { selected: true, selectedColor: "#0ea5e9" },
+          [day.dateString]: {
+            startingDay: true,
+            selected: true,
+            color: "#0ea5e9",
+          },
         });
-        setSelectedDate(today);
-        setFormData({
-            userId: "",
-            weight: "",
-            fat: "",
-            snf: "",
-            rate: "",
-            date: format(new Date(), "yyyy-MM-dd"),
-            shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
-            milkType: MilkType.Cow,
-        });
-        fetchEntries({ date: today });
-    };
+      } else {
+        // Complete the range
+        let start = new Date(startDate);
+        let end = new Date(day.dateString);
 
-    useFocusEffect(
-        useCallback(() => {
-            clearFilters();
-        }, [])
-    );
-
-    // Handle calendar date selection
-    const handleDateSelect = (day: any) => {
-        if (calendarMode === "single") {
-            const selectedDay = day.dateString;
-            setSelectedDate(selectedDay);
-            setStartDate("");
-            setEndDate("");
-            setMarkedDates({
-                [selectedDay]: { selected: true, selectedColor: "#0ea5e9" },
-            });
-            setShowDateModal(false);
-        } else {
-            // Range selection logic
-            if (!startDate || (startDate && endDate)) {
-                // Start new range
-                setStartDate(day.dateString);
-                setEndDate("");
-                setMarkedDates({
-                    [day.dateString]: {
-                        startingDay: true,
-                        selected: true,
-                        color: "#0ea5e9",
-                    },
-                });
-            } else {
-                // Complete the range
-                let start = new Date(startDate);
-                let end = new Date(day.dateString);
-
-                // Swap if end date is before start date
-                if (end < start) {
-                    const temp = start;
-                    start = end;
-                    end = temp;
-                    setStartDate(format(start, "yyyy-MM-dd"));
-                }
-
-                setEndDate(format(end, "yyyy-MM-dd"));
-
-                // Mark all days in the range
-                const markedDatesObj: any = {};
-                let currentDate = new Date(start);
-
-                while (currentDate <= end) {
-                    const dateString = format(currentDate, "yyyy-MM-dd");
-
-                    if (dateString === format(start, "yyyy-MM-dd")) {
-                        markedDatesObj[dateString] = {
-                            startingDay: true,
-                            color: "#0ea5e9",
-                            textColor: "white",
-                        };
-                    } else if (dateString === format(end, "yyyy-MM-dd")) {
-                        markedDatesObj[dateString] = {
-                            endingDay: true,
-                            color: "#0ea5e9",
-                            textColor: "white",
-                        };
-                    } else {
-                        markedDatesObj[dateString] = {
-                            color: "#bae6fd",
-                            textColor: "#0369a1",
-                        };
-                    }
-
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-
-                setMarkedDates(markedDatesObj);
-                setSelectedDate("");
-                setShowDateRangeModal(false);
-            }
-        }
-    };
-
-    // Get selected user name
-    const getSelectedUserName = () => {
-        const user = customers.find((u) => u._id === selectedFilterUser);
-        return user ? user.name.split(" ")[0] : t("records.user");
-    };
-
-    const handleSubmit = async () => {
-        if (!formData.userId) {
-            Alert.alert(t("common.error"), t("validation.user"));
-            return;
+        // Swap if end date is before start date
+        if (end < start) {
+          const temp = start;
+          start = end;
+          end = temp;
+          setStartDate(format(start, "yyyy-MM-dd"));
         }
 
-        if (!formData.weight || !formData.fat || !formData.snf || !formData.rate) {
-            Alert.alert(t("common.error"), t("validation.all_fields_required"));
-            return;
-        }
+        setEndDate(format(end, "yyyy-MM-dd"));
 
-        setIsUpdating(true);
+        // Mark all days in the range
+        const markedDatesObj: any = {};
+        let currentDate = new Date(start);
 
-        try {
-            const storedToken = await AsyncStorage.getItem("token");
-            if (!storedToken) {
-                Toast.show({
-                    type: "error",
-                    text1: t("records.authentication_token_not_found"),
-                });
-                return;
-            }
-            const entryData = {
-                userId: formData.userId,
-                date: formData.date,
-                shift: formData.shift,
-                weight: formData.weight,
-                fat: formData.fat,
-                snf: formData.snf,
-                rate: formData.rate,
-                price: calculateTotal(formData.weight, formData.rate),
-                milkType: formData.milkType,
+        while (currentDate <= end) {
+          const dateString = format(currentDate, "yyyy-MM-dd");
+
+          if (dateString === format(start, "yyyy-MM-dd")) {
+            markedDatesObj[dateString] = {
+              startingDay: true,
+              color: "#0ea5e9",
+              textColor: "white",
             };
-            const parsedToken = JSON.parse(storedToken);
-            const response = await fetch(`${api.updateMilkEntry}/${isEditing}`, {
-                method: "PUT",
-                body: JSON.stringify(entryData),
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${parsedToken}`,
-                },
-            });
+          } else if (dateString === format(end, "yyyy-MM-dd")) {
+            markedDatesObj[dateString] = {
+              endingDay: true,
+              color: "#0ea5e9",
+              textColor: "white",
+            };
+          } else {
+            markedDatesObj[dateString] = {
+              color: "#bae6fd",
+              textColor: "#0369a1",
+            };
+          }
 
-            const data = await response.json();
-
-            if (data.success) {
-
-                Alert.alert(t("common.success"), data.message);
-                clearFilters();
-            } else {
-                Alert.alert(t("common.error"), data.message);
-            }
-        } catch (error) {
-            console.error("Submit Error:", error);
-            Alert.alert(t("common.error"), t("records.failed_update_entry"));
-        } finally {
-            setIsUpdating(false);
+          currentDate.setDate(currentDate.getDate() + 1);
         }
-    };
-    const updateFormData = (field: string, value: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
 
+        setMarkedDates(markedDatesObj);
+        setSelectedDate("");
+        setShowDateRangeModal(false);
+      }
+    }
+  };
 
+  // Get selected user name
+  const getSelectedUserName = () => {
+    const user = customers.find((u) => u._id === selectedFilterUser);
+    return user ? user.name.split(" ")[0] : t("records.user");
+  };
 
-    return (
-        < >
+  const handleSubmit = async () => {
+    if (!formData.userId) {
+      Alert.alert(t("common.error"), t("validation.user"));
+      return;
+    }
 
-            {/* Header with Search */}
-            <View style={styles.header}>
-                <View style={styles.searchContainer}>
-                    <MaterialIcons name="search" size={20} color="#64748b" />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder={t("records.search_entries")}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholderTextColor="#94a3b8"
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery("")}>
-                            <MaterialIcons name="clear" size={20} color="#64748b" />
-                        </TouchableOpacity>
-                    )}
-                </View>
-                <TouchableOpacity onPress={clearFilters} style={styles.clearButton}>
-                    <MaterialIcons name="refresh" size={20} color="#0ea5e9" />
-                </TouchableOpacity>
+    if (!formData.weight || !formData.fat || !formData.snf || !formData.rate) {
+      Alert.alert(t("common.error"), t("validation.all_fields_required"));
+      return;
+    }
+
+    setIsUpdating(true);
+
+    try {
+      const storedToken = await AsyncStorage.getItem("token");
+      if (!storedToken) {
+        Toast.show({
+          type: "error",
+          text1: t("records.authentication_token_not_found"),
+        });
+        return;
+      }
+      const entryData = {
+        userId: formData.userId,
+        date: formData.date,
+        shift: formData.shift,
+        weight: formData.weight,
+        fat: formData.fat,
+        snf: formData.snf,
+        rate: formData.rate,
+        price: calculateTotal(formData.weight, formData.rate),
+        milkType: formData.milkType,
+      };
+      const parsedToken = JSON.parse(storedToken);
+      const response = await fetch(`${api.updateMilkEntry}/${isEditing}`, {
+        method: "PUT",
+        body: JSON.stringify(entryData),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${parsedToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Alert.alert(t("common.success"), data.message);
+        clearFilters();
+      } else {
+        Alert.alert(t("common.error"), data.message);
+      }
+    } catch (error) {
+      console.error("Submit Error:", error);
+      Alert.alert(t("common.error"), t("records.failed_update_entry"));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  const updateFormData = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  return (
+    <>
+      {/* Header with Search */}
+      <View style={styles.header}>
+        <View style={styles.searchContainer}>
+          <MaterialIcons name="search" size={20} color="#64748b" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t("records.search_entries")}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#94a3b8"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <MaterialIcons name="clear" size={20} color="#64748b" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity onPress={clearFilters} style={styles.clearButton}>
+          <MaterialIcons name="refresh" size={20} color="#0ea5e9" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Compact Filters */}
+      <View style={styles.filtersContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScroll}
+        >
+          <FilterChip
+            title={
+              selectedFilterUser ? getSelectedUserName() : t("entry.farmer")
+            }
+            isActive={!!selectedFilterUser}
+            onPress={() => setShowUserModal(true)}
+            icon="person"
+          />
+          <FilterChip
+            title={
+              selectedDate
+                ? format(new Date(selectedDate), "dd MMM")
+                : t("records.date")
+            }
+            isActive={!!selectedDate}
+            onPress={() => {
+              setCalendarMode("single");
+              setShowDateModal(true);
+            }}
+            icon="today"
+          />
+          <FilterChip
+            title={
+              startDate && endDate
+                ? `${format(new Date(startDate), "dd MMM")} - ${format(
+                    new Date(endDate),
+                    "dd MMM",
+                  )}`
+                : t("records.range")
+            }
+            isActive={!!(startDate && endDate)}
+            onPress={() => {
+              setCalendarMode("range");
+              setShowDateRangeModal(true);
+            }}
+            icon="date-range"
+          />
+          <FilterChip
+            title={selectedShift ? selectedShift[0] : t("records.shift")}
+            isActive={!!selectedShift}
+            onPress={() => setShowShiftModal(true)}
+            icon="schedule"
+          />
+        </ScrollView>
+      </View>
+
+      {/* Filter Action Buttons */}
+      <View style={styles.actionButtonsContainer}>
+        <TouchableOpacity style={styles.resetButton} onPress={clearFilters}>
+          <MaterialIcons name="clear-all" size={16} color="#ef4444" />
+          <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+          <MaterialIcons name="filter-list" size={16} color="#fff" />
+          <Text style={styles.applyButtonText}>{t("entry.apply_filters")}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Summary */}
+      <RenderSummary filteredEntries={filteredEntries} />
+
+      {/* Loading Indicator */}
+      {loading && (
+        <DairyLoadingScreen
+          loading={loading}
+          loadingText={t("records.syncing_milk_entries")}
+        />
+      )}
+
+      {/* Entries List */}
+      {!loading && (
+        <FlatList
+          data={filteredEntries}
+          renderItem={({ item }) => (
+            <DataCard
+              handleEdit={handleEditEntry}
+              item={item}
+              setSelectedItem={setSelectedItem}
+              setShowDeleteModal={setShowDeleteModal}
+            />
+          )}
+          keyExtractor={(item) => item._id}
+          numColumns={2}
+          columnWrapperStyle={styles.entryRow}
+          contentContainerStyle={styles.entriesList}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="inbox" size={48} color="#cbd5e1" />
+              <Text style={styles.emptyText}>
+                {searchQuery
+                  ? t("records.no_matching_entries")
+                  : t("records.no_entries_found")}
+              </Text>
             </View>
+          }
+        />
+      )}
 
-            {/* Compact Filters */}
-            <View style={styles.filtersContainer}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filtersScroll}
-                >
-                    <FilterChip
-                        title={selectedFilterUser ? getSelectedUserName() : t("entry.farmer")}
-                        isActive={!!selectedFilterUser}
-                        onPress={() => setShowUserModal(true)}
-                        icon="person"
-                    />
-                    <FilterChip
-                        title={
-                            selectedDate ? format(new Date(selectedDate), "dd MMM") : t("records.date")
-                        }
-                        isActive={!!selectedDate}
-                        onPress={() => {
-                            setCalendarMode("single");
-                            setShowDateModal(true);
-                        }}
-                        icon="today"
-                    />
-                    <FilterChip
-                        title={
-                            startDate && endDate
-                                ? `${format(new Date(startDate), "dd MMM")} - ${format(
-                                    new Date(endDate),
-                                    "dd MMM"
-                                )}`
-                                : t("records.range")
-                        }
-                        isActive={!!(startDate && endDate)}
-                        onPress={() => {
-                            setCalendarMode("range");
-                            setShowDateRangeModal(true);
-                        }}
-                        icon="date-range"
-                    />
-                    <FilterChip
-                        title={selectedShift ? selectedShift[0] : t("records.shift")}
-                        isActive={!!selectedShift}
-                        onPress={() => setShowShiftModal(true)}
-                        icon="schedule"
-                    />
-                </ScrollView>
+      {/* User Selection Modal */}
+      <Modal
+        visible={showUserModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t("entry.select_farmer")}</Text>
+              <TouchableOpacity onPress={() => setShowUserModal(false)}>
+                <MaterialIcons name="close" size={20} color="#64748b" />
+              </TouchableOpacity>
             </View>
-
-            {/* Filter Action Buttons */}
-            <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity style={styles.resetButton} onPress={clearFilters}>
-                    <MaterialIcons name="clear-all" size={16} color="#ef4444" />
-                    <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
-                    <MaterialIcons name="filter-list" size={16} color="#fff" />
-                    <Text style={styles.applyButtonText}>{t("entry.apply_filters")}</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Summary */}
-            <RenderSummary filteredEntries={filteredEntries} />
-
-            {/* Loading Indicator */}
-            {loading && (
-                <DairyLoadingScreen
-                    loading={loading}
-                    loadingText={t("records.syncing_milk_entries")}
-                />
-            )}
-
-            {/* Entries List */}
-            {!loading && (
-                <FlatList
-                    data={filteredEntries}
-                    renderItem={({ item }) => <DataCard handleEdit={handleEditEntry} item={item} setSelectedItem={setSelectedItem} setShowDeleteModal={setShowDeleteModal} />}
-                    keyExtractor={(item) => item._id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.entryRow}
-                    contentContainerStyle={styles.entriesList}
-                    showsVerticalScrollIndicator={false}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <MaterialIcons name="inbox" size={48} color="#cbd5e1" />
-                            <Text style={styles.emptyText}>
-                                {searchQuery ? t("records.no_matching_entries") : t("records.no_entries_found")}
-                            </Text>
-                        </View>
+            <TouchableOpacity
+              style={[
+                styles.optionItem,
+                !(isEditing ? formData.userId : selectedFilterUser) &&
+                  styles.selectedOption,
+              ]}
+              onPress={() => {
+                if (isEditing) {
+                  updateFormData("userId", "");
+                } else {
+                  setSelectedFilterUser("");
+                }
+                setShowUserModal(false);
+              }}
+            >
+              <Text style={styles.optionText}>{t("records.all_farmers")}</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={customers}
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.optionItem,
+                    (isEditing ? formData.userId : selectedFilterUser) ===
+                      item._id && styles.selectedOption,
+                  ]}
+                  onPress={() => {
+                    if (isEditing) {
+                      updateFormData("userId", item._id);
+                    } else {
+                      setSelectedFilterUser(item._id);
                     }
-                />
-            )}
+                    setShowUserModal(false);
+                  }}
+                >
+                  <View style={styles.userOptionRow}>
+                    <Image
+                      source={{
+                        uri:
+                          item.profilePic ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            item.name,
+                          )}`,
+                      }}
+                      style={styles.userOptionAvatar}
+                    />
+                    <Text style={styles.optionText}>{item.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
 
-            {/* User Selection Modal */}
-            <Modal visible={showUserModal} transparent animationType="fade" statusBarTranslucent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t("entry.select_farmer")}</Text>
-                            <TouchableOpacity onPress={() => setShowUserModal(false)}>
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
-                        <TouchableOpacity
-                            style={[
-                                styles.optionItem,
-                                !(isEditing ? formData.userId : selectedFilterUser) && styles.selectedOption,
-                            ]}
-                            onPress={() => {
-                                if (isEditing) {
-                                    updateFormData("userId", "");
-                                } else {
-                                    setSelectedFilterUser("");
-                                }
-                                setShowUserModal(false);
-                            }}
-                        >
-                            <Text style={styles.optionText}>{t("records.all_farmers")}</Text>
-                        </TouchableOpacity>
-                        <FlatList
-                            data={customers}
-                            keyExtractor={(item) => item._id}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[
-                                        styles.optionItem,
-                                        (isEditing ? formData.userId : selectedFilterUser) === item._id && styles.selectedOption,
-                                    ]}
-                                    onPress={() => {
-                                        if (isEditing) {
-                                            updateFormData("userId", item._id);
-                                        } else {
-                                            setSelectedFilterUser(item._id);
-                                        }
-                                        setShowUserModal(false);
-                                    }}
-                                >
-                                    <View style={styles.userOptionRow}>
-                                        <Image
-                                            source={{
-                                                uri:
-                                                    item.profilePic ||
-                                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                                        item.name
-                                                    )}`,
-                                            }}
-                                            style={styles.userOptionAvatar}
-                                        />
-                                        <Text style={styles.optionText}>{item.name}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </View>
-                </View>
-            </Modal>
+      {/* Date Selection Modal with Calendar */}
+      <Modal
+        visible={showDateModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t("common.select_date")}</Text>
+              <TouchableOpacity onPress={() => setShowDateModal(false)}>
+                <MaterialIcons name="close" size={20} color="#64748b" />
+              </TouchableOpacity>
+            </View>
 
-            {/* Date Selection Modal with Calendar */}
-            <Modal visible={showDateModal} transparent animationType="fade" statusBarTranslucent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.calendarModalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t("common.select_date")}</Text>
-                            <TouchableOpacity onPress={() => setShowDateModal(false)}>
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
+            <Calendar
+              onDayPress={handleDateSelect}
+              markedDates={markedDates}
+              theme={{
+                todayTextColor: "#0ea5e9",
+                arrowColor: "#0ea5e9",
+                dotColor: "#0ea5e9",
+                selectedDayBackgroundColor: "#0ea5e9",
+              }}
+            />
 
-                        <Calendar
-                            onDayPress={handleDateSelect}
-                            markedDates={markedDates}
-                            theme={{
-                                todayTextColor: "#0ea5e9",
-                                arrowColor: "#0ea5e9",
-                                dotColor: "#0ea5e9",
-                                selectedDayBackgroundColor: "#0ea5e9",
-                            }}
-                        />
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowDateModal(false)}
+            >
+              <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
-                        <TouchableOpacity
-                            style={styles.modalButton}
-                            onPress={() => setShowDateModal(false)}
-                        >
-                            <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+      {/* Date Range Modal with Calendar */}
+      <Modal
+        visible={showDateRangeModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("records.select_date_range")}
+              </Text>
+              <TouchableOpacity onPress={() => setShowDateRangeModal(false)}>
+                <MaterialIcons name="close" size={20} color="#64748b" />
+              </TouchableOpacity>
+            </View>
 
-            {/* Date Range Modal with Calendar */}
-            <Modal visible={showDateRangeModal} transparent animationType="fade" statusBarTranslucent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.calendarModalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t("records.select_date_range")}</Text>
-                            <TouchableOpacity onPress={() => setShowDateRangeModal(false)}>
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
+            <Text style={styles.calendarInstructions}>
+              {!startDate
+                ? t("records.select_start_date")
+                : !endDate
+                  ? t("records.select_end_date")
+                  : t("records.date_range_selected")}
+            </Text>
 
-                        <Text style={styles.calendarInstructions}>
-                            {!startDate
-                                ? t("records.select_start_date")
-                                : !endDate
-                                    ? t("records.select_end_date")
-                                    : t("records.date_range_selected")}
-                        </Text>
+            <Calendar
+              onDayPress={handleDateSelect}
+              markingType={"period"}
+              markedDates={markedDates}
+              theme={{
+                todayTextColor: "#0ea5e9",
+                arrowColor: "#0ea5e9",
+                dotColor: "#0ea5e9",
+                selectedDayBackgroundColor: "#0ea5e9",
+              }}
+            />
 
-                        <Calendar
-                            onDayPress={handleDateSelect}
-                            markingType={"period"}
-                            markedDates={markedDates}
-                            theme={{
-                                todayTextColor: "#0ea5e9",
-                                arrowColor: "#0ea5e9",
-                                dotColor: "#0ea5e9",
-                                selectedDayBackgroundColor: "#0ea5e9",
-                            }}
-                        />
+            <View style={styles.rangeDisplayContainer}>
+              <View style={styles.rangeDisplayItem}>
+                <Text style={styles.rangeDisplayLabel}>
+                  {t("entry.start_date")}:
+                </Text>
+                <Text style={styles.rangeDisplayValue}>
+                  {startDate
+                    ? format(new Date(startDate), "dd MMM yyyy")
+                    : t("records.not_selected")}
+                </Text>
+              </View>
+              <View style={styles.rangeDisplayItem}>
+                <Text style={styles.rangeDisplayLabel}>
+                  {t("entry.end_date")}:
+                </Text>
+                <Text style={styles.rangeDisplayValue}>
+                  {endDate
+                    ? format(new Date(endDate), "dd MMM yyyy")
+                    : t("records.not_selected")}
+                </Text>
+              </View>
+            </View>
 
-                        <View style={styles.rangeDisplayContainer}>
-                            <View style={styles.rangeDisplayItem}>
-                                <Text style={styles.rangeDisplayLabel}>{t("entry.start_date")}:</Text>
-                                <Text style={styles.rangeDisplayValue}>
-                                    {startDate
-                                        ? format(new Date(startDate), "dd MMM yyyy")
-                                        : t("records.not_selected")}
-                                </Text>
-                            </View>
-                            <View style={styles.rangeDisplayItem}>
-                                <Text style={styles.rangeDisplayLabel}>{t("entry.end_date")}:</Text>
-                                <Text style={styles.rangeDisplayValue}>
-                                    {endDate
-                                        ? format(new Date(endDate), "dd MMM yyyy")
-                                        : t("records.not_selected")}
-                                </Text>
-                            </View>
-                        </View>
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalSecondaryButton}
+                onPress={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setMarkedDates({});
+                }}
+              >
+                <Text style={styles.modalSecondaryButtonText}>
+                  {t("entry.clear")}
+                </Text>
+              </TouchableOpacity>
 
-                        <View style={styles.modalButtonsRow}>
-                            <TouchableOpacity
-                                style={styles.modalSecondaryButton}
-                                onPress={() => {
-                                    setStartDate("");
-                                    setEndDate("");
-                                    setMarkedDates({});
-                                }}
-                            >
-                                <Text style={styles.modalSecondaryButtonText}>{t("entry.clear")}</Text>
-                            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowDateRangeModal(false)}
+              >
+                <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
-                            <TouchableOpacity
-                                style={styles.modalButton}
-                                onPress={() => setShowDateRangeModal(false)}
-                            >
-                                <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+      <ShiftModal
+        selectedShift={selectedShift}
+        setSelectedShift={setSelectedShift}
+        setShowShiftModal={setShowShiftModal}
+        showShiftModal={showShiftModal}
+      />
 
-            <ShiftModal selectedShift={selectedShift} setSelectedShift={setSelectedShift} setShowShiftModal={setShowShiftModal} showShiftModal={showShiftModal} />
+      {!!selectedItem && (
+        <RenderDeleteModal
+          text={t("records.entry")}
+          showDeleteModal={showDeleteModal}
+          setShowDeleteModal={setShowDeleteModal}
+          isDeleting={isDeleting}
+          selectedItem={selectedItem}
+          handleDelete={handleDeleteEntry}
+        />
+      )}
 
-            {!!selectedItem && (
-                <RenderDeleteModal
-                    text={t("records.entry")}
-                    showDeleteModal={showDeleteModal}
-                    setShowDeleteModal={setShowDeleteModal}
-                    isDeleting={isDeleting}
-                    selectedItem={selectedItem}
-                    handleDelete={handleDeleteEntry}
-                />
-            )}
-
-            <ModalWrapper visible={!!isEditing} setVisibility={() => setIsEditing(null)} headerText={t("entry.edit_entry")} >
-                <EntryForm
-                    editingEntry={!!isEditing}
-                    formData={formData}
-                    selectedUser={customers.find((u) => u._id === formData.userId) || null}
-                    updateFormData={updateFormData}
-                    setShowUserSelector={setShowUserModal}
-                    weightRef={weightRef}
-                    handleSubmit={handleSubmit}
-                    isSubmitting={isUpdating}
-                />
-            </ModalWrapper>
-        </>
-    );
+      <ModalWrapper
+        visible={!!isEditing}
+        setVisibility={() => setIsEditing(null)}
+        headerText={t("entry.edit_entry")}
+      >
+        <EntryForm
+          editingEntry={!!isEditing}
+          formData={formData}
+          selectedUser={
+            customers.find((u) => u._id === formData.userId) || null
+          }
+          updateFormData={updateFormData}
+          setShowUserSelector={setShowUserModal}
+          weightRef={weightRef}
+          handleSubmit={handleSubmit}
+          isSubmitting={isUpdating}
+        />
+      </ModalWrapper>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#f8fafc",
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: "#fff",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
-        gap: 12,
-    },
-    searchContainer: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#f8fafc",
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        height: 40,
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-    },
-    searchInput: {
-        flex: 1,
-        marginLeft: 8,
-        fontSize: 14,
-        color: "#334155",
-    },
-    clearButton: {
-        padding: 8,
-    },
-    filtersContainer: {
-        backgroundColor: "#fff",
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
-    },
-    filtersScroll: {
-        paddingHorizontal: 16,
-        gap: 8,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+    gap: 12,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 40,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#334155",
+  },
+  clearButton: {
+    padding: 8,
+  },
+  filtersContainer: {
+    backgroundColor: "#fff",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  filtersScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
 
-    actionButtonsContainer: {
-        flexDirection: "row",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        backgroundColor: "#fff",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e2e8f0",
-        gap: 8,
-    },
-    resetButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#fef2f2",
-        borderWidth: 1,
-        borderColor: "#fecaca",
-        borderRadius: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        gap: 4,
-        flex: 1,
-    },
-    resetButtonText: {
-        color: "#ef4444",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    applyButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#0ea5e9",
-        borderRadius: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        gap: 4,
-        flex: 2,
-    },
-    applyButtonText: {
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    loadingText: {
-        marginTop: 12,
-        color: "#64748b",
-        fontSize: 14,
-    },
-    entriesList: {
-        paddingHorizontal: 12,
-        paddingBottom: 20,
-    },
-    entryRow: {
-        justifyContent: "space-between",
-        paddingHorizontal: 4,
-    },
+  actionButtonsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+    gap: 8,
+  },
+  resetButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 4,
+    flex: 1,
+  },
+  resetButtonText: {
+    color: "#ef4444",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  applyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0ea5e9",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 4,
+    flex: 2,
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    color: "#64748b",
+    fontSize: 14,
+  },
+  entriesList: {
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+  },
+  entryRow: {
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
 
-    emptyContainer: {
-        alignItems: "center",
-        paddingVertical: 40,
-        flex: 1,
-    },
-    emptyText: {
-        fontSize: 14,
-        color: "#64748b",
-        marginTop: 12,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    modalContent: {
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        margin: 20,
-        width: "80%",
-        maxHeight: "60%",
-    },
-    calendarModalContent: {
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        margin: 20,
-        width: "90%",
-        maxHeight: "80%",
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
-    },
-    modalTitle: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#334155",
-    },
-    calendarInstructions: {
-        fontSize: 14,
-        color: "#64748b",
-        textAlign: "center",
-        paddingVertical: 8,
-    },
-    rangeDisplayContainer: {
-        flexDirection: "row",
-        padding: 16,
-        borderTopWidth: 1,
-        borderTopColor: "#f1f5f9",
-        justifyContent: "space-between",
-    },
-    rangeDisplayItem: {
-        flex: 1,
-    },
-    rangeDisplayLabel: {
-        fontSize: 12,
-        color: "#64748b",
-        marginBottom: 4,
-    },
-    rangeDisplayValue: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#334155",
-    },
-    userOptionRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-    },
-    userOptionAvatar: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-    },
-    optionItem: {
-        padding: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f1f5f9",
-    },
-    selectedOption: {
-        backgroundColor: "#f0f9ff",
-    },
-    optionText: {
-        fontSize: 14,
-        color: "#334155",
-    },
-    dateInput: {
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-        borderRadius: 6,
-        padding: 10,
-        margin: 16,
-        fontSize: 14,
-    },
-    modalButtonsRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        padding: 16,
-        gap: 8,
-    },
-    modalButton: {
-        backgroundColor: "#0ea5e9",
-        margin: 16,
-        padding: 10,
-        borderRadius: 6,
-        alignItems: "center",
-        flex: 1,
-    },
-    modalButtonText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    modalSecondaryButton: {
-        backgroundColor: "#fff",
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-        padding: 10,
-        borderRadius: 6,
-        alignItems: "center",
-        flex: 1,
-    },
-    modalSecondaryButtonText: {
-        color: "#64748b",
-        fontSize: 14,
-        fontWeight: "600",
-    },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
+    flex: 1,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#64748b",
+    marginTop: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    margin: 20,
+    width: "80%",
+    maxHeight: "60%",
+  },
+  calendarModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    margin: 20,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#334155",
+  },
+  calendarInstructions: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    paddingVertical: 8,
+  },
+  rangeDisplayContainer: {
+    flexDirection: "row",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    justifyContent: "space-between",
+  },
+  rangeDisplayItem: {
+    flex: 1,
+  },
+  rangeDisplayLabel: {
+    fontSize: 12,
+    color: "#64748b",
+    marginBottom: 4,
+  },
+  rangeDisplayValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#334155",
+  },
+  userOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  userOptionAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  optionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  selectedOption: {
+    backgroundColor: "#f0f9ff",
+  },
+  optionText: {
+    fontSize: 14,
+    color: "#334155",
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 6,
+    padding: 10,
+    margin: 16,
+    fontSize: 14,
+  },
+  modalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 16,
+    gap: 8,
+  },
+  modalButton: {
+    backgroundColor: "#0ea5e9",
+    margin: 16,
+    padding: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    flex: 1,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  modalSecondaryButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    flex: 1,
+  },
+  modalSecondaryButtonText: {
+    color: "#64748b",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 });
