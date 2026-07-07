@@ -3,11 +3,12 @@ import RateModal from "@/components/admin/RateModal"
 import { RateChartHeader } from "@/components/common/HeaderVarients"
 import { api } from "@/constants/api"
 import { stringNumber } from "@/constants/types"
+import { Ionicons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useFocusEffect } from "expo-router"
 import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { ActivityIndicator, Alert, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export interface RateChartRow {
@@ -103,28 +104,37 @@ const RateChartScreen = () => {
     };
     // Add new row
     const addRow = () => {
-        if (!rateChart.length) return;
-        const firstKey = columns[0].key;
-        const sortedChart = [...rateChart].sort((a, b) => {
-            const valA = Number(a[firstKey]) || 0;
-            const valB = Number(b[firstKey]) || 0;
-            return valA - valB;
-        });
-
-        const lastRow = sortedChart[rateChart.length - 1];
+        if (!columns.length) return;
 
         const newRow: RateChartRow = {
             _id: Date.now().toString(),
         } as RateChartRow;
 
-        columns.forEach(col => {
-            if (col.key === "_id") return;
+        if (!rateChart.length) {
+            // No rows yet (fresh rate chart) — seed the first row with zeros
+            columns.forEach(col => {
+                if (col.key === "_id") return;
+                newRow[col.key] = 0;
+            });
+        } else {
+            const firstKey = columns[0].key;
+            const sortedChart = [...rateChart].sort((a, b) => {
+                const valA = Number(a[firstKey]) || 0;
+                const valB = Number(b[firstKey]) || 0;
+                return valA - valB;
+            });
 
-            newRow[col.key] =
-                typeof lastRow[col.key] === "number"
-                    ? Number(lastRow[col.key]) + 1
-                    : 0;
-        });
+            const lastRow = sortedChart[rateChart.length - 1];
+
+            columns.forEach(col => {
+                if (col.key === "_id") return;
+
+                newRow[col.key] =
+                    typeof lastRow[col.key] === "number"
+                        ? Number(lastRow[col.key]) + 1
+                        : 0;
+            });
+        }
 
         setRateChart(prev => [...prev, { ...newRow, isCellEdited: `new-${newRow._id}` }]);
     };
@@ -258,23 +268,32 @@ const RateChartScreen = () => {
         try {
             setLoading(true)
 
-            const data = rateChart.filter(row => row.isCellEdited)
-            // Replace with your actual API endpoint
-            const response = await fetch(`${api.rateChart}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${parsedToken}`
-                },
-                body: JSON.stringify(data),
-            })
+            const editedRows = rateChart.filter(row => row.isCellEdited)
 
-            if (response.ok) {
-                Alert.alert(t("common.success"), t("rate.data_saved_successfully"))
-                fetchDataFromServer()
-            } else {
-                throw new Error("Save failed")
+            for (const row of editedRows) {
+                const isNewRow = typeof row.isCellEdited === "string" && row.isCellEdited.startsWith("new-")
+                const { _id, isCellEdited, ...rowData } = row
+
+                const url = isNewRow ? api.rateChart : `${api.rateChart}/${_id}`
+                const method = isNewRow ? "POST" : "PUT"
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${parsedToken}`
+                    },
+                    body: JSON.stringify(rowData),
+                })
+
+                if (!response.ok) {
+                    const responseText = await response.text()
+                    throw new Error(`Save failed (${response.status}): ${responseText}`)
+                }
             }
+
+            Alert.alert(t("common.success"), t("rate.data_saved_successfully"))
+            fetchDataFromServer()
         }
 
         catch (error) {
@@ -295,15 +314,10 @@ const RateChartScreen = () => {
             <RateChartHeader fetchDataFromServer={fetchDataFromServer} saveDataToServer={saveDataToServer} />
 
             <View style={styles.controls}>
-                {/* <TouchableOpacity style={styles.controlButton} onPress={confirmAddRow}>
+                <TouchableOpacity style={styles.controlButton} onPress={confirmAddRow}>
                     <Ionicons name="add-circle-outline" size={20} color="#0ea5e9" />
-                    <Text style={styles.controlButtonText}>Row</Text>
+                    <Text style={styles.controlButtonText}>{t("rate.add_row")}</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity style={styles.controlButton} onPress={addColumn}>
-                    <Ionicons name="add-circle-outline" size={20} color="#0ea5e9" />
-                    <Text style={styles.controlButtonText}>Column</Text>
-                </TouchableOpacity> */}
 
                 {loading && (
                     <View style={styles.loadingContainer}>
@@ -323,6 +337,12 @@ const RateChartScreen = () => {
                     removeColumn={removeColumn}
                     setEditingHeader={setEditingHeader}
                 />
+            ) : !loading ? (
+                <View style={styles.emptyState}>
+                    <Ionicons name="grid-outline" size={48} color="#94a3b8" />
+                    <Text style={styles.emptyStateTitle}>{t("rate.no_data_title")}</Text>
+                    <Text style={styles.emptyStateMessage}>{t("rate.no_data_message")}</Text>
+                </View>
             ) : null}
             <RateModal
                 visible={!!editingHeader}
@@ -373,6 +393,24 @@ const styles = StyleSheet.create({
         color: "#0ea5e9",
         fontWeight: "600",
         fontSize: 14,
+    },
+    emptyState: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginHorizontal: 16,
+        marginTop: 40,
+        gap: 8,
+    },
+    emptyStateTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#334155",
+        marginTop: 8,
+    },
+    emptyStateMessage: {
+        fontSize: 14,
+        color: "#64748b",
+        textAlign: "center",
     },
 })
 

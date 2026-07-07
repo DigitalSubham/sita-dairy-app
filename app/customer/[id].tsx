@@ -1,17 +1,16 @@
 import { CustomHeader } from "@/components/common/CustomHeader";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
-import {
-  MaterialCommunityIcons,
-  MaterialIcons
-} from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  ActivityIndicator,
   Image,
   Linking,
   RefreshControl,
@@ -19,10 +18,11 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 interface User {
   id: number;
@@ -39,6 +39,8 @@ interface User {
   profilePic: string;
   mobile: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function CustomerDetailsScreen() {
@@ -48,6 +50,7 @@ export default function CustomerDetailsScreen() {
   const [userData, setUserData] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [isSettingLocation, setIsSettingLocation] = useState<boolean>(false);
 
   const fetchUserData = useCallback(async () => {
     const storedToken = await AsyncStorage.getItem("token");
@@ -102,6 +105,70 @@ export default function CustomerDetailsScreen() {
     }
   };
 
+  const handleViewLocation = () => {
+    if (userData?.latitude == null || userData?.longitude == null) {
+      Toast.show({
+        type: "error",
+        text1: "Location not set for this customer yet",
+        text2: 'Use "Set Location" to save it first',
+      });
+      return;
+    }
+    Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${userData.latitude},${userData.longitude}`,
+    );
+  };
+
+  const handleSetLocation = async () => {
+    if (!userData) return;
+    setIsSettingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Toast.show({
+          type: "error",
+          text1: "Location permission denied",
+        });
+        return;
+      }
+
+      const position = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = position.coords;
+
+      const storedToken = await AsyncStorage.getItem("token");
+      const token = storedToken ? JSON.parse(storedToken) : "";
+      const response = await fetch(api.updateUser, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: userData._id, latitude, longitude }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUserData({ ...userData, latitude, longitude });
+        Toast.show({
+          type: "success",
+          text1: "Location saved",
+        });
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Failed to save location",
+        });
+      }
+    } catch (error) {
+      console.error("Error setting location:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to get current location",
+      });
+    } finally {
+      setIsSettingLocation(false);
+    }
+  };
+
   if (loading) {
     return (
       <DairyLoadingScreen loading loadingText={t("users.loading_customer")} />
@@ -116,7 +183,9 @@ export default function CustomerDetailsScreen() {
           size={64}
           color="#ef4444"
         />
-        <Text style={styles.errorText}>{t("users.failed_load_customer_data")}</Text>
+        <Text style={styles.errorText}>
+          {t("users.failed_load_customer_data")}
+        </Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchUserData}>
           <Text style={styles.retryButtonText}>{t("common.retry")}</Text>
         </TouchableOpacity>
@@ -128,10 +197,13 @@ export default function CustomerDetailsScreen() {
     return format(new Date(dateString), "MMM dd, yyyy");
   };
 
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CustomHeader title={t("users.customer_details")} showBackButton showMenuButton={false} />
+      <CustomHeader
+        title={t("users.customer_details")}
+        showBackButton
+        showMenuButton={false}
+      />
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -205,11 +277,14 @@ export default function CustomerDetailsScreen() {
             <Text style={styles.actionText}>Message</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleViewLocation}
+          >
             <View style={[styles.actionIcon, { backgroundColor: "#8b5cf6" }]}>
-              <MaterialCommunityIcons name="cow" size={24} color="#ffffff" />
+              <MaterialIcons name="map" size={24} color="#ffffff" />
             </View>
-            <Text style={styles.actionText}>{t("navigation.milk_records")}</Text>
+            <Text style={styles.actionText}>View Location</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton}>
@@ -218,6 +293,37 @@ export default function CustomerDetailsScreen() {
             </View>
             <Text style={styles.actionText}>Payment</Text>
           </TouchableOpacity>
+        </Animated.View>
+
+        {/* Set Location */}
+        <Animated.View
+          entering={FadeInUp.delay(250)}
+          style={styles.setLocationRow}
+        >
+          <TouchableOpacity
+            style={styles.setLocationButton}
+            onPress={handleSetLocation}
+            disabled={isSettingLocation}
+          >
+            {isSettingLocation ? (
+              <ActivityIndicator size="small" color="#3b82f6" />
+            ) : (
+              <MaterialIcons
+                name="add-location-alt"
+                size={20}
+                color="#3b82f6"
+              />
+            )}
+            <Text style={styles.setLocationText}>
+              {isSettingLocation ? "Getting location..." : "Set Location"}
+            </Text>
+          </TouchableOpacity>
+          {userData.latitude != null && userData.longitude != null && (
+            <Text style={styles.setLocationCoords}>
+              Saved: {Number(userData.latitude).toFixed(5)},{" "}
+              {Number(userData.longitude).toFixed(5)}
+            </Text>
+          )}
         </Animated.View>
 
         {/* Wallet Cards */}
@@ -256,7 +362,9 @@ export default function CustomerDetailsScreen() {
                 size={24}
                 color="#fff"
               />
-              <Text style={styles.walletLabel}>{userData.role === "Farmer" ? "Withdrawn" : "Paid"}</Text>
+              <Text style={styles.walletLabel}>
+                {userData.role === "Farmer" ? "Withdrawn" : "Paid"}
+              </Text>
               <Text style={styles.walletAmountSmall}>
                 ₹{userData.totalWithdrawnAmount}
               </Text>
@@ -277,9 +385,7 @@ export default function CustomerDetailsScreen() {
               />
               <Text style={styles.infoLabel}>Customer ID</Text>
             </View>
-            <Text style={styles.infoValue}>
-              {userData.id}
-            </Text>
+            <Text style={styles.infoValue}>{userData.id}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -320,7 +426,10 @@ export default function CustomerDetailsScreen() {
         </Animated.View>
         <View style={styles.overviewContainer}>
           {/* Quick Stats */}
-          <Animated.View entering={FadeInUp.delay(200)} style={styles.statsGrid}>
+          <Animated.View
+            entering={FadeInUp.delay(200)}
+            style={styles.statsGrid}
+          >
             <View style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: "#dbeafe" }]}>
                 <MaterialCommunityIcons name="cow" size={24} color="#3b82f6" />
@@ -359,10 +468,15 @@ export default function CustomerDetailsScreen() {
           </Animated.View>
 
           {/* Recent Activity */}
-          <Animated.View entering={FadeInUp.delay(400)} style={styles.activityCard}>
+          <Animated.View
+            entering={FadeInUp.delay(400)}
+            style={styles.activityCard}
+          >
             <Text style={styles.activityTitle}>Recent Activity</Text>
             <View style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: "#dcfce7" }]}>
+              <View
+                style={[styles.activityIcon, { backgroundColor: "#dcfce7" }]}
+              >
                 <MaterialCommunityIcons name="cow" size={16} color="#16a34a" />
               </View>
               <View style={styles.activityContent}>
@@ -372,7 +486,9 @@ export default function CustomerDetailsScreen() {
             </View>
 
             <View style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: "#dbeafe" }]}>
+              <View
+                style={[styles.activityIcon, { backgroundColor: "#dbeafe" }]}
+              >
                 <MaterialIcons name="payment" size={16} color="#3b82f6" />
               </View>
               <View style={styles.activityContent}>
@@ -382,7 +498,9 @@ export default function CustomerDetailsScreen() {
             </View>
 
             <View style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: "#fef3c7" }]}>
+              <View
+                style={[styles.activityIcon, { backgroundColor: "#fef3c7" }]}
+              >
                 <MaterialCommunityIcons
                   name="quality-high"
                   size={16}
@@ -563,6 +681,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#6b7280",
+  },
+
+  // Set Location
+  setLocationRow: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  setLocationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    backgroundColor: "#eff6ff",
+    alignSelf: "stretch",
+  },
+  setLocationText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3b82f6",
+  },
+  setLocationCoords: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 6,
   },
 
   // Wallet Cards

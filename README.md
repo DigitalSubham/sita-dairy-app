@@ -2,6 +2,8 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+      // "apiUrl": "https://z6ztgnnyqi.execute-api.ap-south-1.amazonaws.com/dev/api/v1",
+
 ## Get started
 
 1. Install dependencies

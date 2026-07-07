@@ -25,7 +25,11 @@ import {
 } from "react-native";
 import ListShow from "./ListShow";
 
-export default function MilkBuyEntry() {
+type MilkBuyEntryProps = {
+    onWalletAmountChange?: (amount: number | null) => void;
+};
+
+export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps = {}) {
     const [rateChart, setRateChart] = useState<RateChartRow[]>();
     const [showUserSelector, setShowUserSelector] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +87,35 @@ export default function MilkBuyEntry() {
             }
         }
     }, [formData.fat, formData.snf, rateChart]);
+
+    // Fetch and report the selected farmer's wallet amount to the parent header
+    useEffect(() => {
+        if (!selectedUser?._id || !token) {
+            onWalletAmountChange?.(null);
+            return;
+        }
+        let isCancelled = false;
+        (async () => {
+            try {
+                const response = await fetch(`${api.getUser}?userId=${selectedUser._id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                const data = await response.json();
+                if (!isCancelled && data.success) {
+                    onWalletAmountChange?.(data.user?.walletAmount ?? null);
+                }
+            } catch (error) {
+                console.error("Error fetching wallet amount:", error);
+            }
+        })();
+        return () => {
+            isCancelled = true;
+        };
+    }, [selectedUser?._id, token]);
 
     const fetchDataFromServer = async () => {
         const token = await AsyncStorage.getItem("token");

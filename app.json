@@ -21,10 +21,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "INTERNET",
-        "READ_EXTERNAL_STORAGE"
-      ],
+      "permissions": ["INTERNET", "READ_EXTERNAL_STORAGE"],
       "edgeToEdgeEnabled": true,
       "package": "com.digitalsubham.sita_dairy"
     },
@@ -45,13 +42,19 @@
         }
       ],
       "expo-font",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Sita Dairy to access your location to set a customer's location."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "https://z6ztgnnyqi.execute-api.ap-south-1.amazonaws.com/dev/api/v1",
+      "apiUrl": "http://192.168.0.111:5002/api/v1",
       "router": {},
       "eas": {
         "projectId": "0b36d8dd-d239-409c-ad8a-f0ed553f55f0"

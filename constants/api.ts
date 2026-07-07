@@ -1,7 +1,6 @@
 import Constants from "expo-constants";
 
 const BASE_URL = Constants?.expoConfig?.extra?.apiUrl ?? "";
-
 export const api = {
   login: `${BASE_URL}/user/login`,
   signup: `${BASE_URL}/user/create`,

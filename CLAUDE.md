@@ -33,6 +33,8 @@ Navigation is Expo Router file-based routing under [app/](app/), with `typedRout
 - `Buyer` / `User` → [app/(buyer)/](app/(buyer)/) — buyer view (products, payments, records)
 - Unauthenticated → [app/(auth)/](app/(auth)/) (login/signup)
 
+[app/customer/[id].tsx](app/customer/[id].tsx) is a standalone route outside any group — the Admin drill-down reached from the eye icon on `customers.tsx`.
+
 Each role group's `_layout.tsx` is an `expo-router/drawer` Drawer and is itself the access guard: it reads `useAuth()`, and if `user.role` doesn't match the group, it redirects (e.g. `(tabs)/_layout.tsx` redirects Buyers/Admins to their own group) or bounces to `/+not-found`. When adding a screen to a role group, register it both as a file under that group's folder and as an entry in that layout's `screens` array (drawer label/icon). There is no centralized route guard — the redirect logic is duplicated per group, so keep new groups consistent with the existing pattern.
 
 [app/_layout.tsx](app/_layout.tsx) is the root: sets up `SafeAreaProvider`, `GestureHandlerRootView`, `I18nextProvider`, `AuthProvider`, and a root `Stack` listing the four groups plus `+not-found`. It also holds the splash-screen gating (`SplashScreen.preventAutoHideAsync()` + a fixed 2s delay before hiding).
@@ -52,6 +54,10 @@ Feedback to the user on API calls goes through `react-native-toast-message` (`To
 ### Domain types
 
 [constants/types.ts](constants/types.ts) is the single source of truth for domain shapes (`User`, `Customer`, `Farmer`, `MilkEntry`/`MilkRecord`/`MilkCollection`, `PaymentRequest`, `Transaction`, `AdminDashboardData`, `FarmerDashboardData`, `RateChartRow`, etc.) and shared enums (`ShiftType`, `MilkType`, `PaymentType`, `PaymentMethod`). Check here first before adding ad hoc inline types — most dashboard/record/payment shapes already exist.
+
+### Payment `code` semantics
+
+Payments use a `code` field with two values: `"Paid"` (money the dairy pays to farmers) and `"Recieve"` (money the dairy receives from buyers — this is the actual backend spelling, not a typo to casually "fix"). Farmer wallet screens always query `code: "Paid"`; Buyer wallet screens always query `code: "Recieve"`; Admin's Payments screen toggles between both.
 
 ### i18n
 
@@ -75,3 +81,7 @@ Styling is plain React Native `StyleSheet`, no Nativewind/Tamagui despite the co
 ## Path aliases
 
 `@/*` maps to the repo root (see [tsconfig.json](tsconfig.json)), e.g. `@/context/AuthContext`, `@/constants/types`. Use this alias instead of relative `../../` imports, matching the rest of the codebase.
+
+## Screen-level reference
+
+[doc/existing.md](doc/existing.md) inventories every currently implemented screen by role, including which API endpoints and shared components each one uses, plus known dead/placeholder code (e.g. the Admin dashboard's commented-out inventory section, `app/customer/[id].tsx`'s hardcoded "Quick Stats"/"Recent Activity"). Check it before touching a screen you haven't worked in before — it reflects current behavior, not a spec.

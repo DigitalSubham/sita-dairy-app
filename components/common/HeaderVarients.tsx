@@ -33,6 +33,7 @@ type MilkEntryHeaderProps = {
     entryType: string;
     setEntryType: (type: string) => void;
     entryData?: MilkEntry[]; // Optional, if you want to pass data for export
+    walletAmount?: number | null;
 };
 interface ProfileProps {
     isEditing: boolean;
@@ -139,7 +140,8 @@ export const PaymentHeader: React.FC<ProductsHeaderProps> = ({ addNewProduct }) 
 }
 
 
-export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProps) => {
+export const MilkEntryHeader = ({ entryType, setEntryType, walletAmount }: MilkEntryHeaderProps) => {
+    const { t } = useTranslation()
 
     const actions: HeaderAction[] = [
         {
@@ -148,7 +150,27 @@ export const MilkEntryHeader = ({ entryType, setEntryType }: MilkEntryHeaderProp
         },
     ]
 
-    return <CustomHeader title={entryType === "Milk Buy" ? "entry.milk_buy" : "entry.milk_sale"} actions={actions} />
+    return (
+        <CustomHeader
+            title={entryType === "Milk Buy" ? "entry.milk_buy" : "entry.milk_sale"}
+            actions={actions}
+            centerContent={
+                <View style={styles.milkEntryTitleRow}>
+                    <Text style={styles.milkEntryTitleText} numberOfLines={1}>
+                        {t(entryType === "Milk Buy" ? "entry.milk_buy" : "entry.milk_sale")}
+                    </Text>
+                    {walletAmount != null && (
+                        <View style={styles.walletBadge}>
+                            <MaterialIcons name="account-balance-wallet" size={14} color="#16a34a" />
+                            <Text style={styles.walletBadgeText} numberOfLines={1}>
+                                ₹{walletAmount.toFixed(2)}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            }
+        />
+    )
 }
 
 // Records Header with filter options
@@ -522,6 +544,30 @@ const styles = StyleSheet.create({
     },
     titleSection: {
         flex: 1,
+    },
+    milkEntryTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+    milkEntryTitleText: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#111827",
+    },
+    walletBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        backgroundColor: "#dcfce7",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+    },
+    walletBadgeText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#16a34a",
     },
     title: {
         fontSize: 18,

@@ -139,6 +139,8 @@
   "rate.fat_and_snf_rate_chart": "Fat and SNF Rate Chart",
   "rate.add_row": "Add Row",
   "rate.add_row_confirmation": "Do you want to add a new row?",
+  "rate.no_data_title": "No Rate Chart Data",
+  "rate.no_data_message": "Add your first row to start building the Fat/SNF rate chart.",
   "rate.at_least_one_row": "At least one row must remain.",
   "rate.delete_row": "Delete Row",
   "rate.delete_row_confirmation": "This row will be permanently removed.",

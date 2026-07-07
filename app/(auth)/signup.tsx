@@ -144,9 +144,10 @@ export default function Signup() {
             placeholder={t("common.mobile_number")}
             placeholderTextColor="#93c5fd"
             value={mobile}
-            onChangeText={setMobile}
+            onChangeText={(text) => setMobile(text.replace(/\D/g, "").slice(0, 10))}
             autoCapitalize="none"
             keyboardType="number-pad"
+            maxLength={10}
             editable={!isLoading}
             onSubmitEditing={() => handleSignup()}
           />

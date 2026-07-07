@@ -3,13 +3,13 @@ import { stringNumber } from "@/constants/types";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-    FlatList,
-    ListRenderItemInfo,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  ListRenderItemInfo,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export interface RateChartRow {
@@ -95,7 +95,7 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
       return rateChart;
     }
 
-    if (columns.length === 0) return rateChart;
+    if (!columns || columns.length === 0) return rateChart;
 
     const firstKey = columns[0].key;
 
@@ -105,6 +105,8 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
       return valA - valB;
     });
   }, [rateChart, columns, editingCell]);
+
+  if (!columns || columns.length === 0) return null;
 
   const RenderRow = ({ item }: ListRenderItemInfo<RateChartRow>) => {
     return (

@@ -24,7 +24,11 @@ import ListShow from "./ListShow"
 
 const { width: screenWidth } = Dimensions.get("window")
 
-export default function MilkSaleEntry() {
+type MilkSaleEntryProps = {
+    onWalletAmountChange?: (amount: number | null) => void;
+};
+
+export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryProps = {}) {
     const [showUserSelector, setShowUserSelector] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -66,6 +70,35 @@ export default function MilkSaleEntry() {
             fetchTodayEntries(api.milkSales, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
         }
     }, [formData.date, formData.shift, token])
+
+    // Fetch and report the selected buyer's wallet amount to the parent header
+    useEffect(() => {
+        if (!selectedUser?._id || !token) {
+            onWalletAmountChange?.(null)
+            return
+        }
+        let isCancelled = false
+        ;(async () => {
+            try {
+                const response = await fetch(`${api.getUser}?userId=${selectedUser._id}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                const data = await response.json()
+                if (!isCancelled && data.success) {
+                    onWalletAmountChange?.(data.user?.walletAmount ?? null)
+                }
+            } catch (error) {
+                console.error("Error fetching wallet amount:", error)
+            }
+        })()
+        return () => {
+            isCancelled = true
+        }
+    }, [selectedUser?._id, token])
 
     useFocusEffect(
         useCallback(() => {

@@ -7,10 +7,19 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 const MilkEntry = () => {
   const [entryType, setEntryType] = useState("Milk Buy")
+  const [walletAmount, setWalletAmount] = useState<number | null>(null)
+
+  const handleSetEntryType = (type: string) => {
+    setWalletAmount(null)
+    setEntryType(type)
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <MilkEntryHeader entryType={entryType} setEntryType={setEntryType} />
-      {entryType === "Milk Buy" ? <MilkBuyEntry /> : <MilkSaleEntry />}
+      <MilkEntryHeader entryType={entryType} setEntryType={handleSetEntryType} walletAmount={walletAmount} />
+      {entryType === "Milk Buy"
+        ? <MilkBuyEntry onWalletAmountChange={setWalletAmount} />
+        : <MilkSaleEntry onWalletAmountChange={setWalletAmount} />}
     </SafeAreaView>
 
   )

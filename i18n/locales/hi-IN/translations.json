@@ -139,6 +139,8 @@
   "rate.fat_and_snf_rate_chart": "वसा और SNF दर चार्ट",
   "rate.add_row": "पंक्ति जोड़ें",
   "rate.add_row_confirmation": "क्या आप नई पंक्ति जोड़ना चाहते हैं?",
+  "rate.no_data_title": "कोई रेट चार्ट डेटा नहीं",
+  "rate.no_data_message": "फैट/SNF रेट चार्ट बनाना शुरू करने के लिए अपनी पहली पंक्ति जोड़ें।",
   "rate.at_least_one_row": "कम से कम एक पंक्ति रहनी चाहिए।",
   "rate.delete_row": "पंक्ति हटाएँ",
   "rate.delete_row_confirmation": "यह पंक्ति स्थायी रूप से हट जाएगी।",
