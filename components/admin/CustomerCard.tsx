@@ -1,14 +1,14 @@
+import { format } from "date-fns";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  Pressable,
   Dimensions,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { format } from 'date-fns';
-import { LinearGradient } from 'expo-linear-gradient';
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface CustomerCardProps {
   customer: {
@@ -23,7 +23,7 @@ interface CustomerCardProps {
   };
 }
 
-export function CustomerCard({ customer }: CustomerCardProps) {
+export function CustomerCard({ customer }: Readonly<CustomerCardProps>) {
   const router = useRouter();
 
   return (
@@ -32,7 +32,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
       onPress={() => router.push(`/customer/${customer.id}`)}
     >
       <LinearGradient
-        colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+        colors={["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"]}
         style={styles.card}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -50,7 +50,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
 
         <View style={styles.statsContainer}>
           <LinearGradient
-            colors={['rgba(0,122,255,0.2)', 'rgba(0,122,255,0.1)']}
+            colors={["rgba(0,122,255,0.2)", "rgba(0,122,255,0.1)"]}
             style={styles.statItem}
           >
             <Text style={styles.statValue}>{customer.totalWalletAmount}</Text>
@@ -58,7 +58,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
           </LinearGradient>
 
           <LinearGradient
-            colors={['rgba(88,86,214,0.2)', 'rgba(88,86,214,0.1)']}
+            colors={["rgba(88,86,214,0.2)", "rgba(88,86,214,0.1)"]}
             style={styles.statItem}
           >
             <Text style={styles.statValue}>{customer.CouponsRedeemed}</Text>
@@ -66,7 +66,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
           </LinearGradient>
 
           <LinearGradient
-            colors={['rgba(52,199,89,0.2)', 'rgba(52,199,89,0.1)']}
+            colors={["rgba(52,199,89,0.2)", "rgba(52,199,89,0.1)"]}
             style={styles.statItem}
           >
             <Text style={styles.statValue}>{customer.pointsWithdrawn}</Text>
@@ -76,7 +76,7 @@ export function CustomerCard({ customer }: CustomerCardProps) {
 
         <View style={styles.footer}>
           <Text style={styles.joinDate}>
-            Member since {format(new Date(customer.joinDate), 'MMM dd, yyyy')}
+            Member since {format(new Date(customer.joinDate), "MMM dd, yyyy")}
           </Text>
         </View>
       </LinearGradient>
@@ -84,24 +84,24 @@ export function CustomerCard({ customer }: CustomerCardProps) {
   );
 }
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   cardContainer: {
     marginHorizontal: 16,
     marginVertical: 10,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   card: {
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   profilePic: {
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: "rgba(255,255,255,0.2)",
   },
   headerText: {
     marginLeft: 12,
@@ -117,42 +117,42 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
+    fontWeight: "600",
+    color: "#ffffff",
     marginBottom: 4,
   },
   email: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: "rgba(255,255,255,0.6)",
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 16,
     gap: 8,
   },
   statItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     padding: 12,
     borderRadius: 12,
   },
   statLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: "rgba(255,255,255,0.6)",
     marginTop: 4,
   },
   statValue: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontWeight: "700",
+    color: "#ffffff",
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
   joinDate: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
+    color: "rgba(255,255,255,0.4)",
   },
 });
