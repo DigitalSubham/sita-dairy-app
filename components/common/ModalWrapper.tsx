@@ -40,8 +40,9 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         borderRadius: 12,
         margin: 20,
-        width: "80%",
-        maxHeight: "60%",
+        width: "92%",
+        maxHeight: "80%",
+        overflow: "hidden",
     },
     modalHeader: {
         flexDirection: "row",

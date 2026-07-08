@@ -15,6 +15,8 @@
   "common.screen_not_exist": "स्क्रीन मौजूद नहीं है।",
   "common.go_home": "होम स्क्रीन पर जाएँ",
   "common.cancel": "रद्द करें",
+  "common.active": "सक्रिय",
+  "common.inactive": "निष्क्रिय",
   "common.modified": "संशोधित किया गया",
   "common.role_assignment": "भूमिका असाइनमेंट",
   "common.transaction": "लेनदेन",

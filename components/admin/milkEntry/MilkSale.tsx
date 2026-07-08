@@ -1,3 +1,4 @@
+import ModalWrapper from "@/components/common/ModalWrapper"
 import UserModal from "@/components/common/UserModal"
 import { api } from "@/constants/api"
 import { MilkEntry, MilkEntryFormData, MilkType, ShiftType, User } from "@/constants/types"
@@ -39,7 +40,7 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
     const [selectedEntry, setSelectedEntry] = useState<MilkEntry | null>(null)
     const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null)
 
-    const { customers, token } = useCustomers({ role: "Buyer" })
+    const { customers, token, refresh: refreshCustomers } = useCustomers({ role: "Buyer", activeOnly: true })
     const { t } = useTranslation()
     const weightRef = useRef<TextInput>(null);
     const rateRef = useRef<TextInput>(null);
@@ -50,6 +51,20 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
         rate: "",
         date: format(new Date(), "yyyy-MM-dd"),
         shift: new Date().getHours() < 12 ? ShiftType.Morning : ShiftType.Evening,
+        milkType: MilkType.Cow,
+    })
+
+    // Editing an existing entry from today's entries list (separate modal, distinct from the create form above)
+    const [editingListEntry, setEditingListEntry] = useState<MilkEntry | null>(null)
+    const [editSelectedUser, setEditSelectedUser] = useState<User | null>(null)
+    const [isUpdatingListEntry, setIsUpdatingListEntry] = useState(false)
+    const [showEditDatePicker, setShowEditDatePicker] = useState(false)
+    const [editFormData, setEditFormData] = useState<MilkEntryFormData>({
+        userId: "",
+        weight: "",
+        rate: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+        shift: ShiftType.Morning,
         milkType: MilkType.Cow,
     })
 
@@ -104,8 +119,8 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
         useCallback(() => {
             resetForm();
             fetchTodayEntries(api.milkSales, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
-
-        }, [])
+            refreshCustomers();
+        }, [refreshCustomers])
     );
 
 
@@ -205,14 +220,120 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
         setShowOptionsModal(false)
     }
 
+    // Helper function to update the today's-entry edit form data
+    const updateEditFormData = (field: string, value: string) => {
+        setEditFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }))
+    }
+
+    // Open the edit modal for an entry from today's entries list
+    const handleEditListEntry = (entry: MilkEntry) => {
+        setEditingListEntry(entry)
+        setEditSelectedUser(customers.find((c) => c._id === entry.byUser._id) ?? null)
+        setEditFormData({
+            userId: entry.byUser._id,
+            weight: String(entry.weight ?? ""),
+            rate: String(entry.rate ?? ""),
+            date: entry.date,
+            shift: entry.shift,
+            milkType: entry.milkType,
+        })
+    }
+
+    // Handle edit modal date picker change
+    const onEditDateChange = (event: any, selectedDate?: Date) => {
+        setShowEditDatePicker(false)
+        if (selectedDate) {
+            updateEditFormData("date", format(selectedDate, "yyyy-MM-dd"))
+        }
+    }
+
+    // Submit the today's-entry edit
+    const handleUpdateListEntry = async () => {
+        if (!editingListEntry) return
+
+        if (!editFormData.weight || !editFormData.rate) {
+            Alert.alert(t("common.error"), t("validation.all_fields_required"))
+            return
+        }
+
+        setIsUpdatingListEntry(true)
+
+        try {
+            const entryData = {
+                userId: editFormData.userId,
+                date: editFormData.date,
+                shift: editFormData.shift,
+                weight: editFormData.weight,
+                rate: editFormData.rate,
+                price: calculateTotal(editFormData.weight, editFormData.rate),
+                milkType: editFormData.milkType,
+            }
+
+            const response = await fetch(`${api.milkSales}/${editingListEntry._id}`, {
+                method: "PUT",
+                body: JSON.stringify(entryData),
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                Alert.alert(t("common.success"), data.message)
+                setEditingListEntry(null)
+                fetchTodayEntries(api.milkSales, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
+            } else {
+                Alert.alert(t("common.error"), data.message)
+            }
+        } catch (error) {
+            console.error("Update Error:", error)
+            Alert.alert(t("common.error"), t("records.failed_update_entry"))
+        } finally {
+            setIsUpdatingListEntry(false)
+        }
+    }
+
+    // Confirm and delete an entry from today's entries list
+    const handleDeleteListEntry = (entry: MilkEntry) => {
+        Alert.alert(
+            t("common.delete_item_title", { item: t("records.entry") }),
+            t("common.delete_item_confirmation", { item: t("records.entry") }),
+            [
+                { text: t("common.cancel"), style: "cancel" },
+                {
+                    text: t("common.delete"),
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await fetch(`${api.milkSales}/${entry._id}`, {
+                                method: "DELETE",
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            })
+                            const data = await response.json()
+                            if (data.success) {
+                                setTodayEntries((prev) => prev.filter((e) => e._id !== entry._id))
+                            } else {
+                                Alert.alert(t("common.error"), data.message || t("records.failed_delete_entry"))
+                            }
+                        } catch (error) {
+                            console.error("Delete Error:", error)
+                            Alert.alert(t("common.error"), t("records.failed_delete_entry"))
+                        }
+                    },
+                },
+            ]
+        )
+    }
+
     const existingUserIds = todayEntries.map(entry => entry.byUser._id);
     const filteredUser = customers
-        .filter(c => {
-            const normalizedShift = formData.shift.toLowerCase();
-            if (normalizedShift === "morning") return c.morningMilk;
-            if (normalizedShift === "evening") return c.eveningMilk;
-            return false;
-        })
         .filter(c => !existingUserIds.includes(c._id))
         .sort((a, b) => {
             if (a.positionNo === undefined && b.positionNo === undefined) return 0;
@@ -395,11 +516,124 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
                 date={formData.date}
                 isLoadingEntries={isLoadingEntries}
                 setIsLoadingEntries={setIsLoadingEntries}
+                onEditEntry={handleEditListEntry}
+                onDeleteEntry={handleDeleteListEntry}
             />
 
             {<UserModal title={t("entry.buyer")} showUserSelector={showUserSelector} setShowUserSelector={setShowUserSelector} filteredUser={filteredUser} selectedUser={selectedUser} setSelectedUser={setSelectedUser} updateFormData={updateFormData} weightRef={weightRef} />}
 
             {renderEntryOptionsModal()}
+
+            <ModalWrapper
+                visible={!!editingListEntry}
+                setVisibility={() => setEditingListEntry(null)}
+                headerText={t("entry.edit_entry")}
+            >
+                <View style={styles.editModalBody}>
+                    {/* Date, Shift and Milk Type in one row */}
+                    <View style={styles.topRow}>
+                        <TouchableOpacity onPress={() => setShowEditDatePicker(true)} style={styles.compactField}>
+                            <FontAwesome name="calendar" size={14} color="#0284c7" />
+                            <Text style={styles.compactFieldText}>{format(new Date(editFormData.date), "dd/MM")}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.compactField}
+                            onPress={() => {
+                                const newShift = editFormData.shift === "Morning" ? "Evening" : "Morning"
+                                updateEditFormData("shift", newShift)
+                            }}
+                        >
+                            <Text style={styles.compactFieldText}>
+                                {editFormData.shift === "Morning" ? "🌅" : "🌙"} {editFormData.shift === "Morning" ? t("entry.morning") : t("entry.evening")}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.milkTypeToggle}>
+                            <TouchableOpacity
+                                style={[styles.milkTypeBtn, editFormData.milkType === "Cow" && styles.milkTypeBtnActive]}
+                                onPress={() => updateEditFormData("milkType", "Cow")}
+                            >
+                                <Text style={styles.milkTypeText}>🐄</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.milkTypeBtn, editFormData.milkType === "Buffalo" && styles.milkTypeBtnActive]}
+                                onPress={() => updateEditFormData("milkType", "Buffalo")}
+                            >
+                                <Text style={styles.milkTypeText}>🐃</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Buyer (disabled — can't reassign an existing entry to a different buyer) */}
+                    <View style={[styles.userSelector, styles.userSelectorDisabled]}>
+                        <FontAwesome name="user" size={16} color="#94a3b8" />
+                        <Text style={styles.userSelectorText}>{editSelectedUser?.name ?? t("entry.select_buyer")}</Text>
+                    </View>
+
+                    {/* Weight */}
+                    <View style={styles.inputRow}>
+                        <View style={styles.inputContainer}>
+                            <FontAwesome name="balance-scale" size={16} color="#38bdf8" />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t("entry.weight")}
+                                placeholderTextColor="#93c5fd"
+                                value={editFormData.weight}
+                                onChangeText={(value) => updateEditFormData("weight", value)}
+                                keyboardType="decimal-pad"
+                            />
+                            <Text style={styles.inputUnit}>L</Text>
+                        </View>
+                    </View>
+
+                    {/* Rate */}
+                    <View style={styles.inputRow}>
+                        <View style={styles.inputContainer}>
+                            <FontAwesome name="rupee" size={16} color="#10b981" />
+                            <TextInput
+                                style={styles.input}
+                                placeholder={t("records.rate")}
+                                placeholderTextColor="#93c5fd"
+                                value={editFormData.rate}
+                                onChangeText={(value) => updateEditFormData("rate", value)}
+                                keyboardType="decimal-pad"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Total and Submit */}
+                    <View style={styles.bottomRow}>
+                        <View style={styles.totalDisplay}>
+                            <Text style={styles.totalLabel}>{t("entry.total")}: </Text>
+                            <Text style={styles.totalValue}>₹{calculateTotal(editFormData.weight, editFormData.rate)}</Text>
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.submitButton}
+                            disabled={isUpdatingListEntry}
+                            onPress={handleUpdateListEntry}
+                        >
+                            <LinearGradient colors={["#0ea5e9", "#0284c7"]} style={styles.submitGradient}>
+                                <FontAwesome name="save" size={16} color="white" />
+                                <Text style={styles.submitButtonText}>
+                                    {isUpdatingListEntry ? t("common.saving") : t("common.update")}
+                                </Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+
+                    {showEditDatePicker && (
+                        <DateTimePicker
+                            value={new Date(editFormData.date)}
+                            mode="date"
+                            display="default"
+                            onChange={onEditDateChange}
+                            maximumDate={new Date()}
+                        />
+                    )}
+                </View>
+            </ModalWrapper>
         </>
     )
 }
@@ -487,6 +721,13 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginBottom: 12,
         gap: 8,
+    },
+    userSelectorDisabled: {
+        backgroundColor: "#f1f5f9",
+        borderColor: "#cbd5e1",
+    },
+    editModalBody: {
+        padding: 16,
     },
     userSelectorText: {
         flex: 1,

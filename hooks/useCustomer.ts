@@ -1,14 +1,18 @@
 import { api } from "@/constants/api";
 import { Customer, CustomerRole } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export default function useCustomers({ role }: { role?: CustomerRole } = {}) {
+export default function useCustomers({
+  role,
+  activeOnly,
+}: { role?: CustomerRole; activeOnly?: boolean } = {}) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string>("");
+  const isRefreshingRef = useRef(false);
 
   // Load token once
   useEffect(() => {
@@ -28,30 +32,39 @@ export default function useCustomers({ role }: { role?: CustomerRole } = {}) {
     if (!token) return;
     try {
       setError(null);
-      if (!refreshing) setLoading(true);
+      if (!isRefreshingRef.current) setLoading(true);
 
-      const url = role
-        ? `${api.getAllCustomers}?role=${role}`
-        : api.getAllCustomers;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = activeOnly
+        ? await fetch(api.dropdownUsers, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ code: "USERS", data: { role } }),
+          })
+        : await fetch(
+            role ? `${api.getAllCustomers}?role=${role}` : api.getAllCustomers,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
       if (!res.ok) throw new Error("Failed to fetch customers");
       const data = await res.json();
-      setCustomers(data.users);
+      setCustomers(activeOnly ? data.user : data.users);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";
       setError(errorMsg);
     } finally {
       setLoading(false);
+      isRefreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [token, refreshing, role]);
+  }, [token, role, activeOnly]);
 
   // Fetch customers when token is available
   useEffect(() => {
@@ -61,10 +74,11 @@ export default function useCustomers({ role }: { role?: CustomerRole } = {}) {
   }, [token, fetchCustomers]);
 
   // Refresh function to expose
-  const refresh = () => {
+  const refresh = useCallback(() => {
+    isRefreshingRef.current = true;
     setRefreshing(true);
     fetchCustomers();
-  };
+  }, [fetchCustomers]);
 
   return { customers, loading, error, refreshing, refresh, token };
 }

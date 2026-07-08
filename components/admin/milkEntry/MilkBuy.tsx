@@ -1,3 +1,4 @@
+import ModalWrapper from "@/components/common/ModalWrapper";
 import UserModal from "@/components/common/UserModal";
 import EntryForm from "@/components/forms/EntryForm";
 import { api } from "@/constants/api";
@@ -37,9 +38,26 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
     const [todayEntries, setTodayEntries] = useState<MilkEntry[]>([]);
     const [isLoadingEntries, setIsLoadingEntries] = useState(false);
     const [editingEntry, setEditingEntry] = useState<MilkEntry | null>(null);
-    const { customers, token } = useCustomers({ role: "Farmer" });
+    const { customers, token, refresh: refreshCustomers } = useCustomers({ role: "Farmer", activeOnly: true });
     const weightRef = useRef<TextInput>(null);
     const { t } = useTranslation();
+
+    // Editing an existing entry from today's entries list (separate modal, distinct from the create form above)
+    const [editingListEntry, setEditingListEntry] = useState<MilkEntry | null>(null);
+    const [editSelectedUser, setEditSelectedUser] = useState<User | null>(null);
+    const [showEditUserSelector, setShowEditUserSelector] = useState(false);
+    const [isUpdatingListEntry, setIsUpdatingListEntry] = useState(false);
+    const editWeightRef = useRef<TextInput>(null);
+    const [editFormData, setEditFormData] = useState<MilkEntryFormData>({
+        userId: "",
+        weight: "",
+        fat: "",
+        snf: "",
+        rate: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+        shift: ShiftType.Morning,
+        milkType: MilkType.Cow,
+    });
     const [formData, setFormData] = useState<MilkEntryFormData>({
         userId: "",
         weight: "",
@@ -173,7 +191,8 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
                 formData.shift,
                 setTodayEntries
             );
-        }, [])
+            refreshCustomers();
+        }, [refreshCustomers])
     );
 
 
@@ -257,6 +276,135 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
         }
     };
 
+    // Helper function to update the today's-entry edit form data
+    const updateEditFormData = (field: string, value: string) => {
+        setEditFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    // Auto-calculate rate when fat or SNF changes in the edit modal
+    useEffect(() => {
+        if (editFormData.fat && editFormData.snf) {
+            const fatNum = Number.parseFloat(editFormData.fat);
+            const snfNum = Number.parseFloat(editFormData.snf);
+
+            if (!isNaN(fatNum) && !isNaN(snfNum)) {
+                const rate = getRateFromChart(fatNum, snfNum);
+                if (rate > 0) {
+                    updateEditFormData("rate", rate.toFixed(2));
+                }
+            }
+        }
+    }, [editFormData.fat, editFormData.snf, rateChart]);
+
+    // Open the edit modal for an entry from today's entries list
+    const handleEditListEntry = (entry: MilkEntry) => {
+        setEditingListEntry(entry);
+        setEditSelectedUser(customers.find((c) => c._id === entry.byUser._id) ?? null);
+        setEditFormData({
+            userId: entry.byUser._id,
+            weight: String(entry.weight ?? ""),
+            fat: String(entry.fat ?? ""),
+            snf: String(entry.snf ?? ""),
+            rate: String(entry.rate ?? ""),
+            date: entry.date,
+            shift: entry.shift,
+            milkType: entry.milkType,
+        });
+    };
+
+    // Submit the today's-entry edit
+    const handleUpdateListEntry = async () => {
+        if (!editingListEntry) return;
+
+        if (!editFormData.weight || !editFormData.fat || !editFormData.snf || !editFormData.rate) {
+            Alert.alert(t("common.error"), t("validation.all_fields_required"));
+            return;
+        }
+
+        setIsUpdatingListEntry(true);
+
+        try {
+            const entryData = {
+                userId: editFormData.userId,
+                date: editFormData.date,
+                shift: editFormData.shift,
+                weight: editFormData.weight,
+                fat: editFormData.fat,
+                snf: editFormData.snf,
+                rate: editFormData.rate,
+                price: calculateTotal(editFormData.weight, editFormData.rate),
+                milkType: editFormData.milkType,
+            };
+
+            const response = await fetch(`${api.updateMilkEntry}/${editingListEntry._id}`, {
+                method: "PUT",
+                body: JSON.stringify(entryData),
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Alert.alert(t("common.success"), data.message);
+                setEditingListEntry(null);
+                fetchTodayEntries(
+                    api.getRecords,
+                    setIsLoadingEntries,
+                    formData.date,
+                    formData.shift,
+                    setTodayEntries
+                );
+            } else {
+                Alert.alert(t("common.error"), data.message);
+            }
+        } catch (error) {
+            console.error("Update Error:", error);
+            Alert.alert(t("common.error"), t("records.failed_update_entry"));
+        } finally {
+            setIsUpdatingListEntry(false);
+        }
+    };
+
+    // Confirm and delete an entry from today's entries list
+    const handleDeleteListEntry = (entry: MilkEntry) => {
+        Alert.alert(
+            t("common.delete_item_title", { item: t("records.entry") }),
+            t("common.delete_item_confirmation", { item: t("records.entry") }),
+            [
+                { text: t("common.cancel"), style: "cancel" },
+                {
+                    text: t("common.delete"),
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await fetch(`${api.deleteRecord}/${entry._id}`, {
+                                method: "DELETE",
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                setTodayEntries((prev) => prev.filter((e) => e._id !== entry._id));
+                            } else {
+                                Alert.alert(t("common.error"), data.message || t("records.failed_delete_entry"));
+                            }
+                        } catch (error) {
+                            console.error("Delete Error:", error);
+                            Alert.alert(t("common.error"), t("records.failed_delete_entry"));
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     const existingUserIds: string[] =
         Array.isArray(todayEntries) && todayEntries.length > 0
             ? todayEntries.map((entry) => entry?.byUser?._id)
@@ -267,6 +415,16 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
         .sort((a, b) => {
             if (a.positionNo === undefined && b.positionNo === undefined) return 0;
             if (a.positionNo === undefined) return 1; // move undefined to end
+            if (b.positionNo === undefined) return -1;
+            return a.positionNo - b.positionNo;
+        });
+
+    // Same as filteredUser, but keeps the entry's current farmer visible/selectable
+    const editFilteredUser = customers
+        .filter((c) => c._id === editingListEntry?.byUser?._id || !existingUserIds.includes(c._id))
+        .sort((a, b) => {
+            if (a.positionNo === undefined && b.positionNo === undefined) return 0;
+            if (a.positionNo === undefined) return 1;
             if (b.positionNo === undefined) return -1;
             return a.positionNo - b.positionNo;
         });
@@ -300,6 +458,8 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
                 date={formData.date}
                 isLoadingEntries={isLoadingEntries}
                 setIsLoadingEntries={setIsLoadingEntries}
+                onEditEntry={handleEditListEntry}
+                onDeleteEntry={handleDeleteListEntry}
             />
 
 
@@ -312,6 +472,35 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
                 setSelectedUser={setSelectedUser}
                 updateFormData={updateFormData}
                 weightRef={weightRef}
+            />
+
+            <ModalWrapper
+                visible={!!editingListEntry}
+                setVisibility={() => setEditingListEntry(null)}
+                headerText={t("entry.edit_entry")}
+            >
+                <EntryForm
+                    editingEntry={editingListEntry}
+                    formData={editFormData}
+                    selectedUser={editSelectedUser}
+                    updateFormData={updateEditFormData}
+                    setShowUserSelector={setShowEditUserSelector}
+                    disableUserSelector
+                    weightRef={editWeightRef}
+                    handleSubmit={handleUpdateListEntry}
+                    isSubmitting={isUpdatingListEntry}
+                />
+            </ModalWrapper>
+
+            <UserModal
+                title={t("entry.farmer")}
+                showUserSelector={showEditUserSelector}
+                setShowUserSelector={setShowEditUserSelector}
+                filteredUser={editFilteredUser}
+                selectedUser={editSelectedUser}
+                setSelectedUser={setEditSelectedUser}
+                updateFormData={updateEditFormData}
+                weightRef={editWeightRef}
             />
 
         </>

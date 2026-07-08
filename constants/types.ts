@@ -85,6 +85,7 @@ export interface Customer extends BaseUser {
   eveningMilk?: string;
   milkRate?: string;
   positionNo?: number;
+  status?: boolean;
 }
 
 export interface Farmer extends BaseUser {

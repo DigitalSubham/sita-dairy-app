@@ -20,6 +20,8 @@ type ListShowProps = {
     isLoadingEntries: boolean;
     setIsLoadingEntries: React.Dispatch<React.SetStateAction<boolean>>;
     url: string;
+    onEditEntry?: (item: any) => void;
+    onDeleteEntry?: (item: any) => void;
 };
 
 const ListShow: React.FC<ListShowProps> = ({
@@ -31,7 +33,9 @@ const ListShow: React.FC<ListShowProps> = ({
     date,
     isLoadingEntries,
     setIsLoadingEntries,
-    url
+    url,
+    onEditEntry,
+    onDeleteEntry
 }) => {
     const { t } = useTranslation()
     return (
@@ -55,7 +59,9 @@ const ListShow: React.FC<ListShowProps> = ({
             {<FlatList
                 data={todayEntries}
                 keyExtractor={(item) => item._id}
-                renderItem={({ item, index }) => <UserCard item={item} index={index} />}
+                renderItem={({ item, index }) => (
+                    <UserCard item={item} index={index} onEdit={onEditEntry} onDelete={onDeleteEntry} />
+                )}
                 numColumns={1}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={[

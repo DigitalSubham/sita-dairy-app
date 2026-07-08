@@ -25,6 +25,9 @@ type EntryFormProps = {
     /** Show user selector modal */
     setShowUserSelector: (value: boolean) => void
 
+    /** Disable changing the selected farmer/user (e.g. while editing an existing entry) */
+    disableUserSelector?: boolean
+
     /** Refs */
     weightRef: RefObject<TextInput | null>
 
@@ -36,7 +39,7 @@ type EntryFormProps = {
 
 
 
-const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedUser, updateFormData, setShowUserSelector, weightRef, handleSubmit, isSubmitting }) => {
+const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedUser, updateFormData, setShowUserSelector, disableUserSelector, weightRef, handleSubmit, isSubmitting }) => {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const fatRef = useRef<TextInput>(null);
     const snfRef = useRef<TextInput>(null);
@@ -90,10 +93,14 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
                 </View>
 
                 {/* User Selector */}
-                <TouchableOpacity style={styles.userSelector} onPress={() => setShowUserSelector(true)}>
-                    <FontAwesome name="user" size={16} color="#0ea5e9" />
+                <TouchableOpacity
+                    style={[styles.userSelector, disableUserSelector && styles.userSelectorDisabled]}
+                    onPress={() => !disableUserSelector && setShowUserSelector(true)}
+                    disabled={disableUserSelector}
+                >
+                    <FontAwesome name="user" size={16} color={disableUserSelector ? "#94a3b8" : "#0ea5e9"} />
                     <Text style={styles.userSelectorText}>{selectedUser ? selectedUser.name : t("entry.select_farmer")}</Text>
-                    <Feather name="chevron-down" size={16} color="#64748b" />
+                    {!disableUserSelector && <Feather name="chevron-down" size={16} color="#64748b" />}
                 </TouchableOpacity>
 
                 {/* Input fields in two rows */}
@@ -232,6 +239,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 12,
         gap: 8,
+        flexWrap: "wrap",
     },
     compactField: {
         flexDirection: "row",
@@ -280,6 +288,10 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         marginBottom: 12,
         gap: 8,
+    },
+    userSelectorDisabled: {
+        backgroundColor: "#f1f5f9",
+        borderColor: "#cbd5e1",
     },
     userSelectorText: {
         flex: 1,

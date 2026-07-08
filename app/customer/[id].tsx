@@ -16,6 +16,7 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -41,6 +42,8 @@ interface User {
   address: string;
   latitude?: number;
   longitude?: number;
+  allowNegativeBalance?: boolean;
+  status?: boolean;
 }
 
 export default function CustomerDetailsScreen() {
@@ -51,6 +54,8 @@ export default function CustomerDetailsScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [isSettingLocation, setIsSettingLocation] = useState<boolean>(false);
+  const [isTogglingNegativeBalance, setIsTogglingNegativeBalance] = useState<boolean>(false);
+  const [isTogglingStatus, setIsTogglingStatus] = useState<boolean>(false);
 
   const fetchUserData = useCallback(async () => {
     const storedToken = await AsyncStorage.getItem("token");
@@ -166,6 +171,88 @@ export default function CustomerDetailsScreen() {
       });
     } finally {
       setIsSettingLocation(false);
+    }
+  };
+
+  const handleToggleNegativeBalance = async (value: boolean) => {
+    if (!userData) return;
+    const previousValue = userData.allowNegativeBalance;
+    setUserData({ ...userData, allowNegativeBalance: value });
+    setIsTogglingNegativeBalance(true);
+    try {
+      const storedToken = await AsyncStorage.getItem("token");
+      const token = storedToken ? JSON.parse(storedToken) : "";
+      const response = await fetch(api.updateUser, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: userData._id, allowNegativeBalance: value }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        Toast.show({
+          type: "success",
+          text1: value ? "Negative balance allowed" : "Negative balance disallowed",
+        });
+      } else {
+        setUserData({ ...userData, allowNegativeBalance: previousValue });
+        Toast.show({
+          type: "error",
+          text1: "Failed to update setting",
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling negative balance:", error);
+      setUserData({ ...userData, allowNegativeBalance: previousValue });
+      Toast.show({
+        type: "error",
+        text1: "Failed to update setting",
+      });
+    } finally {
+      setIsTogglingNegativeBalance(false);
+    }
+  };
+
+  const handleToggleStatus = async (value: boolean) => {
+    if (!userData) return;
+    const previousValue = userData.status;
+    setUserData({ ...userData, status: value });
+    setIsTogglingStatus(true);
+    try {
+      const storedToken = await AsyncStorage.getItem("token");
+      const token = storedToken ? JSON.parse(storedToken) : "";
+      const response = await fetch(api.updateUser, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: userData._id, status: value }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        Toast.show({
+          type: "success",
+          text1: value ? "User marked active" : "User marked inactive",
+        });
+      } else {
+        setUserData({ ...userData, status: previousValue });
+        Toast.show({
+          type: "error",
+          text1: "Failed to update status",
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      setUserData({ ...userData, status: previousValue });
+      Toast.show({
+        type: "error",
+        text1: "Failed to update status",
+      });
+    } finally {
+      setIsTogglingStatus(false);
     }
   };
 
@@ -422,6 +509,46 @@ export default function CustomerDetailsScreen() {
             <Text style={styles.infoValue}>
               {formatDate(userData.updatedAt)}
             </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoLabelContainer}>
+              <MaterialCommunityIcons name="cash-minus" size={20} color="#3b82f6" />
+              <Text style={styles.infoLabel}>Allow negative wallet balance</Text>
+            </View>
+            {isTogglingNegativeBalance ? (
+              <ActivityIndicator size="small" color="#3b82f6" />
+            ) : (
+              <Switch
+                value={!!userData.allowNegativeBalance}
+                onValueChange={handleToggleNegativeBalance}
+                trackColor={{ false: "#e5e7eb", true: "#3b82f6" }}
+                thumbColor={userData.allowNegativeBalance ? "#ffffff" : "#9ca3af"}
+                ios_backgroundColor="#e5e7eb"
+              />
+            )}
+          </View>
+
+          <View style={[styles.infoRow, styles.infoRowNoBorder]}>
+            <View style={styles.infoLabelContainer}>
+              <MaterialCommunityIcons
+                name={userData.status === false ? "account-off-outline" : "account-check-outline"}
+                size={20}
+                color="#3b82f6"
+              />
+              <Text style={styles.infoLabel}>Active</Text>
+            </View>
+            {isTogglingStatus ? (
+              <ActivityIndicator size="small" color="#3b82f6" />
+            ) : (
+              <Switch
+                value={userData.status !== false}
+                onValueChange={handleToggleStatus}
+                trackColor={{ false: "#e5e7eb", true: "#3b82f6" }}
+                thumbColor={userData.status !== false ? "#ffffff" : "#9ca3af"}
+                ios_backgroundColor="#e5e7eb"
+              />
+            )}
           </View>
         </Animated.View>
         <View style={styles.overviewContainer}>
@@ -772,6 +899,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f3f4f6",
+  },
+  infoRowNoBorder: {
+    borderBottomWidth: 0,
   },
   infoLabelContainer: {
     flexDirection: "row",

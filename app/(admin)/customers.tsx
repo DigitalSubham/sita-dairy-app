@@ -150,6 +150,7 @@ const ImprovedCustomersList: React.FC = () => {
         method: "POST",
         body: JSON.stringify({ users: JSON.stringify(updates) }),
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       })
@@ -242,7 +243,24 @@ const ImprovedCustomersList: React.FC = () => {
               <Text style={styles.customerName} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text style={styles.customerId}>ID: {item.id}</Text>
+              <View style={styles.idStatusRow}>
+                <Text style={[styles.customerId, styles.customerIdInline]}>ID: {item.id}</Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    item.status === false ? styles.statusBadgeInactive : styles.statusBadgeActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      item.status === false ? styles.statusBadgeTextInactive : styles.statusBadgeTextActive,
+                    ]}
+                  >
+                    {item.status === false ? t("common.inactive") : t("common.active")}
+                  </Text>
+                </View>
+              </View>
               <View style={styles.infoRow}>
                 <MaterialIcons name="phone" size={14} color="#64748b" />
                 <Text style={styles.infoText}>{item.mobile}</Text>
@@ -531,6 +549,36 @@ const styles = StyleSheet.create({
     color: "#64748b",
     marginBottom: 8,
     fontWeight: "500",
+  },
+  customerIdInline: {
+    marginBottom: 0,
+  },
+  idStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  statusBadgeActive: {
+    backgroundColor: "#dcfce7",
+  },
+  statusBadgeInactive: {
+    backgroundColor: "#fee2e2",
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  statusBadgeTextActive: {
+    color: "#16a34a",
+  },
+  statusBadgeTextInactive: {
+    color: "#ef4444",
   },
   infoRow: {
     flexDirection: "row",

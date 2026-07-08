@@ -15,6 +15,7 @@ export const api = {
   getRecords: `${BASE_URL}/milk/get`,
 
   getAllCustomers: `${BASE_URL}/user/all-customers`,
+  dropdownUsers: `${BASE_URL}/general/dropdown`,
   deleteRecord: `${BASE_URL}/milk/delete`,
   deleteAccount: `${BASE_URL}/user/delete-account`,
   changeRole: `${BASE_URL}/user/change-user-role`,
