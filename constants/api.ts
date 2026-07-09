@@ -26,10 +26,16 @@ export const api = {
   updateProduct: `${BASE_URL}/product/update`,
   deleteProduct: `${BASE_URL}/product/delete`,
 
-  // payments
+  // payments (legacy — not implemented on the backend, kept until callers are migrated)
   createPayment: `${BASE_URL}/payment/add-payment`,
   getPaymentsReport: `${BASE_URL}/payment/payment-report`,
   resetPayments: `${BASE_URL}/payment/reset-payment`,
+
+  // wallet
+  walletStatement: `${BASE_URL}/wallet/statement`,
+  walletCashPayment: `${BASE_URL}/wallet/cash-payment`,
+  walletTopupInitiate: `${BASE_URL}/wallet/upi-topup/initiate`,
+  walletTopupReverify: `${BASE_URL}/wallet/upi-topup`,
 
   rateChart: `${BASE_URL}/ratechart`,
 };

@@ -1,355 +1,255 @@
 import { api } from "@/constants/api";
-import { CustomerRole, FormData, PaymentStatus, PaymentType } from "@/constants/types";
-
-import { Feather, FontAwesome } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { format } from "date-fns";
-import React, { useState } from "react";
+import { User } from "@/constants/types";
+import { Feather, FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
+    Dimensions,
+    Image,
     KeyboardAvoidingView,
     Modal,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
-import RoleCheckBox from "../users/RoleCheckBox";
 
-type paymentFormProps = {
-    showPaymentMethodModal: boolean;
-    setShowPaymentMethodModal: (show: boolean) => void;
-    fetchPaymentRequests: (status: PaymentStatus) => Promise<void>;
-    formData: FormData;
-    setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-    token: string;
-    setShowUserSelector: (show: boolean) => void;
-    selectedUser: User | null;
-    setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
+type Direction = "Credit" | "Debit";
+
+type PaymentFormProps = {
+    visible: boolean;
+    onClose: () => void;
+    user: User | null;
+    token: string | null;
+    onSuccess: () => void;
 };
 
-interface User {
-    _id: string;
-    id: string;
-    name: string;
-    mobile: string;
-    collectionCenter: string;
-    profilePic: string;
-}
-
-const PaymentForm: React.FC<paymentFormProps> = ({
-    showPaymentMethodModal,
-    setShowPaymentMethodModal,
-    fetchPaymentRequests,
-    formData,
-    setFormData,
+const PaymentForm: React.FC<PaymentFormProps> = ({
+    visible,
+    onClose,
+    user,
     token,
-    setShowUserSelector,
-    selectedUser,
-    setSelectedUser,
+    onSuccess,
 }) => {
-    const { t } = useTranslation()
-    const [errors, setErrors] = React.useState({
-        user: "",
-        amount: "",
-        role: "",
-        date: "",
-        api: "",
-    });
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [showDatePicker, setShowDatePicker] = useState(false);
+    const { t } = useTranslation();
+    const [direction, setDirection] = useState<Direction>("Credit");
+    const [amount, setAmount] = useState("");
+    const [note, setNote] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState({ amount: "", api: "" });
+
+    useEffect(() => {
+        if (visible) {
+            setDirection("Credit");
+            setAmount("");
+            setNote("");
+            setErrors({ amount: "", api: "" });
+        }
+    }, [visible]);
 
     const validateForm = (): boolean => {
-        const newErrors: {
-            amount: string;
-            user: string;
-            role: string;
-            date: string;
-            api: "";
-        } = {
-            amount: "",
-            user: "",
-            role: "",
-            date: "",
-            api: "",
-        };
-        let isValid = true;
-
-        // Validate amount
-        const amountNum = Number.parseInt(formData.amount, 10);
-        if (!formData.amount || Number.isNaN(amountNum)) {
-            newErrors.amount = t("validation.amount")
-            isValid = false;
+        const amountNum = Number(amount);
+        if (!amount || Number.isNaN(amountNum) || amountNum <= 0) {
+            setErrors({ amount: t("validation.amount"), api: "" });
+            return false;
         }
-
-        // Validate UPI ID
-        if (!formData.role) {
-            newErrors.role = t("validation.role")
-            isValid = false;
-        }
-        if (!formData.userId) {
-            newErrors.user = t("validation.user")
-            isValid = false;
-        }
-        if (!formData.role) {
-            newErrors.role = t("validation.date");
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
+        return true;
     };
 
-    const handleAdd = async () => {
-        if (validateForm()) {
-            setIsLoading(true);
-            try {
-                const requestBody = {
-                    userId: formData.userId,
-                    date: formData.date,
-                    code: formData.role === "Farmer" ? "Paid" : "Recieve",
-                    amount: formData.amount,
-                };
-                const response = await fetch(api.createPayment, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify(requestBody),
-                });
-                const data = await response.json();
-                if (data.success) {
-                    fetchPaymentRequests(formData.role === "Farmer" ? PaymentType.Paid : PaymentType.Receive);
-                    handleClose();
-                } else {
-                    setErrors({ ...errors, api: "Failed to add user" });
-                }
-            } catch (err: any) {
-                setErrors({
-                    ...errors,
-                    api: err?.message
-                        ? `Failed to create account: ${err.message}`
-                        : "Failed to create account",
-                });
-            } finally {
-                setIsLoading(false);
-                // Reset form
-                setFormData({
-                    userId: "",
-                    amount: "",
-                    role: "Farmer",
-                    date: format(new Date(), "yyyy-MM-dd"),
-                });
-                setErrors({ user: "", amount: "", role: "", date: "", api: "" });
+    const handleSubmit = async () => {
+        if (!user || !token) return;
+        if (!validateForm()) return;
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(api.walletCashPayment, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    userId: user._id,
+                    amount: Number(amount),
+                    direction,
+                    note: note.trim() || undefined,
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                onSuccess();
+                onClose();
+            } else {
+                setErrors({ amount: "", api: data.message || t("payments.failed_to_add_entry") });
             }
+        } catch (err: any) {
+            setErrors({
+                amount: "",
+                api: err?.message
+                    ? `${t("payments.failed_to_add_entry")}: ${err.message}`
+                    : t("payments.failed_to_add_entry"),
+            });
+        } finally {
+            setIsLoading(false);
         }
-    };
-
-    const handleClose = () => {
-        setFormData({
-            userId: "",
-            amount: "",
-            role: "Farmer",
-            date: format(new Date(), "yyyy-MM-dd"),
-        });
-        setErrors({ user: "", amount: "", role: "", date: "", api: "" });
-        setShowPaymentMethodModal(false);
-        setSelectedUser(null);
-    };
-
-    const handleRoleSelect = (role: CustomerRole) => {
-        setFormData({ ...formData, role });
-        setSelectedUser(null);
-        if (errors.role) {
-            setErrors({ ...errors, role: "" });
-        }
-    };
-
-
-    // Handle date picker change
-    const onDateChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(false);
-        if (selectedDate) {
-            const dateString = format(selectedDate, "yyyy-MM-dd");
-            setFormData({ ...formData, date: dateString });
-        }
-    };
-    const getButtonText = () => {
-        if (isLoading) {
-            return formData.role === "Customer" ? "Receiving..." : "Sending...";
-        }
-        return formData.role === "Customer" ? "Receive" : "Send";
     };
 
     return (
-        <View>
-            <Modal
-                visible={showPaymentMethodModal}
-                animationType="slide"
-                transparent
-                statusBarTranslucent={true}
+        <Modal visible={visible} animationType="slide" transparent statusBarTranslucent={true}>
+            <KeyboardAvoidingView
+                style={styles.container}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
-                <KeyboardAvoidingView
-                    style={styles.container}
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            {/* Header */}
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>{t("payments.select_payment_for")}</Text>
-                                <TouchableOpacity
-                                    onPress={handleClose}
-                                    style={styles.closeButton}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Feather name="x" size={24} color="#64748b" />
-                                </TouchableOpacity>
-                            </View>
-                            {!!errors.api && (
-                                <Text style={styles.errorText}>{errors.api}</Text>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{t("payments.add_entry")}</Text>
+                            <TouchableOpacity
+                                onPress={onClose}
+                                style={styles.closeButton}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Feather name="x" size={24} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {!!errors.api && <Text style={styles.errorText}>{errors.api}</Text>}
+
+                        <ScrollView
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.formContainer}
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {user && (
+                                <View style={styles.userRow}>
+                                    <Image source={{ uri: user.profilePic }} style={styles.userAvatar} />
+                                    <View>
+                                        <Text style={styles.userName}>{user.name}</Text>
+                                        <Text style={styles.userSubtext}>ID: {user.id}</Text>
+                                    </View>
+                                </View>
                             )}
 
-                            <View style={styles.formContainer}>
-                                {/* Name Input */}
-                                <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>{t("common.select_date")}</Text>
+                            <View style={styles.inputContainer}>
+                                <Text style={styles.inputLabel}>{t("payments.entry_type")}</Text>
+                                <View style={styles.directionRow}>
                                     <TouchableOpacity
-                                        onPress={() => setShowDatePicker(true)}
-                                        style={styles.compactField}
-                                    >
-                                        <FontAwesome name="calendar" size={14} color="#0284c7" />
-                                        <Text style={styles.compactFieldText}>
-                                            {format(new Date(formData.date), "dd/MM/yyyy")}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    {errors.date ? (
-                                        <Text style={styles.errorText}>{errors.date}</Text>
-                                    ) : null}
-                                </View>
-                                <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>{t("payments.select_user")}</Text>
-                                    <View style={styles.roleContainer}>
-                                        <RoleCheckBox
-                                            isSelected={false}
-                                            isModified={formData.role === "Farmer"}
-                                            canRemoveModification={false}
-                                            handleRoleChange={() => handleRoleSelect("Farmer")}
-                                            label="Farmer"
-                                        />
-                                        <RoleCheckBox
-                                            isSelected={false}
-                                            isModified={formData.role === "Customer"}
-                                            canRemoveModification={false}
-                                            handleRoleChange={() => handleRoleSelect("Customer")}
-                                            label="Customer"
-                                        />
-                                    </View>
-                                    {errors.role ? (
-                                        <Text style={styles.errorText}>{errors.role}</Text>
-                                    ) : null}
-                                </View>
-
-                                {/* amount Input */}
-                                <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>{t("payments.select_user")}</Text>
-                                    <TouchableOpacity
-                                        style={styles.userSelector}
-                                        onPress={() => setShowUserSelector(true)}
-                                    >
-                                        <FontAwesome name="user" size={16} color="#0ea5e9" />
-                                        <Text style={styles.userSelectorText}>
-                                            {selectedUser
-                                                ? selectedUser.name
-                                                : `Select ${formData.role}`}
-                                        </Text>
-                                        <Feather name="chevron-down" size={16} color="#64748b" />
-                                    </TouchableOpacity>
-                                    {errors.user ? (
-                                        <Text style={styles.errorText}>{errors.user}</Text>
-                                    ) : null}
-                                </View>
-
-                                {/* amount Input */}
-                                <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>{t("payments.enter_amount")}</Text>
-                                    <TextInput
-                                        placeholder="Amount"
                                         style={[
-                                            styles.textInput,
-                                            errors.amount ? styles.inputError : null,
+                                            styles.directionButton,
+                                            direction === "Credit" && styles.creditButtonActive,
                                         ]}
-                                        value={formData.amount}
-                                        onChangeText={(text) => {
-                                            setFormData({ ...formData, amount: text });
-                                            if (errors.amount) {
-                                                setErrors({ ...errors, amount: "" });
-                                            }
-                                        }}
-                                        keyboardType="phone-pad"
-                                        maxLength={15}
-                                    />
-                                    {errors.amount ? (
-                                        <Text style={styles.errorText}>{errors.amount}</Text>
-                                    ) : null}
-                                </View>
-                            </View>
-
-                            {/* Footer with buttons */}
-                            <View style={styles.modalFooter}>
-                                <TouchableOpacity
-                                    style={styles.cancelButton}
-                                    onPress={handleClose}
-                                >
-                                    <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[
-                                        styles.createButton,
-                                        isLoading && styles.loadingButton,
-                                    ]}
-                                    onPress={handleAdd}
-                                    disabled={isLoading}
-                                >
-                                    <View style={styles.buttonContent}>
-                                        {isLoading && (
-                                            <ActivityIndicator
-                                                size="small"
-                                                color="white"
-                                                style={styles.loader}
-                                            />
-                                        )}
+                                        onPress={() => setDirection("Credit")}
+                                    >
+                                        <MaterialIcons
+                                            name="trending-up"
+                                            size={18}
+                                            color={direction === "Credit" ? "#16a34a" : "#94a3b8"}
+                                        />
                                         <Text
                                             style={[
-                                                styles.createButtonText,
-                                                isLoading && styles.loadingButtonText,
+                                                styles.directionButtonText,
+                                                direction === "Credit" && styles.creditButtonTextActive,
                                             ]}
                                         >
-                                            {getButtonText()}
+                                            {t("payments.credit")}
                                         </Text>
-                                    </View>
-                                </TouchableOpacity>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.directionButton,
+                                            direction === "Debit" && styles.debitButtonActive,
+                                        ]}
+                                        onPress={() => setDirection("Debit")}
+                                    >
+                                        <MaterialIcons
+                                            name="trending-down"
+                                            size={18}
+                                            color={direction === "Debit" ? "#ef4444" : "#94a3b8"}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.directionButtonText,
+                                                direction === "Debit" && styles.debitButtonTextActive,
+                                            ]}
+                                        >
+                                            {t("payments.debit")}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <Text style={styles.directionHint}>
+                                    {direction === "Credit"
+                                        ? t("payments.credit_hint")
+                                        : t("payments.debit_hint")}
+                                </Text>
                             </View>
+
+                            <View style={styles.inputContainer}>
+                                <Text style={styles.inputLabel}>{t("payments.enter_amount")}</Text>
+                                <View style={styles.amountInputWrapper}>
+                                    <FontAwesome name="rupee" size={16} color="#10b981" />
+                                    <TextInput
+                                        placeholder="0.00"
+                                        style={[styles.textInput, errors.amount ? styles.inputError : null]}
+                                        value={amount}
+                                        onChangeText={(text) => {
+                                            setAmount(text);
+                                            if (errors.amount) setErrors({ ...errors, amount: "" });
+                                        }}
+                                        keyboardType="decimal-pad"
+                                    />
+                                </View>
+                                {errors.amount ? <Text style={styles.errorText}>{errors.amount}</Text> : null}
+                            </View>
+
+                            <View style={styles.inputContainer}>
+                                <Text style={styles.inputLabel}>{t("payments.remark")}</Text>
+                                <TextInput
+                                    placeholder={t("payments.remark_placeholder")}
+                                    style={styles.noteInput}
+                                    value={note}
+                                    onChangeText={setNote}
+                                    multiline
+                                    numberOfLines={3}
+                                    textAlignVertical="top"
+                                />
+                            </View>
+                        </ScrollView>
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                                <Text style={styles.cancelButtonText}>{t("common.cancel")}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.createButton,
+                                    direction === "Debit" && styles.createButtonDebit,
+                                    isLoading && styles.loadingButton,
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={isLoading}
+                            >
+                                <View style={styles.buttonContent}>
+                                    {isLoading && (
+                                        <ActivityIndicator size="small" color="white" style={styles.loader} />
+                                    )}
+                                    <Text style={styles.createButtonText}>
+                                        {isLoading ? t("common.saving") : t("payments.add_entry")}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
                         </View>
                     </View>
-                </KeyboardAvoidingView>
-            </Modal>
-
-            {showDatePicker && (
-                <DateTimePicker
-                    value={new Date(formData.date)}
-                    mode="date"
-                    display="default"
-                    onChange={onDateChange}
-                    maximumDate={new Date()}
-                />
-            )}
-        </View>
+                </View>
+            </KeyboardAvoidingView>
+        </Modal>
     );
 };
 
@@ -375,10 +275,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
         elevation: 5,
         shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
     },
@@ -402,10 +299,33 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     scrollView: {
-        flex: 1,
+        maxHeight: SCREEN_HEIGHT * 0.55,
     },
     formContainer: {
         padding: 20,
+    },
+    userRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        backgroundColor: "#f8fafc",
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: 20,
+    },
+    userAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
+    userName: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#1e293b",
+    },
+    userSubtext: {
+        fontSize: 12,
+        color: "#64748b",
     },
     inputContainer: {
         marginBottom: 20,
@@ -416,29 +336,80 @@ const styles = StyleSheet.create({
         color: "#374151",
         marginBottom: 8,
     },
+    directionRow: {
+        flexDirection: "row",
+        gap: 10,
+    },
+    directionButton: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        paddingVertical: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        backgroundColor: "#ffffff",
+    },
+    creditButtonActive: {
+        backgroundColor: "#dcfce7",
+        borderColor: "#16a34a",
+    },
+    debitButtonActive: {
+        backgroundColor: "#fee2e2",
+        borderColor: "#ef4444",
+    },
+    directionButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#94a3b8",
+    },
+    creditButtonTextActive: {
+        color: "#16a34a",
+    },
+    debitButtonTextActive: {
+        color: "#ef4444",
+    },
+    directionHint: {
+        fontSize: 12,
+        color: "#94a3b8",
+        marginTop: 6,
+    },
+    amountInputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        borderWidth: 1,
+        borderColor: "#d1d5db",
+        borderRadius: 8,
+        paddingHorizontal: 12,
+    },
     textInput: {
+        flex: 1,
+        paddingVertical: 12,
+        fontSize: 16,
+        color: "#1f2937",
+    },
+    noteInput: {
         borderWidth: 1,
         borderColor: "#d1d5db",
         borderRadius: 8,
         paddingHorizontal: 16,
         paddingVertical: 12,
-        fontSize: 16,
         backgroundColor: "#ffffff",
+        fontSize: 16,
         color: "#1f2937",
+        minHeight: 80,
     },
     inputError: {
         borderColor: "#ef4444",
-        borderWidth: 2,
     },
     errorText: {
         color: "#ef4444",
         fontSize: 14,
         marginTop: 4,
         marginLeft: 4,
-    },
-    roleContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
     },
     modalFooter: {
         flexDirection: "row",
@@ -466,19 +437,14 @@ const styles = StyleSheet.create({
     },
     createButton: {
         flex: 1,
-        backgroundColor: "#0ea5e9",
+        backgroundColor: "#16a34a",
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 8,
         alignItems: "center",
-        elevation: 2,
-        shadowColor: "#0ea5e9",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+    },
+    createButtonDebit: {
+        backgroundColor: "#ef4444",
     },
     createButtonText: {
         color: "white",
@@ -486,11 +452,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     loadingButton: {
-        backgroundColor: "#0284c7",
         opacity: 0.8,
-    },
-    loadingButtonText: {
-        marginLeft: 8,
     },
     buttonContent: {
         flexDirection: "row",
@@ -499,109 +461,5 @@ const styles = StyleSheet.create({
     },
     loader: {
         marginRight: 8,
-    },
-    disabledButton: {
-        opacity: 0.5,
-    },
-    disabledText: {
-        color: "#9ca3af",
-    },
-
-    modalDetails: {
-        backgroundColor: "#374151",
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
-        position: "relative",
-    },
-    modalDetailText: {
-        fontSize: 14,
-        color: "#d1d5db",
-        marginBottom: 6,
-    },
-    modalDetailLabel: {
-        fontWeight: "bold",
-        color: "#ffffff",
-    },
-    paymentMethodText: {
-        fontSize: 16,
-        color: "#d1d5db",
-        marginBottom: 16,
-        marginTop: 8,
-        textAlign: "left",
-    },
-    paymentMethodButtons: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        gap: 12,
-    },
-    paymentMethodButton: {
-        flex: 1,
-        paddingVertical: 16,
-        borderRadius: 8,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    cashButton: {
-        backgroundColor: "#10b981",
-    },
-    onlineButton: {
-        backgroundColor: "#6366f1",
-    },
-    paymentMethodButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#ffffff",
-    },
-    userSelector: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "white",
-        borderWidth: 1,
-        borderColor: "#0ea5e9",
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        marginBottom: 12,
-        gap: 8,
-    },
-    userSelectorText: {
-        flex: 1,
-        fontSize: 14,
-        color: "#0c4a6e",
-        fontWeight: "500",
-    },
-    modalButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-
-    modalActions: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-    },
-    modalButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#ffffff",
-    },
-    compactField: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#bae6fd",
-        gap: 6,
-    },
-    compactFieldText: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#0c4a6e",
     },
 });

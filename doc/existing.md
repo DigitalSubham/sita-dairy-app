@@ -123,7 +123,7 @@ Same pattern as Admin profile: `GET getUser` → `AuthContext.updateUser` → sh
 
 Farmer's own collection history.
 
-- Defaults to the last 7 days (excluding today); `GET getRecords?startDate&endDate&shift`.
+- Defaults to the last 7 days (including today); `GET getRecords?startDate&endDate&shift`.
 - Client-side search (name, date, shift, weight, snf, rate, price, fat).
 - Date-range picker (`react-native-calendars` `Calendar` modal, custom range highlighting) plus `ShiftModal` (Morning/Evening/All).
 - `RenderSummary` bar (entries / amount / weight) and a two-column `DataCard` grid — read-only here since edit/delete on `DataCard` only render for `role === "Admin"`.

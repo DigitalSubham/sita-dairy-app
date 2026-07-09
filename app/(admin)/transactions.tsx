@@ -1,6 +1,5 @@
-import PaymentForm from "@/components/admin/payment/paymentForm";
 import FilterChip from "@/components/common/Chips";
-import { PaymentHeader } from "@/components/common/HeaderVarients";
+import { CustomHeader } from "@/components/common/CustomHeader";
 import UserModal from "@/components/common/UserModal";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
@@ -8,6 +7,8 @@ import { User, WalletTransaction } from "@/constants/types";
 import useCustomers from "@/hooks/useCustomer";
 import { walletSourceLabel, walletStatusColor } from "@/utils/helper";
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from "date-fns";
 import { useFocusEffect } from "expo-router";
 import type React from "react";
@@ -17,7 +18,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -27,79 +30,59 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const WALLET_PAGE_LIMIT = 20;
 
-type PayableRole = "Farmer" | "Buyer" | "User";
-const PAYABLE_ROLES: PayableRole[] = ["Farmer", "Buyer", "User"];
+type SourceFilter = "All" | WalletTransaction["source"];
+const SOURCE_FILTERS: SourceFilter[] = ["All", "MilkBuy", "MilkSell", "CashPayment", "Top-up"];
 
-export default function PaymentRequestsScreen(): React.ReactElement {
+export default function TransactionsScreen(): React.ReactElement {
   const { t } = useTranslation();
-  const [roleFilter, setRoleFilter] = useState<PayableRole>("Farmer");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("All");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserSelector, setShowUserSelector] = useState(false);
-  const [showAddEntryModal, setShowAddEntryModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [token, setToken] = useState<string>("");
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { customers, token } = useCustomers({ role: roleFilter });
+  const { customers } = useCustomers({});
 
-  const roleLabel = (role: PayableRole): string => {
-    switch (role) {
-      case "Farmer":
-        return t("entry.farmer");
-      case "Buyer":
-        return t("entry.buyer");
-      default:
-        return t("users.user");
+  const buildStatementUrl = (pageNum: number) => {
+    const params = new URLSearchParams({
+      limit: String(WALLET_PAGE_LIMIT),
+      page: String(pageNum),
+    });
+    if (sourceFilter !== "All") params.append("source", sourceFilter);
+    if (selectedUser) params.append("userId", selectedUser._id);
+    if (selectedDate) {
+      params.append("startDate", selectedDate);
+      params.append("endDate", selectedDate);
     }
+    return `${api.walletStatement}?${params.toString()}`;
   };
 
-  const handleRoleFilterChange = (role: PayableRole) => {
-    if (role === roleFilter) return;
-    setRoleFilter(role);
-    setSelectedUser(null);
-    setTransactions([]);
-    setWalletBalance(0);
-    setPage(1);
-    setTotalCount(0);
-  };
+  const fetchTransactions = useCallback(async () => {
+    const storedToken = await AsyncStorage.getItem("token");
+    const parsedToken = storedToken ? JSON.parse(storedToken) : "";
+    setToken(parsedToken);
+    if (!parsedToken) return;
 
-  const fetchWalletData = useCallback(async () => {
-    if (!token || !selectedUser) return;
     setLoading(true);
     try {
-      const [userResponse, statementResponse] = await Promise.all([
-        fetch(`${api.getUser}?userId=${selectedUser._id}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        fetch(
-          `${api.walletStatement}?userId=${selectedUser._id}&limit=${WALLET_PAGE_LIMIT}&page=1`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        ),
-      ]);
-
-      const userData = await userResponse.json();
-      if (userData.success) {
-        setWalletBalance(userData.user?.walletAmount ?? 0);
-      }
-
-      const statementData = await statementResponse.json();
-      if (statementData.success) {
-        setTransactions(statementData.data);
-        setTotalCount(statementData.totalCount ?? statementData.data.length);
+      const response = await fetch(buildStatementUrl(1), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${parsedToken}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTransactions(data.data);
+        setTotalCount(data.totalCount ?? data.data.length);
         setPage(1);
       }
     } catch (error) {
@@ -108,41 +91,28 @@ export default function PaymentRequestsScreen(): React.ReactElement {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [token, selectedUser]);
+  }, [sourceFilter, selectedUser, selectedDate]);
 
   useFocusEffect(
     useCallback(() => {
-      if (selectedUser) {
-        fetchWalletData();
-      }
-    }, [selectedUser])
+      fetchTransactions();
+    }, [fetchTransactions])
   );
 
-  const handleSelectUser = (user: User | null) => {
-    setSelectedUser(user);
-    setTransactions([]);
-    setWalletBalance(0);
-    setPage(1);
-    setTotalCount(0);
-  };
-
   const loadMoreTransactions = async () => {
-    if (!token || !selectedUser || isLoadingMore) return;
+    if (!token || isLoadingMore) return;
     if (transactions.length >= totalCount) return;
 
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const response = await fetch(
-        `${api.walletStatement}?userId=${selectedUser._id}&limit=${WALLET_PAGE_LIMIT}&page=${nextPage}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(buildStatementUrl(nextPage), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       if (data.success) {
         setTransactions((prev) => [...prev, ...data.data]);
@@ -157,47 +127,78 @@ export default function PaymentRequestsScreen(): React.ReactElement {
   };
 
   const onRefresh = useCallback(() => {
-    if (!selectedUser) return;
     setRefreshing(true);
-    fetchWalletData();
-  }, [selectedUser, fetchWalletData]);
+    fetchTransactions();
+  }, [fetchTransactions]);
 
-  const handleAddEntryPress = () => {
-    if (!selectedUser) {
-      Alert.alert(t("common.error"), t("payments.select_user_first"));
-      return;
+  const resetPagination = () => {
+    setTransactions([]);
+    setPage(1);
+    setTotalCount(0);
+  };
+
+  const handleSourceFilterChange = (source: SourceFilter) => {
+    if (source === sourceFilter) return;
+    setSourceFilter(source);
+    resetPagination();
+  };
+
+  const handleUserFilterChange = (user: User | null) => {
+    setSelectedUser(user);
+    resetPagination();
+  };
+
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(format(date, "yyyy-MM-dd"));
+      resetPagination();
     }
-    setShowAddEntryModal(true);
+  };
+
+  const hasActiveFilters = sourceFilter !== "All" || !!selectedUser || !!selectedDate;
+
+  const clearAllFilters = () => {
+    setSourceFilter("All");
+    setSelectedUser(null);
+    setSelectedDate("");
+    resetPagination();
   };
 
   const renderTransaction = ({ item }: { item: WalletTransaction }) => {
     const isCredit = item.direction === "Credit";
     const amountColor = walletStatusColor(item.status, isCredit);
+    const user = typeof item.user === "object" ? item.user : null;
+
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View
-            style={[
-              styles.transactionIcon,
-              { backgroundColor: `${amountColor}26` },
-            ]}
-          >
-            <MaterialIcons
-              name={
-                item.status === "Pending"
-                  ? "schedule"
-                  : item.status === "Failed"
-                    ? "cancel"
-                    : isCredit ? "trending-up" : "trending-down"
-              }
-              size={20}
-              color={amountColor}
-            />
-          </View>
+          {user?.profilePic ? (
+            <Image source={{ uri: user.profilePic }} style={styles.userAvatar} />
+          ) : (
+            <View
+              style={[
+                styles.transactionIcon,
+                { backgroundColor: `${amountColor}26` },
+              ]}
+            >
+              <MaterialIcons
+                name={
+                  item.status === "Pending"
+                    ? "schedule"
+                    : item.status === "Failed"
+                      ? "cancel"
+                      : isCredit ? "trending-up" : "trending-down"
+                }
+                size={20}
+                color={amountColor}
+              />
+            </View>
+          )}
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{walletSourceLabel(item.source)}</Text>
+            <Text style={styles.userName}>{user?.name ?? t("payments.unknown_user")}</Text>
             <Text style={styles.userId}>
-              {format(new Date(item.createdAt), "dd MMM yyyy, hh:mm a")}
+              {walletSourceLabel(item.source)} • {format(new Date(item.createdAt), "dd MMM yyyy, hh:mm a")}
             </Text>
             {item.status !== "Success" && (
               <Text style={styles.statusBadgeText}>{item.status}</Text>
@@ -226,41 +227,61 @@ export default function PaymentRequestsScreen(): React.ReactElement {
 
   return (
     <SafeAreaView style={styles.container}>
-      <PaymentHeader addNewProduct={handleAddEntryPress} />
-      <View style={styles.roleTabRow}>
-        {PAYABLE_ROLES.map((role) => (
-          <TouchableOpacity
-            key={role}
-            style={[styles.roleTab, roleFilter === role && styles.roleTabActive]}
-            onPress={() => handleRoleFilterChange(role)}
-          >
-            <Text style={[styles.roleTabText, roleFilter === role && styles.roleTabTextActive]}>
-              {roleLabel(role)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <View style={styles.tabContainer}>
-        <FilterChip
-          title={selectedUser ? selectedUser.name.split(" ")[0] ?? "User" : t("payments.select_user")}
-          isActive={!!selectedUser}
-          onPress={() => setShowUserSelector(true)}
-          icon="person"
-        />
-        {selectedUser && (
-          <View style={styles.balanceChip}>
-            <MaterialIcons name="account-balance-wallet" size={16} color="#0ea5e9" />
-            <Text style={styles.balanceChipText}>₹{walletBalance.toFixed(2)}</Text>
-          </View>
-        )}
+      <CustomHeader title={t("navigation.transactions")} />
+
+      <View style={styles.filterRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
+          {SOURCE_FILTERS.map((source) => (
+            <TouchableOpacity
+              key={source}
+              style={[styles.filterTab, sourceFilter === source && styles.filterTabActive]}
+              onPress={() => handleSourceFilterChange(source)}
+            >
+              <Text
+                style={[
+                  styles.filterTabText,
+                  sourceFilter === source && styles.filterTabTextActive,
+                ]}
+              >
+                {source === "All" ? t("common.all") : walletSourceLabel(source)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
-      {!selectedUser ? (
-        <View style={styles.emptyContainer}>
-          <MaterialIcons name="person-search" size={48} color="#9ca3af" />
-          <Text style={styles.emptyText}>{t("payments.select_user_prompt")}</Text>
-        </View>
-      ) : loading ? (
+      <View style={styles.chipFilterRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipFilterScroll}
+        >
+          <FilterChip
+            title={selectedUser ? selectedUser.name.split(" ")[0] ?? "User" : t("payments.select_user")}
+            isActive={!!selectedUser}
+            onPress={() => setShowUserSelector(true)}
+            icon="person"
+          />
+          <FilterChip
+            title={selectedDate ? format(new Date(selectedDate), "dd MMM yyyy") : t("common.select_date")}
+            isActive={!!selectedDate}
+            onPress={() => setShowDatePicker(true)}
+            icon="event"
+          />
+          {hasActiveFilters && (
+            <TouchableOpacity style={styles.resetButton} onPress={clearAllFilters}>
+              <MaterialIcons name="clear-all" size={16} color="#ef4444" />
+              <Text style={styles.resetButtonText}>{t("common.reset")}</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </View>
+
+      {loading ? (
         <DairyLoadingScreen loading loadingText={t("payments.loading_transactions")} />
       ) : (
         <FlatList
@@ -301,22 +322,24 @@ export default function PaymentRequestsScreen(): React.ReactElement {
       )}
 
       <UserModal
-        title={roleLabel(roleFilter)}
+        title={t("payments.select_user")}
         showUserSelector={showUserSelector}
         setShowUserSelector={setShowUserSelector}
         filteredUser={customers}
         selectedUser={selectedUser}
-        setSelectedUser={handleSelectUser}
+        setSelectedUser={handleUserFilterChange}
         updateFormData={() => {}}
       />
 
-      <PaymentForm
-        visible={showAddEntryModal}
-        onClose={() => setShowAddEntryModal(false)}
-        user={selectedUser}
-        token={token}
-        onSuccess={fetchWalletData}
-      />
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate ? new Date(selectedDate) : new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          maximumDate={new Date()}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -326,55 +349,60 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
   },
-  roleTabRow: {
-    flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingTop: 12,
+  filterRow: {
     backgroundColor: "#d9dee6ff",
+    paddingVertical: 12,
+  },
+  filterScroll: {
+    paddingHorizontal: 12,
     gap: 8,
   },
-  roleTab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    borderRadius: 8,
+  filterTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 16,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#cbd5e1",
   },
-  roleTabActive: {
+  filterTabActive: {
     backgroundColor: "#0ea5e9",
     borderColor: "#0ea5e9",
   },
-  roleTabText: {
+  filterTabText: {
     fontSize: 13,
     fontWeight: "600",
     color: "#475569",
   },
-  roleTabTextActive: {
+  filterTabTextActive: {
     color: "#ffffff",
   },
-  tabContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: "#d9dee6ff",
-    gap: 8,
+  chipFilterRow: {
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+    paddingVertical: 10,
   },
-  balanceChip: {
+  chipFilterScroll: {
+    paddingHorizontal: 12,
+    gap: 8,
+    alignItems: "center",
+  },
+  resetButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
     gap: 4,
   },
-  balanceChipText: {
+  resetButtonText: {
+    color: "#ef4444",
     fontSize: 12,
-    fontWeight: "700",
-    color: "#0369a1",
+    fontWeight: "600",
   },
   listContainer: {
     padding: 16,
@@ -393,6 +421,12 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  userAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
   },
   transactionIcon: {
     width: 44,
@@ -453,13 +487,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 60,
-    gap: 12,
   },
   emptyText: {
     fontSize: 16,
     color: "#9ca3af",
-    textAlign: "center",
-    paddingHorizontal: 32,
   },
   loadMoreButton: {
     alignItems: "center",

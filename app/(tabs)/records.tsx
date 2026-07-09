@@ -57,8 +57,8 @@ export default function EnhancedCustomerMilkRecords() {
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
 
   useEffect(() => {
-    const end = format(subDays(new Date(), 1), "yyyy-MM-dd");
-    const start = format(subDays(new Date(), 7), "yyyy-MM-dd");
+    const end = format(new Date(), "yyyy-MM-dd");
+    const start = format(subDays(new Date(), 6), "yyyy-MM-dd");
 
     setStartDate(start);
     setEndDate(end);
@@ -154,8 +154,8 @@ export default function EnhancedCustomerMilkRecords() {
 
   // Clear all filters and fetch today's data
   const clearFilters = () => {
-    const end = format(subDays(new Date(), 1), "yyyy-MM-dd");
-    const start = format(subDays(new Date(), 7), "yyyy-MM-dd");
+    const end = format(new Date(), "yyyy-MM-dd");
+    const start = format(subDays(new Date(), 6), "yyyy-MM-dd");
 
     setSearchQuery("");
     setSelectedShift("");
@@ -803,7 +803,6 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     backgroundColor: "#0ea5e9",
-    margin: 16,
     padding: 10,
     borderRadius: 6,
     alignItems: "center",

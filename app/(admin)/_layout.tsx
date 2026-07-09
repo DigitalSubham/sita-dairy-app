@@ -37,6 +37,11 @@ export default function Layout() {
       icon: Icon("wallet")
     },
     {
+      name: "transactions",
+      title: t("navigation.transactions"),
+      icon: Icon("ledger")
+    },
+    {
       name: "milkEntry",
       title: t("navigation.milk_entry"),
       icon: Icon("entry")

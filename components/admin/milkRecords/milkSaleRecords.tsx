@@ -599,7 +599,7 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={styles.modalButton}
+                                style={[styles.modalButton, styles.modalButtonInRow]}
                                 onPress={() => setShowDateRangeModal(false)}
                             >
                                 <Text style={styles.modalButtonText}>{t("entry.done")}</Text>
@@ -845,6 +845,9 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         alignItems: "center",
         flex: 1,
+    },
+    modalButtonInRow: {
+        margin: 0,
     },
     modalButtonText: {
         color: "#fff",

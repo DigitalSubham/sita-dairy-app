@@ -255,6 +255,24 @@ export interface Payment {
   date: Date;
 }
 
+export interface WalletTransaction {
+  _id: string;
+  user: { _id: string; name: string; id: string; profilePic?: string } | string;
+  direction: "Credit" | "Debit";
+  amount: number;
+  source: "MilkSell" | "MilkBuy" | "CashPayment" | "Top-up";
+  status: "Pending" | "Success" | "Failed";
+  balanceAfter: number | null;
+  refType?: "milk" | "walletTransaction";
+  refId?: string;
+  createdBy?: { _id: string; name: string; id: string } | string | null;
+  note?: string;
+  failureReason?: string;
+  gateway?: { merchantOrderId?: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Custom Alert Props interface
 export interface CustomAlertProps {
   visible: boolean;

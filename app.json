@@ -54,7 +54,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.111:5002/api/v1",
+      "apiUrl": "http://192.168.0.107:5002/api/v1",
       "router": {},
       "eas": {
         "projectId": "0b36d8dd-d239-409c-ad8a-f0ed553f55f0"

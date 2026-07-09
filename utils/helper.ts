@@ -1,5 +1,5 @@
 import { api } from "@/constants/api";
-import { Customer } from "@/constants/types";
+import { Customer, WalletTransaction } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { Alert } from "react-native";
@@ -7,6 +7,30 @@ import Toast from "react-native-toast-message";
 
 export const getCurrentDate = () => {
   return new Date().toISOString().split("T")[0];
+};
+
+export const walletSourceLabel = (source: WalletTransaction["source"]): string => {
+  switch (source) {
+    case "MilkBuy":
+      return "Milk Collection";
+    case "MilkSell":
+      return "Milk Sale";
+    case "CashPayment":
+      return "Cash Payment";
+    case "Top-up":
+      return "Wallet Top-up";
+    default:
+      return source;
+  }
+};
+
+export const walletStatusColor = (
+  status: WalletTransaction["status"],
+  isCredit: boolean
+): string => {
+  if (status === "Pending") return "#F59E0B";
+  if (status === "Failed") return "#EF4444";
+  return isCredit ? "#10B981" : "#EF4444";
 };
 
 export const formatDate = (dateString: string) => {

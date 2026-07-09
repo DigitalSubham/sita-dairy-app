@@ -1,9 +1,9 @@
 import { CustomHeader } from '@/components/common/CustomHeader';
 import { api } from '@/constants/api';
-import { AlertConfig, AlertType, CustomAlertProps, Payment } from '@/constants/types';
-import { Entypo, Feather, FontAwesome } from '@expo/vector-icons';
+import { AlertConfig, AlertType, CustomAlertProps, WalletTransaction } from '@/constants/types';
+import { walletSourceLabel, walletStatusColor } from '@/utils/helper';
+import { Entypo, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { format } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
@@ -120,21 +120,25 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
 
 
 
+const WALLET_PAGE_LIMIT = 20;
+
 const WalletModal: React.FC = () => {
   const { t } = useTranslation();
   const [token, setToken] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<Payment[]>([]);
-  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(1);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [alertVisible, setAlertVisible] = useState<boolean>(false);
   const [alertConfig, setAlertConfig] = useState<AlertConfig>({
     title: '',
     message: '',
     type: 'info',
   });
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"))
 
   const showAlert = (
     title: string,
@@ -152,30 +156,87 @@ const WalletModal: React.FC = () => {
     setAlertVisible(false);
   };
 
-  const fetchData = async (): Promise<void> => {
-    if (!token) return;
-    setIsLoading(true);
+  const handleVerify = async (transaction: WalletTransaction): Promise<void> => {
+    const merchantOrderId = transaction.gateway?.merchantOrderId;
+    if (!token || !merchantOrderId || verifyingId) return;
 
+    setVerifyingId(transaction._id);
     try {
       const response = await fetch(
-        api.getPaymentsReport,
+        `${api.walletTopupReverify}/${merchantOrderId}/reverify`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            code: "Paid",
-            date: date, // fetch all records
-          }),
         }
       );
-
       const data = await response.json();
       if (data.success) {
-        setTransactions(data.data);
-        setTotalAmount(data.totalAmount || 0);
+        const status = data.data?.status;
+        if (status === 'Success') {
+          showAlert(
+            t('payments.payment_successful'),
+            t('payments.payment_successful_message', { amount: transaction.amount }),
+            'success'
+          );
+        } else if (status === 'Failed') {
+          showAlert(t('payments.payment_failed'), t('payments.payment_failed_message'), 'error');
+        } else {
+          showAlert(t('payments.payment_pending'), t('payments.payment_pending_message'), 'info');
+        }
+        fetchData();
+      } else {
+        showAlert(
+          t('payments.payment_failed'),
+          data.message || t('payments.topup_failed_to_start'),
+          'error'
+        );
+      }
+    } catch (error) {
+      showAlert(
+        t('payments.payment_failed'),
+        t('payments.topup_failed_to_start'),
+        'error'
+      );
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const fetchData = async (): Promise<void> => {
+    if (!token) return;
+    setIsLoading(true);
+
+    try {
+      const [userResponse, statementResponse] = await Promise.all([
+        fetch(api.getUser, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        fetch(`${api.walletStatement}?limit=${WALLET_PAGE_LIMIT}&page=1`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
+
+      const userData = await userResponse.json();
+      if (userData.success) {
+        setWalletBalance(userData.user?.walletAmount ?? 0);
+      }
+
+      const statementData = await statementResponse.json();
+      if (statementData.success) {
+        setTransactions(statementData.data);
+        setTotalCount(statementData.totalCount ?? statementData.data.length);
+        setPage(1);
       }
     } catch (error) {
       // console.error('Error fetching user data:', error);
@@ -186,6 +247,39 @@ const WalletModal: React.FC = () => {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadMoreTransactions = async (): Promise<void> => {
+    if (!token || isLoadingMore || transactions.length >= totalCount) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const response = await fetch(
+        `${api.walletStatement}?limit=${WALLET_PAGE_LIMIT}&page=${nextPage}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setTransactions((prev) => [...prev, ...data.data]);
+        setTotalCount(data.totalCount ?? totalCount);
+        setPage(nextPage);
+      }
+    } catch (error) {
+      showAlert(
+        'Connection Error',
+        'Failed to load more transactions. Please try again.',
+        'error'
+      );
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -207,7 +301,7 @@ const WalletModal: React.FC = () => {
     if (token) {
       fetchData();
     }
-  }, [token, date]);
+  }, [token]);
 
   useFocusEffect(
     useCallback(() => {
@@ -261,37 +355,90 @@ const WalletModal: React.FC = () => {
         }
       >
         <View style={styles.transactionList}>
-          {transactions.map((transaction, index) => (
-            <Animated.View
-              key={transaction._id}
-              style={[
-                styles.transactionItem,
-                index === transactions.length - 1 && { borderBottomWidth: 0 },
-              ]}
-            >
-              <View
-                style={
-                  styles.transactionIcon}
+          {transactions.map((transaction, index) => {
+            const isCredit = transaction.direction === 'Credit';
+            const statusColor = walletStatusColor(transaction.status, isCredit);
+            const canVerify =
+              transaction.source === 'Top-up' &&
+              transaction.status === 'Pending' &&
+              !!transaction.gateway?.merchantOrderId;
+            return (
+              <Animated.View
+                key={transaction._id}
+                style={[
+                  styles.transactionItem,
+                  index === transactions.length - 1 && { borderBottomWidth: 0 },
+                ]}
               >
-                <Feather name='trending-up' size={20} color="#34C759" />
-              </View>
-              <View style={styles.transactionContent}>
-                <Text style={{ color: "white" }}>Recieved</Text>
-                <Text style={styles.transactionDate}>
-                  {format(transaction.date, 'MMM d, yyyy')}
+                <View
+                  style={[
+                    styles.transactionIcon,
+                    { backgroundColor: `${statusColor}26` },
+                  ]}
+                >
+                  <Feather
+                    name={
+                      transaction.status === 'Pending'
+                        ? 'clock'
+                        : transaction.status === 'Failed'
+                          ? 'x-circle'
+                          : isCredit ? 'trending-up' : 'trending-down'
+                    }
+                    size={20}
+                    color={statusColor}
+                  />
+                </View>
+                <View style={styles.transactionContent}>
+                  <Text style={{ color: "white" }}>{walletSourceLabel(transaction.source)}</Text>
+                  <Text style={styles.transactionDate}>
+                    {format(new Date(transaction.createdAt), 'MMM d, yyyy')}
+                    {transaction.status !== 'Success' ? (
+                      <Text style={{ color: statusColor }}> • {transaction.status}</Text>
+                    ) : ''}
+                  </Text>
+                  {!!transaction.note && (
+                    <Text style={styles.transactionNote} numberOfLines={2}>
+                      {transaction.note}
+                    </Text>
+                  )}
+                  {canVerify && (
+                    <TouchableOpacity
+                      style={styles.verifyButton}
+                      onPress={() => handleVerify(transaction)}
+                      disabled={verifyingId === transaction._id}
+                    >
+                      {verifyingId === transaction._id ? (
+                        <ActivityIndicator size="small" color="#F59E0B" />
+                      ) : (
+                        <>
+                          <Feather name="refresh-cw" size={12} color="#F59E0B" />
+                          <Text style={styles.verifyButtonText}>{t('payments.verify')}</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={[styles.transactionAmount, { color: statusColor }]}>
+                  {isCredit ? '+' : '-'}₹{transaction.amount}
                 </Text>
-              </View>
-              <Text
-                style={
-                  styles.transactionAmount
-                }
-              >
-                {'+'}
-                {transaction.amount}
-              </Text>
-            </Animated.View>
-          ))}
+              </Animated.View>
+            );
+          })}
         </View>
+
+        {transactions.length < totalCount && (
+          <TouchableOpacity
+            style={styles.loadMoreButton}
+            onPress={loadMoreTransactions}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? (
+              <ActivityIndicator size="small" color="#3B82F6" />
+            ) : (
+              <Text style={styles.loadMoreText}>Load More</Text>
+            )}
+          </TouchableOpacity>
+        )}
       </ScrollView>
     );
   };
@@ -311,14 +458,6 @@ const WalletModal: React.FC = () => {
       }),
     ]).start();
   };
-
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false)
-    if (selectedDate) {
-      const dateString = format(selectedDate, "yyyy-MM-dd")
-      setDate(dateString)
-    }
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -347,9 +486,9 @@ const WalletModal: React.FC = () => {
             >
               <View style={styles.balanceHeader}>
                 <View>
-                  <Text style={styles.balanceLabel}>Total Money Earned</Text>
+                  <Text style={styles.balanceLabel}>{t("payments.wallet_balance")}</Text>
                   <Text style={styles.balanceAmount}>
-                    {totalAmount.toFixed(2)}
+                    ₹{walletBalance.toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.walletIconContainer}>
@@ -361,23 +500,10 @@ const WalletModal: React.FC = () => {
         </Animated.View>
         <View style={styles.transSection}>
           <Text style={styles.sectionTitle}>Transaction History</Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.compactField}>
-            <FontAwesome name="calendar" size={14} color="#0284c7" />
-            <Text style={styles.compactFieldText}>{format(new Date(date), "dd/MM")}</Text>
-          </TouchableOpacity>
         </View>
         {renderTransactionList()}
       </ScrollView>
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={new Date(date)}
-          mode="date"
-          display="default"
-          onChange={onDateChange}
-          maximumDate={new Date()}
-        />
-      )}
       <CustomAlert
         visible={alertVisible}
         title={alertConfig.title}
@@ -410,11 +536,16 @@ interface Styles {
   transactionContent: ViewStyle;
   transactionDescription: TextStyle;
   transactionDate: TextStyle;
+  transactionNote: TextStyle;
   transactionAmount: TextStyle;
+  verifyButton: ViewStyle;
+  verifyButtonText: TextStyle;
   emptyStateContainer: ViewStyle;
   emptyStateText: TextStyle;
   emptyStateButton: ViewStyle;
   emptyStateButtonText: TextStyle;
+  loadMoreButton: ViewStyle;
+  loadMoreText: TextStyle;
   alertOverlay: ViewStyle;
   alertContainer: ViewStyle;
   alertIconContainer: ViewStyle;
@@ -545,6 +676,30 @@ const styles = StyleSheet.create<Styles>({
     fontSize: 14,
     color: '#9CA3AF',
   },
+  transactionNote: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  verifyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+  },
+  verifyButtonText: {
+    color: '#F59E0B',
+    fontWeight: '600',
+    fontSize: 12,
+  },
   transactionAmount: {
     fontWeight: '700',
     fontSize: 16,
@@ -575,6 +730,20 @@ const styles = StyleSheet.create<Styles>({
   },
   emptyStateButtonText: {
     color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  loadMoreButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginBottom: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  loadMoreText: {
+    color: '#3B82F6',
     fontWeight: '600',
     fontSize: 14,
   },
