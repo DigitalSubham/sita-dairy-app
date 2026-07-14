@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
 import i18n from "@/i18n";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -44,15 +45,17 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <I18nextProvider i18n={i18n}>
           <AuthProvider>
-            <StatusBar barStyle="dark-content" />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" options={{ animation: "none" }} />
-              <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-              <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
-              <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
-              <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
-            </Stack>
-            <Toast />
+            <CartProvider>
+              <StatusBar barStyle="dark-content" />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" options={{ animation: "none" }} />
+                <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+                <Stack.Screen name="(admin)" options={{ animation: "fade" }} />
+                <Stack.Screen name="(buyer)" options={{ animation: "fade" }} />
+                <Stack.Screen name="+not-found" options={{ presentation: "modal" }} />
+              </Stack>
+              <Toast />
+            </CartProvider>
           </AuthProvider>
         </I18nextProvider>
       </GestureHandlerRootView>

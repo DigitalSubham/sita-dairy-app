@@ -229,6 +229,16 @@ export interface FormData {
   role: CustomerRole;
 }
 
+export type ProductCategory = "Dahi" | "Milk" | "Ghee" | "Paneer" | "Mawa";
+
+export const PRODUCT_CATEGORIES: ProductCategory[] = [
+  "Dahi",
+  "Milk",
+  "Ghee",
+  "Paneer",
+  "Mawa",
+];
+
 export interface Product {
   _id: string;
   title: string;
@@ -236,6 +246,45 @@ export interface Product {
   description: string;
   thumbnail: string;
   isFeatured: boolean;
+  isPopular?: boolean;
+  category?: ProductCategory;
+}
+
+export type ProductOrderStatus =
+  | "Placed"
+  | "Partially Delivered"
+  | "Delivered"
+  | "Cancelled";
+
+export interface ProductOrderItem {
+  _id: string;
+  product: string;
+  title: string;
+  price: number;
+  quantity: number;
+  deliveredQuantity: number;
+}
+
+export interface ProductOrder {
+  _id: string;
+  user: { _id: string; name: string; id: string; profilePic?: string } | string;
+  items: ProductOrderItem[];
+  totalAmount: number;
+  deliveredAmount: number;
+  status: ProductOrderStatus;
+  deliveryDate: string;
+  cancelledBy?: "User" | "Admin";
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartItem {
+  productId: string;
+  title: string;
+  price: number;
+  thumbnail: string;
+  quantity: number;
 }
 
 export interface ProductFormData {
@@ -245,6 +294,8 @@ export interface ProductFormData {
   description: string;
   thumbnail: string;
   isFeatured: boolean;
+  isPopular: boolean;
+  category?: ProductCategory | "";
 }
 
 export interface Payment {
@@ -260,10 +311,10 @@ export interface WalletTransaction {
   user: { _id: string; name: string; id: string; profilePic?: string } | string;
   direction: "Credit" | "Debit";
   amount: number;
-  source: "MilkSell" | "MilkBuy" | "CashPayment" | "Top-up";
+  source: "MilkSell" | "MilkBuy" | "CashPayment" | "Top-up" | "ProductOrder";
   status: "Pending" | "Success" | "Failed";
   balanceAfter: number | null;
-  refType?: "milk" | "walletTransaction";
+  refType?: "milk" | "walletTransaction" | "productOrder";
   refId?: string;
   createdBy?: { _id: string; name: string; id: string } | string | null;
   note?: string;

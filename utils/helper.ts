@@ -1,5 +1,5 @@
 import { api } from "@/constants/api";
-import { Customer, WalletTransaction } from "@/constants/types";
+import { Customer, ProductOrderStatus, WalletTransaction } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { Alert } from "react-native";
@@ -19,6 +19,8 @@ export const walletSourceLabel = (source: WalletTransaction["source"]): string =
       return "Cash Payment";
     case "Top-up":
       return "Wallet Top-up";
+    case "ProductOrder":
+      return "Product Order";
     default:
       return source;
   }
@@ -31,6 +33,34 @@ export const walletStatusColor = (
   if (status === "Pending") return "#F59E0B";
   if (status === "Failed") return "#EF4444";
   return isCredit ? "#10B981" : "#EF4444";
+};
+
+export const orderStatusColor = (status: ProductOrderStatus): string => {
+  switch (status) {
+    case "Placed":
+      return "#6366F1";
+    case "Partially Delivered":
+      return "#F59E0B";
+    case "Delivered":
+      return "#10B981";
+    case "Cancelled":
+      return "#EF4444";
+    default:
+      return "#6B7280";
+  }
+};
+
+export const orderStatusLabelKey = (status: ProductOrderStatus): string => {
+  switch (status) {
+    case "Placed":
+      return "orders.status_placed";
+    case "Partially Delivered":
+      return "orders.status_partially_delivered";
+    case "Delivered":
+      return "orders.status_delivered";
+    case "Cancelled":
+      return "orders.status_cancelled";
+  }
 };
 
 export const formatDate = (dateString: string) => {

@@ -1,5 +1,6 @@
 import { CustomDrawer } from "@/components/common/CustomDrawer";
 import Icon from "@/components/common/Icon";
+import { Feather } from "@expo/vector-icons";
 import { Drawer } from "expo-router/drawer";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +16,11 @@ export default function Layout() {
             name: "payment",
             title: t("navigation.payments"),
             icon: Icon("wallet"),
+        },
+        {
+            name: "orderHistory",
+            title: t("navigation.order_history"),
+            icon: (size: number, color: string) => <Feather name="package" size={size} color={color} />,
         },
         {
             name: "records",

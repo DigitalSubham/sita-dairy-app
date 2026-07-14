@@ -1,7 +1,7 @@
 import RenderDeleteModal from "@/components/common/DeleteModal";
 import { ProductsHeader } from "@/components/common/HeaderVarients";
 import { api } from "@/constants/api";
-import { Product, ProductFormData } from "@/constants/types";
+import { PRODUCT_CATEGORIES, Product, ProductFormData } from "@/constants/types";
 import { fetchData } from "@/utils/services";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -55,6 +55,8 @@ export default function AdminProductsScreen(): React.ReactElement {
     description: "",
     thumbnail: "",
     isFeatured: false,
+    isPopular: false,
+    category: "",
   });
   const navigation = useNavigation()
   // Filtered products based on search
@@ -114,7 +116,7 @@ export default function AdminProductsScreen(): React.ReactElement {
     try {
       setLoading(true);
 
-      if (!currentProduct.title || !currentProduct.price) {
+      if (!currentProduct.title || !currentProduct.price || !currentProduct.category) {
         Alert.alert(t("common.error"), t("validation.all_fields_required"));
         setLoading(false);
         return;
@@ -126,7 +128,9 @@ export default function AdminProductsScreen(): React.ReactElement {
       formData.append("title", currentProduct.title);
       formData.append("description", currentProduct.description);
       formData.append("price", currentProduct.price?.toString());
+      formData.append("category", currentProduct.category);
       formData.append("isFeatured", currentProduct.isFeatured?.toString());
+      formData.append("isPopular", currentProduct.isPopular?.toString());
 
       if (imageFile) {
         const fileUri = imageFile.uri;
@@ -295,6 +299,8 @@ export default function AdminProductsScreen(): React.ReactElement {
     setCurrentProduct({
       ...product,
       price: product.price?.toString(),
+      category: product.category ?? "",
+      isPopular: product.isPopular ?? false,
     });
     toggleDrawer(true);
   };
@@ -313,6 +319,8 @@ export default function AdminProductsScreen(): React.ReactElement {
       description: "",
       thumbnail: "",
       isFeatured: false,
+      isPopular: false,
+      category: "",
     });
     setImageFile(null);
   };
@@ -326,6 +334,23 @@ export default function AdminProductsScreen(): React.ReactElement {
     setRefreshing(true);
     fetchProducts();
   }, [token, fetchProducts]);
+
+  const categoryLabel = (category?: string): string => {
+    switch (category) {
+      case "Dahi":
+        return t("products.category_dahi");
+      case "Milk":
+        return t("products.category_milk");
+      case "Ghee":
+        return t("products.category_ghee");
+      case "Paneer":
+        return t("products.category_paneer");
+      case "Mawa":
+        return t("products.category_mawa");
+      default:
+        return category || "";
+    }
+  };
 
   const renderProductItem = ({
     item,
@@ -350,10 +375,20 @@ export default function AdminProductsScreen(): React.ReactElement {
             {item.title}
           </Text>
           <View style={styles.productMeta}>
+            {!!item.category && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>{categoryLabel(item.category)}</Text>
+              </View>
+            )}
             {item.isFeatured && (
               <View style={styles.featuredBadge}>
                 <Text style={styles.featuredText}>{t("products.featured")}</Text>
-                
+
+              </View>
+            )}
+            {item.isPopular && (
+              <View style={styles.popularBadge}>
+                <Text style={styles.popularBadgeText}>{t("products.popular")}</Text>
               </View>
             )}
           </View>
@@ -535,6 +570,33 @@ export default function AdminProductsScreen(): React.ReactElement {
               </View>
 
               <View style={styles.formField}>
+                <Text style={styles.fieldLabel}>{t("products.category")} *</Text>
+                <View style={styles.categoryChipsRow}>
+                  {PRODUCT_CATEGORIES.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={[
+                        styles.categoryChip,
+                        currentProduct.category === category && styles.categoryChipActive,
+                      ]}
+                      onPress={() =>
+                        setCurrentProduct({ ...currentProduct, category })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.categoryChipText,
+                          currentProduct.category === category && styles.categoryChipTextActive,
+                        ]}
+                      >
+                        {categoryLabel(category)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formField}>
                 <Text style={styles.fieldLabel}>{t("common.description")}</Text>
                 <TextInput
                   style={[styles.textInput, styles.textArea]}
@@ -572,6 +634,28 @@ export default function AdminProductsScreen(): React.ReactElement {
                     )}
                   </TouchableOpacity>
                   <Text style={styles.checkboxLabel}>{t("products.featured_product")}</Text>
+                </View>
+              </View>
+
+              <View style={styles.formField}>
+                <View style={styles.checkboxContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.checkbox,
+                      currentProduct.isPopular && styles.checkboxChecked,
+                    ]}
+                    onPress={() =>
+                      setCurrentProduct({
+                        ...currentProduct,
+                        isPopular: !currentProduct.isPopular,
+                      })
+                    }
+                  >
+                    {currentProduct.isPopular && (
+                      <FontAwesome name="check" size={16} color="#ffffff" />
+                    )}
+                  </TouchableOpacity>
+                  <Text style={styles.checkboxLabel}>{t("products.popular_product")}</Text>
                 </View>
               </View>
 
@@ -744,6 +828,34 @@ const styles = StyleSheet.create({
   },
   featuredText: {
     color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  categoryBadge: {
+    backgroundColor: "#f0fdf4",
+    borderWidth: 1,
+    borderColor: "#86efac",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  categoryBadgeText: {
+    color: "#15803d",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  popularBadge: {
+    backgroundColor: "#fff7ed",
+    borderWidth: 1,
+    borderColor: "#fdba74",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  popularBadgeText: {
+    color: "#c2410c",
     fontSize: 10,
     fontWeight: "600",
   },
@@ -971,6 +1083,31 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     color: "#111827",
     fontSize: 16,
+  },
+  categoryChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  categoryChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f9fafb",
+  },
+  categoryChipActive: {
+    backgroundColor: "#ede9fe",
+    borderColor: "#4A00E0",
+  },
+  categoryChipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+  categoryChipTextActive: {
+    color: "#4A00E0",
   },
   checkboxContainer: {
     flexDirection: "row",

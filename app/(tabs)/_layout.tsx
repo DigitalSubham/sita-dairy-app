@@ -6,6 +6,7 @@ import { CustomDrawer } from "@/components/common/CustomDrawer";
 import Icon from "@/components/common/Icon";
 import DairyLoadingScreen from "@/components/Loading";
 import { useAuth } from "@/context/AuthContext";
+import { Feather } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 
 export default function Layout() {
@@ -17,7 +18,12 @@ export default function Layout() {
   useEffect(() => {
     if (isLoading) return;
 
-    switch (user?.role) {
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    switch (user.role) {
       case "Buyer":
       case "User":
         router.replace("/(buyer)");
@@ -48,6 +54,11 @@ export default function Layout() {
     { name: "index", title: t("navigation.dashboard"), icon: Icon("home") },
     { name: "payment", title: t("navigation.payments"), icon: Icon("wallet") },
     { name: "products", title: t("navigation.products"), icon: Icon("products") },
+    {
+      name: "orderHistory",
+      title: t("navigation.order_history"),
+      icon: (size: number, color: string) => <Feather name="package" size={size} color={color} />,
+    },
     { name: "records", title: t("navigation.milk_records"), icon: Icon("ledger") },
     { name: "viewRates", title: t("navigation.milk_rate"), icon: Icon("up-arrow") },
     { name: "profile", title: t("navigation.profile"), icon: Icon("user") },

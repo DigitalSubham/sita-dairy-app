@@ -2,6 +2,7 @@ import { CustomDrawer } from "@/components/common/CustomDrawer";
 import Icon from "@/components/common/Icon";
 import DairyLoadingScreen from "@/components/Loading";
 import { useAuth } from "@/context/AuthContext";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { useEffect } from "react";
@@ -15,7 +16,11 @@ export default function Layout() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (user?.role !== "Admin") {
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    if (user.role !== "Admin") {
       router.replace("/+not-found");
     }
   }, [user, isLoading]);
@@ -70,6 +75,16 @@ export default function Layout() {
       name: "products",
       title: t("navigation.products"),
       icon: Icon("products"),
+    },
+    {
+      name: "orders",
+      title: t("navigation.orders"),
+      icon: (size: number, color: string) => <Feather name="truck" size={size} color={color} />,
+    },
+    {
+      name: "orderHistory",
+      title: t("navigation.order_history"),
+      icon: (size: number, color: string) => <Feather name="package" size={size} color={color} />,
     },
     {
       name: "profile",

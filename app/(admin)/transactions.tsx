@@ -31,7 +31,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const WALLET_PAGE_LIMIT = 20;
 
 type SourceFilter = "All" | WalletTransaction["source"];
-const SOURCE_FILTERS: SourceFilter[] = ["All", "MilkBuy", "MilkSell", "CashPayment", "Top-up"];
+const SOURCE_FILTERS: SourceFilter[] = ["All", "MilkBuy", "MilkSell", "CashPayment", "Top-up", "ProductOrder"];
 
 export default function TransactionsScreen(): React.ReactElement {
   const { t } = useTranslation();

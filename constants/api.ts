@@ -38,4 +38,11 @@ export const api = {
   walletTopupReverify: `${BASE_URL}/wallet/upi-topup`,
 
   rateChart: `${BASE_URL}/ratechart`,
+
+  // product orders
+  createProductOrder: `${BASE_URL}/product-orders`,
+  myProductOrders: `${BASE_URL}/product-orders/mine`,
+  productOrders: `${BASE_URL}/product-orders`,
+  productOrderDeliver: `${BASE_URL}/product-orders`,
+  productOrderCancel: `${BASE_URL}/product-orders`,
 };
