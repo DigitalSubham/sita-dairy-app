@@ -8,7 +8,7 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "eas-apk": "eas build --platform android --profile preview",
-    "eas-aab": "eas build --platform android --profile production",
+    "eas-aab": "EAS_BUILD_NO_EXPO_GO_WARNING=true eas build --platform android --profile production",
     "eas-ipa": "eas build --platform ios --profile production",
     "ios": "expo start --ios",
     "web": "expo start --web",
