@@ -1,3 +1,4 @@
+import { FloatingWhatsAppButton } from "@/components/common/FloatingWhatsAppButton";
 import { CategoryGrid } from "@/components/products/CategoryGrid";
 import { FeaturedProductsRow } from "@/components/products/FeaturedProductsRow";
 import { ProductsHomeHeader } from "@/components/products/ProductsHomeHeader";
@@ -159,6 +160,8 @@ export default function ProductsScreen() {
                     <CategoryGrid onSelect={goToCategory} />
                 </ScrollView>
             )}
+
+            <FloatingWhatsAppButton />
         </SafeAreaView>
 
     );
