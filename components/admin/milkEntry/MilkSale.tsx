@@ -190,7 +190,29 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
 
             if (data.success) {
                 Alert.alert(t("common.success"), data.message)
-                resetForm()
+
+                if (editingEntry) {
+                    resetForm()
+                } else {
+                    // Auto-select the next buyer in line (filteredUser is sorted by
+                    // positionNo and already excludes anyone with an entry today) so
+                    // the admin can rattle through entries without reopening the picker.
+                    const currentIndex = filteredUser.findIndex((u) => u._id === formData.userId)
+                    const nextUser = currentIndex >= 0 ? filteredUser[currentIndex + 1] : undefined
+                    const canPrefill = !!(nextUser?.role === "Buyer" && nextUser.milkRate && nextUser.morningMilk && nextUser.eveningMilk)
+
+                    setSelectedUser(nextUser ?? null)
+                    setFormData((prev) => ({
+                        ...prev,
+                        userId: nextUser?._id ?? "",
+                        weight: canPrefill ? (prev.shift === "Morning" ? nextUser!.morningMilk! : nextUser!.eveningMilk!) : "",
+                        rate: canPrefill ? nextUser!.milkRate! : "",
+                    }))
+                    if (nextUser) {
+                        setTimeout(() => weightRef.current?.focus(), 300)
+                    }
+                }
+
                 fetchTodayEntries(api.milkSales, setIsLoadingEntries, formData.date, formData.shift, setTodayEntries)
 
             } else {

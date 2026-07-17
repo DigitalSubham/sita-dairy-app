@@ -20,6 +20,23 @@ import {
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
+// expo-web-browser's dismissBrowser (and, on some platforms, openBrowserAsync)
+// isn't guaranteed to return a Promise on every platform — dismissBrowser is
+// documented as iOS-only, so calling it on Android returns undefined rather
+// than a rejected/resolved Promise. Chaining .catch() directly on that throws
+// "Cannot read property 'catch' of undefined" and aborts the whole flow, so
+// these best-effort cleanup calls need to tolerate a non-Promise return too.
+const safeCall = (fn: () => unknown) => {
+    try {
+        const result = fn();
+        if (result && typeof (result as Promise<unknown>).catch === "function") {
+            (result as Promise<unknown>).catch(() => { });
+        }
+    } catch {
+        // ignore — best-effort browser cleanup
+    }
+};
+
 const QUICK_AMOUNTS = [100, 200, 500, 1000];
 
 export type TopupResult = "Success" | "Pending" | "Failed";
@@ -97,7 +114,7 @@ const AddAmountModal: React.FC<AddAmountModalProps> = ({
             // of these happens first: the redirect (Linking event, once PhonePe navigates
             // back to returnUrl), or the user tapping "I've completed the payment" below
             // as a manual fallback in case the redirect is slow or doesn't fire.
-            WebBrowser.openBrowserAsync(redirectUrl).catch(() => { });
+            safeCall(() => WebBrowser.openBrowserAsync(redirectUrl));
 
             await new Promise<void>((resolve) => {
                 let settled = false;
@@ -115,7 +132,7 @@ const AddAmountModal: React.FC<AddAmountModalProps> = ({
                     }
                 });
             });
-            WebBrowser.dismissBrowser().catch(() => { });
+            safeCall(() => WebBrowser.dismissBrowser());
 
             setStage("verifying");
             const reverifyResponse = await fetch(
