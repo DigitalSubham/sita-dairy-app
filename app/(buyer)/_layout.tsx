@@ -23,6 +23,11 @@ export default function Layout() {
             icon: (size: number, color: string) => <Feather name="package" size={size} color={color} />,
         },
         {
+            name: "viewRates",
+            title: t("navigation.milk_rate"),
+            icon: Icon("up-arrow"),
+        },
+        {
             name: "records",
             title: t("navigation.milk_subscription"),
             icon: Icon("ledger"),
