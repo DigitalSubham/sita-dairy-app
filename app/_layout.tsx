@@ -4,8 +4,9 @@ import i18n from "@/i18n";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
+import { StatusBar } from "expo-status-bar";
 import { I18nextProvider } from "react-i18next";
-import { LogBox, StatusBar } from "react-native";
+import { LogBox } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -46,7 +47,7 @@ export default function RootLayout() {
         <I18nextProvider i18n={i18n}>
           <AuthProvider>
             <CartProvider>
-              <StatusBar barStyle="dark-content" />
+              <StatusBar style="dark" />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(auth)" options={{ animation: "none" }} />
                 <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
