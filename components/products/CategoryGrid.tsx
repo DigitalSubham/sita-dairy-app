@@ -1,10 +1,11 @@
-import { ProductCategory, PRODUCT_CATEGORIES } from "@/constants/types";
+import { ProductCategory } from "@/constants/types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type CategoryGridProps = {
+    categories: ProductCategory[];
     onSelect: (category: ProductCategory) => void;
 };
 
@@ -31,14 +32,16 @@ export const categoryLabelKey = (category: ProductCategory): string => {
     }
 };
 
-export const CategoryGrid: React.FC<CategoryGridProps> = ({ onSelect }) => {
+export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, onSelect }) => {
     const { t } = useTranslation();
+
+    if (categories.length === 0) return null;
 
     return (
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t("products.shop_by_category")}</Text>
             <View style={styles.grid}>
-                {PRODUCT_CATEGORIES.map((category) => (
+                {categories.map((category) => (
                     <TouchableOpacity
                         key={category}
                         style={styles.tile}

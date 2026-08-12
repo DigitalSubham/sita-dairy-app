@@ -104,7 +104,10 @@ const RateChartScreen = () => {
     };
     // Add new row
     const addRow = () => {
-        if (!columns.length) return;
+        if (!columns.length) {
+            Alert.alert(t("common.error"), t("rate.no_data_message"));
+            return;
+        }
 
         const newRow: RateChartRow = {
             _id: Date.now().toString(),
@@ -129,9 +132,14 @@ const RateChartScreen = () => {
             columns.forEach(col => {
                 if (col.key === "_id") return;
 
+                // The primary column (fat) steps by 0.1 to match the
+                // existing row spacing (e.g. 5.40 -> 5.50); other columns
+                // just carry the previous row's value forward.
+                const step = col.key === firstKey ? 0.1 : 0;
+
                 newRow[col.key] =
                     typeof lastRow[col.key] === "number"
-                        ? Number(lastRow[col.key]) + 1
+                        ? Math.round((Number(lastRow[col.key]) + step) * 100) / 100
                         : 0;
             });
         }

@@ -29,6 +29,7 @@ export default function ProductsScreen() {
     const [token, setToken] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(true);
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<ProductCategory[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
@@ -45,8 +46,30 @@ export default function ProductsScreen() {
     useEffect(() => {
         if (token) {
             fetchProducts();
+            fetchCategories();
         }
     }, [token]);
+
+    // Only categories that currently have products — decided server-side by
+    // GET /product/categories, not derived from the fetched product list.
+    const fetchCategories = async (): Promise<void> => {
+        if (!token) return;
+        try {
+            const response = await fetch(api.getProductCategories, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                setCategories(data.categories ?? []);
+            }
+        } catch (error) {
+            console.error('Error fetching product categories:', error);
+        }
+    };
 
     const fetchWalletBalance = useCallback(async (): Promise<void> => {
         if (!token) return;
@@ -116,6 +139,7 @@ export default function ProductsScreen() {
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchProducts();
+        fetchCategories();
         fetchWalletBalance();
     }, [token, fetchWalletBalance]);
 
@@ -156,7 +180,7 @@ export default function ProductsScreen() {
                     }
                 >
                     <FeaturedProductsRow products={popularProducts} />
-                    <CategoryGrid onSelect={goToCategory} />
+                    <CategoryGrid categories={categories} onSelect={goToCategory} />
                 </ScrollView>
             )}
         </SafeAreaView>
