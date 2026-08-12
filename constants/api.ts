@@ -22,6 +22,7 @@ export const api = {
 
   // products
   getProducts: `${BASE_URL}/product/all`,
+  getProductCategories: `${BASE_URL}/product/categories`,
   createProduct: `${BASE_URL}/product/create`,
   updateProduct: `${BASE_URL}/product/update`,
   deleteProduct: `${BASE_URL}/product/delete`,
@@ -45,4 +46,7 @@ export const api = {
   productOrders: `${BASE_URL}/product-orders`,
   productOrderDeliver: `${BASE_URL}/product-orders`,
   productOrderCancel: `${BASE_URL}/product-orders`,
+
+  // push notifications
+  pushToken: `${BASE_URL}/user/push-token`,
 };

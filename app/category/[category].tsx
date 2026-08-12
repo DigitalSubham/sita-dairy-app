@@ -6,7 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { AntDesign, Feather, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,8 +14,6 @@ import {
     Alert,
     FlatList,
     Image,
-    Linking,
-    Platform,
     RefreshControl,
     StyleSheet,
     Text,
@@ -30,6 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CategoryProductsScreen() {
     const { t } = useTranslation();
+    const router = useRouter();
     const { category } = useLocalSearchParams<{ category: ProductCategory }>();
     const { items: cartItems, addItem } = useCart();
     const [token, setToken] = useState<string>("");
@@ -129,33 +128,9 @@ export default function CategoryProductsScreen() {
         fetchProducts();
     }, [token]);
 
-    const openWhatsApp = (product: Product) => {
-        const message = `Hi, I'm interested in purchasing: ${product.title} (₹${product.price})`;
-        const phoneNumber = "918892293899";
-
-        let url = "";
-        if (Platform.OS === "android") {
-            url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(
-                message
-            )}`;
-        } else {
-            url = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(
-                message
-            )}`;
-        }
-
-        Linking.canOpenURL(url)
-            .then((supported: any) => {
-                if (supported) {
-                    return Linking.openURL(url);
-                } else {
-                    Alert.alert(
-                        t("products.whatsapp_not_installed"),
-                        t("products.install_whatsapp_to_contact")
-                    );
-                }
-            })
-            .catch((err: any) => console.error("Error opening WhatsApp:", err));
+    const handleBuyNow = (product: Product) => {
+        addItem(product);
+        router.push("/cart");
     };
 
     const categoryProducts = products.filter((product) => product.category === category);
@@ -211,10 +186,10 @@ export default function CategoryProductsScreen() {
                     <View style={styles.actionRow}>
                         <TouchableOpacity
                             style={styles.buyButton}
-                            onPress={() => openWhatsApp(item)}
+                            onPress={() => handleBuyNow(item)}
                         >
-                            <AntDesign name="message" size={18} color="#ffffff" />
-                            <Text style={styles.buyButtonText}>{t("products.buy_on_whatsapp")}</Text>
+                            <Feather name="zap" size={16} color="#ffffff" />
+                            <Text style={styles.buyButtonText}>{t("products.buy_now")}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.addToCartButton}

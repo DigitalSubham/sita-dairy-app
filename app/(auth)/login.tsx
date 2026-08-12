@@ -1,6 +1,8 @@
 import AuthTemplate from "@/components/auth/AuthTemplate";
+import { POLICY_LINKS } from "@/constants/policies";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -75,6 +77,15 @@ export default function Login() {
       Keyboard.dismiss();
     }
   };
+
+  const openPolicy = (url: string) => {
+    WebBrowser.openBrowserAsync(url).catch((error) =>
+      console.error("Error opening policy link:", error)
+    );
+  };
+
+  const privacyPolicy = POLICY_LINKS.find((policy) => policy.key === "privacy_policy");
+  const termsConditions = POLICY_LINKS.find((policy) => policy.key === "terms_conditions");
 
 
 
@@ -157,6 +168,20 @@ export default function Login() {
               <Text style={styles.loginLink}>{t("auth.sign_up")}</Text>
             </TouchableOpacity>
           </Link>
+        </View>
+
+        <View style={styles.policyContainer}>
+          {privacyPolicy && (
+            <TouchableOpacity onPress={() => openPolicy(privacyPolicy.url)}>
+              <Text style={styles.policyLink}>{t(privacyPolicy.labelKey)}</Text>
+            </TouchableOpacity>
+          )}
+          {privacyPolicy && termsConditions && <Text style={styles.policySeparator}>•</Text>}
+          {termsConditions && (
+            <TouchableOpacity onPress={() => openPolicy(termsConditions.url)}>
+              <Text style={styles.policyLink}>{t(termsConditions.labelKey)}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </AuthTemplate>
@@ -252,5 +277,20 @@ const styles = StyleSheet.create({
     color: "#0ea5e9",
     fontSize: 15,
     fontWeight: "bold",
+  },
+  policyContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  policyLink: {
+    color: "#0284c7",
+    fontSize: 13,
+  },
+  policySeparator: {
+    color: "#94a3b8",
+    fontSize: 13,
+    marginHorizontal: 8,
   },
 });

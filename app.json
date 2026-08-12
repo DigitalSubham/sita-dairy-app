@@ -48,7 +48,8 @@
         {
           "locationWhenInUsePermission": "Allow Sita Dairy to access your location to set a customer's location."
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

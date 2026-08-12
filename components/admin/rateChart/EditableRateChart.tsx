@@ -71,7 +71,9 @@ const EditableCell: React.FC<EditableCellProps> = ({
         style={[
           styles.cellText,
           firstColumn && styles.headerText,
-          isCellEdited === `${rowId}-${columnKey}` && styles.editedCell,
+          (isCellEdited === `${rowId}-${columnKey}` ||
+            isCellEdited === `new-${rowId}`) &&
+            styles.editedCell,
         ]}
       >
         {typeof value === "number" ? value.toFixed(2) : value}
@@ -89,6 +91,21 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
   editingCell,
   setEditingHeader,
 }) => {
+  const flatListRef = React.useRef<FlatList>(null);
+  const prevRowCount = React.useRef(rateChart.length);
+
+  React.useEffect(() => {
+    // A newly added row sorts to the bottom (highest fat) of a chart that
+    // can already have dozens of rows — without this it lands off-screen
+    // and looks like the button did nothing.
+    if (rateChart.length > prevRowCount.current) {
+      requestAnimationFrame(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      });
+    }
+    prevRowCount.current = rateChart.length;
+  }, [rateChart.length]);
+
   const sortedRateChart = React.useMemo(() => {
     // ⛔ do not sort while editing any cell
     if (editingCell) {
@@ -193,6 +210,7 @@ const EditableRateChart: React.FC<EditableRateChartProps> = ({
 
           {/* VERTICAL LIST (inside fixed-height box) */}
           <FlatList
+            ref={flatListRef}
             data={sortedRateChart}
             keyExtractor={(item) => item._id}
             renderItem={RenderRow}

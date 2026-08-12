@@ -40,7 +40,7 @@ export const ProductsHomeHeader: React.FC<ProductsHomeHeaderProps> = ({
                 >
                     <Feather name="menu" size={20} color="#6366F1" />
                 </TouchableOpacity>
-                <View>
+                <View style={styles.nameContainer}>
                     <Text style={styles.greeting}>{t(greetingKey())}</Text>
                     <Text style={styles.name} numberOfLines={1}>
                         {t("common.hi_name", { name: name || "" })}
@@ -78,6 +78,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         flex: 1,
         marginRight: 12,
+    },
+    nameContainer: {
+        flex: 1,
+        flexShrink: 1,
     },
     avatar: {
         width: 40,

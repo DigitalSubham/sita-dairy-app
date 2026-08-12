@@ -1,4 +1,6 @@
+import { POLICY_LINKS } from "@/constants/policies"
 import { Feather, FontAwesome } from "@expo/vector-icons"
+import * as WebBrowser from "expo-web-browser"
 import type React from "react"
 import { useTranslation } from "react-i18next"
 import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native"
@@ -23,6 +25,16 @@ const SettingsComponent: React.FC<SettingsProps> = ({
   setEmailUpdates,
 }) => {
   const { t } = useTranslation()
+
+  const openPolicy = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url)
+    } catch (error) {
+      console.error("Error opening policy link:", error)
+      Alert.alert(t("common.error"), t("settings.failed_to_open_link"))
+    }
+  }
+
   const showDeleteAccountAlert = () => {
     Alert.alert(
       t("settings.delete_account"),
@@ -86,6 +98,33 @@ const SettingsComponent: React.FC<SettingsProps> = ({
             <Feather name="trash-2" size={20} color="#ffffff" style={styles.deleteAccountIcon} />
             <Text style={styles.deleteAccountText}>{t("settings.delete_account")}</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t("settings.legal_policies")}</Text>
+          </View>
+
+          <View style={styles.card}>
+            {POLICY_LINKS.map((policy, index) => (
+              <View key={policy.key}>
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={() => openPolicy(policy.url)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.iconContainer}>
+                    <Feather name="file-text" size={20} color="#6b7280" />
+                  </View>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>{t(policy.labelKey)}</Text>
+                  </View>
+                  <Feather name="chevron-right" size={20} color="#9ca3af" />
+                </TouchableOpacity>
+                {index < POLICY_LINKS.length - 1 && <View style={styles.divider} />}
+              </View>
+            ))}
+          </View>
         </View>
 
         <View style={styles.section}>
