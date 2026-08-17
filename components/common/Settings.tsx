@@ -1,6 +1,6 @@
 import { POLICY_LINKS } from "@/constants/policies"
 import { Feather, FontAwesome } from "@expo/vector-icons"
-import * as WebBrowser from "expo-web-browser"
+import { useRouter } from "expo-router"
 import type React from "react"
 import { useTranslation } from "react-i18next"
 import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native"
@@ -25,10 +25,11 @@ const SettingsComponent: React.FC<SettingsProps> = ({
   setEmailUpdates,
 }) => {
   const { t } = useTranslation()
+  const router = useRouter()
 
-  const openPolicy = async (url: string) => {
+  const openPolicy = (url: string, title: string) => {
     try {
-      await WebBrowser.openBrowserAsync(url)
+      router.push({ pathname: "/webview", params: { url, title } })
     } catch (error) {
       console.error("Error opening policy link:", error)
       Alert.alert(t("common.error"), t("settings.failed_to_open_link"))
@@ -110,7 +111,7 @@ const SettingsComponent: React.FC<SettingsProps> = ({
               <View key={policy.key}>
                 <TouchableOpacity
                   style={styles.settingItem}
-                  onPress={() => openPolicy(policy.url)}
+                  onPress={() => openPolicy(policy.url, t(policy.labelKey))}
                   activeOpacity={0.7}
                 >
                   <View style={styles.iconContainer}>

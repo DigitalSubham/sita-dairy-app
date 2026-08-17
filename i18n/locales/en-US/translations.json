@@ -363,6 +363,7 @@
   "settings.refund_policy": "Refund Policy",
   "settings.account_deletion_policy": "Account Deletion Policy",
   "settings.failed_to_open_link": "Failed to open link",
+  "webview.title": "Details",
   "settings.manage_your_preferences": "Manage your preferences",
   "settings.delete_account_confirmation": "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
   "settings.push_notifications": "Push Notifications",

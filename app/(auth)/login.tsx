@@ -2,7 +2,6 @@ import AuthTemplate from "@/components/auth/AuthTemplate";
 import { POLICY_LINKS } from "@/constants/policies";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -78,10 +77,8 @@ export default function Login() {
     }
   };
 
-  const openPolicy = (url: string) => {
-    WebBrowser.openBrowserAsync(url).catch((error) =>
-      console.error("Error opening policy link:", error)
-    );
+  const openPolicy = (url: string, title: string) => {
+    router.push({ pathname: "/webview", params: { url, title } });
   };
 
   const privacyPolicy = POLICY_LINKS.find((policy) => policy.key === "privacy_policy");
@@ -172,13 +169,13 @@ export default function Login() {
 
         <View style={styles.policyContainer}>
           {privacyPolicy && (
-            <TouchableOpacity onPress={() => openPolicy(privacyPolicy.url)}>
+            <TouchableOpacity onPress={() => openPolicy(privacyPolicy.url, t(privacyPolicy.labelKey))}>
               <Text style={styles.policyLink}>{t(privacyPolicy.labelKey)}</Text>
             </TouchableOpacity>
           )}
           {privacyPolicy && termsConditions && <Text style={styles.policySeparator}>•</Text>}
           {termsConditions && (
-            <TouchableOpacity onPress={() => openPolicy(termsConditions.url)}>
+            <TouchableOpacity onPress={() => openPolicy(termsConditions.url, t(termsConditions.labelKey))}>
               <Text style={styles.policyLink}>{t(termsConditions.labelKey)}</Text>
             </TouchableOpacity>
           )}

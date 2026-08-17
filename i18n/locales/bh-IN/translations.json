@@ -361,6 +361,7 @@
   "settings.refund_policy": "रिफंड नीति",
   "settings.account_deletion_policy": "खाता हटावे के नीति",
   "settings.failed_to_open_link": "लिंक खोले में बिफल",
+  "webview.title": "बिबरन",
   "settings.manage_your_preferences": "अपना प्राथमिकताएँ सम्हालीं",
   "settings.delete_account_confirmation": "का रउआ सच में खाता हटावल चाहत बानी? ई काम वापस ना हो सकेला आ रउआ सभ डेटा हमेशा खातिर हट जाई।",
   "settings.push_notifications": "पुश नोटिफिकेशन",

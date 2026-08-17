@@ -363,6 +363,7 @@
   "settings.refund_policy": "रिफंड नीति",
   "settings.account_deletion_policy": "खाता हटाने की नीति",
   "settings.failed_to_open_link": "लिंक खोलने में विफल",
+  "webview.title": "विवरण",
   "settings.manage_your_preferences": "अपनी प्राथमिकताओं का प्रबंधन करें",
   "settings.delete_account_confirmation": "क्या आप सच में अपना खाता हटाना चाहते हैं? यह कार्रवाई वापस नहीं की जा सकती और आपका सारा डेटा स्थायी रूप से हट जाएगा।",
   "settings.push_notifications": "पुश नोटिफिकेशन",
