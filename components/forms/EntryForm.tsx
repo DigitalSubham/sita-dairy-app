@@ -158,6 +158,9 @@ const EntryForm: React.FC<EntryFormProps> = ({ editingEntry, formData, selectedU
                     </View>
 
                     <View style={styles.rateDisplay}>
+                        {selectedUser?.stickyRateEnabled && (
+                            <Feather name="lock" size={12} color="#047857" />
+                        )}
                         <FontAwesome name="rupee" size={16} color="#10b981" />
                         <Text style={styles.rateText}>₹{formData.rate || "0.00"}</Text>
                     </View>

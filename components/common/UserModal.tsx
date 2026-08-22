@@ -41,6 +41,12 @@ const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSele
                                 onPress={() => {
                                     setSelectedUser(item)
                                     updateFormData("userId", item._id)
+                                    // Sticky-rate customers always use their fixed rate, regardless
+                                    // of role, instead of being computed (rate-chart for Farmers,
+                                    // manual entry for Buyers).
+                                    if (item.stickyRateEnabled && item.milkRate) {
+                                        updateFormData("rate", item.milkRate)
+                                    }
                                     if (item.role === "Buyer" && item.milkRate && item.morningMilk && item.eveningMilk) {
                                         updateFormData("rate", item.milkRate)
                                         updateFormData("weight", new Date().getHours() < 12 ? item.morningMilk : item.eveningMilk)

@@ -9,6 +9,7 @@ import {
   Modal,
   Platform,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -34,6 +35,9 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({
     eveningMilk: visible?.eveningMilk || "",
     milkRate: visible?.milkRate || "",
   });
+  const [stickyRateEnabled, setStickyRateEnabled] = useState(
+    visible?.stickyRateEnabled || false
+  );
 
   const [errors, setErrors] = React.useState({
     morningMilk: "",
@@ -48,6 +52,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({
         eveningMilk: visible.eveningMilk || "",
         milkRate: visible.milkRate || "",
       });
+      setStickyRateEnabled(visible.stickyRateEnabled || false);
     }
   }, [visible]);
 
@@ -83,7 +88,11 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({
           return;
         }
         const parsedToken = JSON.parse(storedToken);
-        const requestBody = { ...buyerRateConfig, userId: visible?._id };
+        const requestBody = {
+          ...buyerRateConfig,
+          stickyRateEnabled,
+          userId: visible?._id,
+        };
         const response = await fetch(api.updateUser, {
           method: "PUT",
           headers: {
@@ -111,6 +120,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({
           eveningMilk: "",
           milkRate: "",
         });
+        setStickyRateEnabled(false);
         setErrors({
           morningMilk: "",
           eveningMilk: "",
@@ -127,6 +137,7 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({
       eveningMilk: "",
       milkRate: "",
     });
+    setStickyRateEnabled(false);
     setErrors({
       morningMilk: "",
       eveningMilk: "",
@@ -234,6 +245,24 @@ const BuyerRateConfigModal: React.FC<BuyerRateProps> = ({
                 {errors.milkRate ? (
                   <Text style={styles.errorText}>{errors.milkRate}</Text>
                 ) : null}
+              </View>
+
+              {/* Sticky Rate Toggle */}
+              <View style={styles.stickyRateRow}>
+                <View style={styles.stickyRateTextContainer}>
+                  <Text style={styles.inputLabel}>Sticky Rate</Text>
+                  <Text style={styles.stickyRateHint}>
+                    When enabled, this fixed rate is always used for this
+                    customer's milk entries and the fat/SNF rate-chart
+                    calculation is skipped.
+                  </Text>
+                </View>
+                <Switch
+                  value={stickyRateEnabled}
+                  onValueChange={setStickyRateEnabled}
+                  trackColor={{ false: "#d1d5db", true: "#0ea5e9" }}
+                  thumbColor="#ffffff"
+                />
               </View>
             </View>
 
@@ -363,6 +392,21 @@ const styles = StyleSheet.create({
   roleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  stickyRateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingTop: 4,
+  },
+  stickyRateTextContainer: {
+    flex: 1,
+  },
+  stickyRateHint: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 4,
   },
   modalFooter: {
     flexDirection: "row",

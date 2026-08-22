@@ -91,8 +91,10 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
         return 0;
     };
 
-    // Auto-calculate rate when fat or SNF changes
+    // Auto-calculate rate when fat or SNF changes — skipped for sticky-rate
+    // farmers, whose rate is fixed and set once on selection (see UserModal).
     useEffect(() => {
+        if (selectedUser?.stickyRateEnabled) return;
         if (formData.fat && formData.snf) {
             const fatNum = Number.parseFloat(formData.fat);
             const snfNum = Number.parseFloat(formData.snf);
@@ -104,7 +106,7 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
                 }
             }
         }
-    }, [formData.fat, formData.snf, rateChart]);
+    }, [formData.fat, formData.snf, rateChart, selectedUser]);
 
     // Fetch and report the selected farmer's wallet amount to the parent header
     useEffect(() => {
@@ -284,8 +286,10 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
         }));
     };
 
-    // Auto-calculate rate when fat or SNF changes in the edit modal
+    // Auto-calculate rate when fat or SNF changes in the edit modal — skipped
+    // for sticky-rate farmers, same as the create form above.
     useEffect(() => {
+        if (editSelectedUser?.stickyRateEnabled) return;
         if (editFormData.fat && editFormData.snf) {
             const fatNum = Number.parseFloat(editFormData.fat);
             const snfNum = Number.parseFloat(editFormData.snf);
@@ -297,7 +301,7 @@ export default function MilkBuyEntry({ onWalletAmountChange }: MilkBuyEntryProps
                 }
             }
         }
-    }, [editFormData.fat, editFormData.snf, rateChart]);
+    }, [editFormData.fat, editFormData.snf, rateChart, editSelectedUser]);
 
     // Open the edit modal for an entry from today's entries list
     const handleEditListEntry = (entry: MilkEntry) => {

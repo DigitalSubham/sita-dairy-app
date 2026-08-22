@@ -199,14 +199,15 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
                     // the admin can rattle through entries without reopening the picker.
                     const currentIndex = filteredUser.findIndex((u) => u._id === formData.userId)
                     const nextUser = currentIndex >= 0 ? filteredUser[currentIndex + 1] : undefined
-                    const canPrefill = !!(nextUser?.role === "Buyer" && nextUser.milkRate && nextUser.morningMilk && nextUser.eveningMilk)
+                    const canPrefillQuantity = !!(nextUser?.role === "Buyer" && nextUser.milkRate && nextUser.morningMilk && nextUser.eveningMilk)
+                    const canPrefillRate = canPrefillQuantity || !!(nextUser?.stickyRateEnabled && nextUser.milkRate)
 
                     setSelectedUser(nextUser ?? null)
                     setFormData((prev) => ({
                         ...prev,
                         userId: nextUser?._id ?? "",
-                        weight: canPrefill ? (prev.shift === "Morning" ? nextUser!.morningMilk! : nextUser!.eveningMilk!) : "",
-                        rate: canPrefill ? nextUser!.milkRate! : "",
+                        weight: canPrefillQuantity ? (prev.shift === "Morning" ? nextUser!.morningMilk! : nextUser!.eveningMilk!) : "",
+                        rate: canPrefillRate ? nextUser!.milkRate! : "",
                     }))
                     if (nextUser) {
                         setTimeout(() => weightRef.current?.focus(), 300)
@@ -478,7 +479,11 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
                     </View>
                     <View style={styles.inputRow}>
                         <View style={styles.inputContainer}>
-                            <FontAwesome name="rupee" size={16} color="#10b981" />
+                            {selectedUser?.stickyRateEnabled ? (
+                                <Feather name="lock" size={14} color="#10b981" />
+                            ) : (
+                                <FontAwesome name="rupee" size={16} color="#10b981" />
+                            )}
                             <TextInput
                                 ref={rateRef}
                                 style={styles.input}
@@ -488,6 +493,7 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
                                 onChangeText={(value) => updateFormData("rate", value)}
                                 keyboardType="decimal-pad"
                                 onSubmitEditing={() => handleSubmit()}
+                                editable={!selectedUser?.stickyRateEnabled}
                             />
 
                         </View>
@@ -612,7 +618,11 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
                     {/* Rate */}
                     <View style={styles.inputRow}>
                         <View style={styles.inputContainer}>
-                            <FontAwesome name="rupee" size={16} color="#10b981" />
+                            {editSelectedUser?.stickyRateEnabled ? (
+                                <Feather name="lock" size={14} color="#10b981" />
+                            ) : (
+                                <FontAwesome name="rupee" size={16} color="#10b981" />
+                            )}
                             <TextInput
                                 style={styles.input}
                                 placeholder={t("records.rate")}
@@ -620,6 +630,7 @@ export default function MilkSaleEntry({ onWalletAmountChange }: MilkSaleEntryPro
                                 value={editFormData.rate}
                                 onChangeText={(value) => updateEditFormData("rate", value)}
                                 keyboardType="decimal-pad"
+                                editable={!editSelectedUser?.stickyRateEnabled}
                             />
                         </View>
                     </View>

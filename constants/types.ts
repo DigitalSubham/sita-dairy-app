@@ -84,6 +84,7 @@ export interface Customer extends BaseUser {
   morningMilk?: string;
   eveningMilk?: string;
   milkRate?: string;
+  stickyRateEnabled?: boolean;
   positionNo?: number;
   status?: boolean;
 }
@@ -104,6 +105,7 @@ export interface User extends BaseUser {
   milkRate?: string;
   morningMilk?: string;
   eveningMilk?: string;
+  stickyRateEnabled?: boolean;
 }
 
 export interface PaymentRequest extends BaseTransaction {
