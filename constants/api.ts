@@ -36,6 +36,8 @@ export const api = {
   walletStatement: `${BASE_URL}/wallet/statement`,
   walletCashPayment: `${BASE_URL}/wallet/cash-payment`,
   walletTopupInitiate: `${BASE_URL}/wallet/upi-topup/initiate`,
+  // Android-only native UPI intent flow — see AddAmountModal.tsx.
+  walletTopupInitiateSdk: `${BASE_URL}/wallet/upi-topup/initiate-sdk`,
   walletTopupReverify: `${BASE_URL}/wallet/upi-topup`,
 
   rateChart: `${BASE_URL}/ratechart`,

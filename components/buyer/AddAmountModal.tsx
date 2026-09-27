@@ -4,6 +4,7 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import PhonePePaymentSDK from "react-native-phonepe-pg";
 import {
   ActivityIndicator,
   AppState,
@@ -74,6 +75,157 @@ const AddAmountModal: React.FC<AddAmountModalProps> = ({
 
   const isProcessing = stage !== "input";
 
+  // Marks an error as "already has a user-facing message" so the catch block
+  // in handlePay shows it as-is instead of prefixing it with the generic
+  // "failed to start" copy — mirrors the original inline `data.success`
+  // check's behavior for both initiate variants below.
+  const initiateFailure = (message: string) => {
+    const err = new Error(message) as Error & { initiateFailure: true };
+    err.initiateFailure = true;
+    return err;
+  };
+
+  // iOS, and the fallback everywhere else: PhonePe's hosted checkout page,
+  // opened in a plain browser tab so it can hand off to an installed UPI app
+  // itself. Returns the merchantOrderId to reverify against once the user is
+  // back.
+  const payWithHostedCheckout = async (amountNum: number): Promise<string> => {
+    // Resolved per-environment: an "exp://<lan-ip>:port/--/..." URL that Expo Go
+    // can actually handle while developing, or the app's own "sitadairy://..."
+    // scheme in a standalone/EAS build. Sent to the backend so PhonePe redirects
+    // back to whichever of those is actually reachable right now.
+    const returnUrl = Linking.createURL("payment-status");
+
+    const response = await fetch(api.walletTopupInitiate, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ amount: amountNum, redirectUrl: returnUrl }),
+    });
+    const data = await response.json();
+    if (!data.success) {
+      throw initiateFailure(
+        data.message || t("payments.topup_failed_to_start"),
+      );
+    }
+
+    const { redirectUrl, merchantOrderId } = data;
+
+    // A plain browser tab (not the sandboxed "auth session" browser) is required
+    // so the checkout page can hand off to an installed UPI app. That means we
+    // can't rely on the browser call itself to tell us when the user is done —
+    // on Android it resolves the instant the tab opens. So we wait on whichever
+    // of these happens first: the redirect (Linking event, once PhonePe navigates
+    // back to returnUrl), or the user tapping "I've completed the payment" below
+    // as a manual fallback in case the redirect is slow or doesn't fire.
+    safeCall(() => WebBrowser.openBrowserAsync(redirectUrl));
+
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      // The deep-link "url" event isn't reliably delivered once the Custom
+      // Tab hands control back to the app (Android in particular), which
+      // left this stuck on "Opening UPI payment..." until the user manually
+      // closed the modal. AppState going back to "active" after the app was
+      // backgrounded (i.e. the Custom Tab/UPI app closed and we're back) is
+      // a much more reliable "user is back" signal, so it doubles as a
+      // fallback — whichever of the two fires first wins.
+      let hasLeftForeground = AppState.currentState !== "active";
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        linkingSubscription.remove();
+        appStateSubscription.remove();
+        finishWaitRef.current = null;
+        resolve();
+      };
+      finishWaitRef.current = finish;
+      const linkingSubscription = Linking.addEventListener(
+        "url",
+        ({ url }) => {
+          if (url.startsWith(returnUrl)) {
+            finish();
+          }
+        },
+      );
+      const appStateSubscription = AppState.addEventListener(
+        "change",
+        (nextState) => {
+          if (nextState !== "active") {
+            hasLeftForeground = true;
+            return;
+          }
+          if (hasLeftForeground) {
+            finish();
+          }
+        },
+      );
+    });
+    safeCall(() => WebBrowser.dismissBrowser());
+
+    return merchantOrderId;
+  };
+
+  // Android only: PhonePe's native SDK order flow. startTransaction() opens
+  // the OS-level UPI app chooser directly — no browser tab involved. See
+  // initiateUpiTopUpSdk/createPhonePeSdkOrder and doc/payment-plan.md Phase 5
+  // in the backend repo for the counterpart on that side.
+  const payWithNativeUpi = async (amountNum: number): Promise<string> => {
+    const response = await fetch(api.walletTopupInitiateSdk, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ amount: amountNum }),
+    });
+    const data = await response.json();
+    if (!data.success) {
+      throw initiateFailure(
+        data.message || t("payments.topup_failed_to_start"),
+      );
+    }
+
+    const {
+      token: orderToken,
+      phonepeOrderId,
+      merchantId,
+      environment,
+      merchantOrderId,
+    } = data;
+
+    // flowId must be alphanumeric with no special characters per PhonePe's
+    // SDK docs; merchantOrderId (a nanoid) can contain "-"/"_", so strip those.
+    const flowId = String(merchantOrderId).replace(/[^a-zA-Z0-9]/g, "");
+    const initialized = await PhonePePaymentSDK.init(
+      environment,
+      merchantId,
+      flowId,
+      __DEV__,
+    );
+    if (!initialized) {
+      throw new Error("Failed to initialize PhonePe SDK");
+    }
+
+    // The SDK's own result is just a UI-flow signal (did the sheet close
+    // normally, did the user back out?) — never proof of payment. Same as
+    // the hosted-checkout flow above, the wallet is only credited once
+    // /reverify (or the webhook) confirms the order against PhonePe's
+    // servers, so its status/error fields aren't inspected here.
+    await PhonePePaymentSDK.startTransaction(
+      JSON.stringify({
+        orderId: phonepeOrderId,
+        merchantId,
+        token: orderToken,
+        paymentMode: { type: "PAY_PAGE" },
+      }),
+      null,
+    );
+
+    return merchantOrderId;
+  };
+
   const handlePay = async () => {
     if (!token) return;
     const amountNum = Number(amount);
@@ -85,79 +237,10 @@ const AddAmountModal: React.FC<AddAmountModalProps> = ({
     setError("");
     setStage("redirecting");
     try {
-      // Resolved per-environment: an "exp://<lan-ip>:port/--/..." URL that Expo Go
-      // can actually handle while developing, or the app's own "sitadairy://..."
-      // scheme in a standalone/EAS build. Sent to the backend so PhonePe redirects
-      // back to whichever of those is actually reachable right now.
-      const returnUrl = Linking.createURL("payment-status");
-
-      const response = await fetch(api.walletTopupInitiate, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ amount: amountNum, redirectUrl: returnUrl }),
-      });
-      const data = await response.json();
-      if (!data.success) {
-        setError(data.message || t("payments.topup_failed_to_start"));
-        setStage("input");
-        return;
-      }
-
-      const { redirectUrl, merchantOrderId } = data;
-
-      // A plain browser tab (not the sandboxed "auth session" browser) is required
-      // so the checkout page can hand off to an installed UPI app. That means we
-      // can't rely on the browser call itself to tell us when the user is done —
-      // on Android it resolves the instant the tab opens. So we wait on whichever
-      // of these happens first: the redirect (Linking event, once PhonePe navigates
-      // back to returnUrl), or the user tapping "I've completed the payment" below
-      // as a manual fallback in case the redirect is slow or doesn't fire.
-      safeCall(() => WebBrowser.openBrowserAsync(redirectUrl));
-
-      await new Promise<void>((resolve) => {
-        let settled = false;
-        // The deep-link "url" event isn't reliably delivered once the Custom
-        // Tab hands control back to the app (Android in particular), which
-        // left this stuck on "Opening UPI payment..." until the user manually
-        // closed the modal. AppState going back to "active" after the app was
-        // backgrounded (i.e. the Custom Tab/UPI app closed and we're back) is
-        // a much more reliable "user is back" signal, so it doubles as a
-        // fallback — whichever of the two fires first wins.
-        let hasLeftForeground = AppState.currentState !== "active";
-        const finish = () => {
-          if (settled) return;
-          settled = true;
-          linkingSubscription.remove();
-          appStateSubscription.remove();
-          finishWaitRef.current = null;
-          resolve();
-        };
-        finishWaitRef.current = finish;
-        const linkingSubscription = Linking.addEventListener(
-          "url",
-          ({ url }) => {
-            if (url.startsWith(returnUrl)) {
-              finish();
-            }
-          },
-        );
-        const appStateSubscription = AppState.addEventListener(
-          "change",
-          (nextState) => {
-            if (nextState !== "active") {
-              hasLeftForeground = true;
-              return;
-            }
-            if (hasLeftForeground) {
-              finish();
-            }
-          },
-        );
-      });
-      safeCall(() => WebBrowser.dismissBrowser());
+      const merchantOrderId =
+        Platform.OS === "android"
+          ? await payWithNativeUpi(amountNum)
+          : await payWithHostedCheckout(amountNum);
 
       setStage("verifying");
       const reverifyResponse = await fetch(
@@ -184,9 +267,11 @@ const AddAmountModal: React.FC<AddAmountModalProps> = ({
       finishWaitRef.current = null;
       setStage("input");
       setError(
-        err?.message
-          ? `${t("payments.topup_failed_to_start")}: ${err.message}`
-          : t("payments.topup_failed_to_start"),
+        err?.initiateFailure
+          ? err.message
+          : err?.message
+            ? `${t("payments.topup_failed_to_start")}: ${err.message}`
+            : t("payments.topup_failed_to_start"),
       );
     }
   };
