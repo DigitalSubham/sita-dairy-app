@@ -1,4 +1,5 @@
 import AuthTemplate from "@/components/auth/AuthTemplate";
+import { BRAND_NAME } from "@/constants/brand";
 import { Feather, FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useRef, useState } from "react";
@@ -161,7 +162,7 @@ export default function Signup() {
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.signupButtonText}>{t("auth.join_sita_dairy")}</Text>
+            <Text style={styles.signupButtonText}>{t("auth.join_sita_dairy", { brandName: BRAND_NAME })}</Text>
           )}
         </TouchableOpacity>
 

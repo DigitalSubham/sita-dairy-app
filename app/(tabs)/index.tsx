@@ -3,6 +3,7 @@ import Icon from "@/components/common/Icon";
 import Summary from "@/components/customer/Summary";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
+import { BRAND_NAME, SUPPORT_WHATSAPP_NUMBER } from "@/constants/brand";
 import { FarmerDashboardData } from "@/constants/types";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -14,6 +15,7 @@ import { format, parseISO } from "date-fns";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Linking,
@@ -43,6 +45,7 @@ export default function SellerDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -107,8 +110,9 @@ export default function SellerDashboard() {
       withSpring(1.1),
       withSpring(1)
     );
+    const message = t("common.whatsapp_help_message", { brandName: BRAND_NAME });
     Linking.openURL(
-      "https://wa.me/918892293899?text=Hello,%20I%20need%20support%20with%20the%20dairy%20management%20app."
+      `https://wa.me/${SUPPORT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
     );
   };
 

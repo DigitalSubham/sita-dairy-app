@@ -1,20 +1,19 @@
+import { BRAND_NAME, SUPPORT_WHATSAPP_NUMBER } from "@/constants/brand";
 import { FontAwesome } from "@expo/vector-icons";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Linking, Platform, StyleSheet, TouchableOpacity } from "react-native";
 
-const SUPPORT_PHONE_NUMBER = "918892293899";
-
 export const FloatingWhatsAppButton: React.FC = () => {
     const { t } = useTranslation();
 
     const openWhatsApp = () => {
-        const message = t("common.whatsapp_help_message");
+        const message = t("common.whatsapp_help_message", { brandName: BRAND_NAME });
 
         const url =
             Platform.OS === "android"
-                ? `whatsapp://send?phone=${SUPPORT_PHONE_NUMBER}&text=${encodeURIComponent(message)}`
-                : `https://api.whatsapp.com/send?phone=${SUPPORT_PHONE_NUMBER}&text=${encodeURIComponent(message)}`;
+                ? `whatsapp://send?phone=${SUPPORT_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`
+                : `https://api.whatsapp.com/send?phone=${SUPPORT_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
 
         Linking.canOpenURL(url)
             .then((supported) => {

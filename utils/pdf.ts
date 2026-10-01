@@ -1,4 +1,5 @@
 import { MilkEntry } from "@/components/admin/milkRecords/milkBuyRecords";
+import { BRAND_NAME } from "@/constants/brand";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
@@ -369,7 +370,7 @@ export function generateMilkEntriesHTML2(
 
     <div class="footer">
         <p>This is a computer-generated report. No signature required.</p>
-        <p>Report generated from Milk Collection Management System</p>
+        <p>Report generated from ${BRAND_NAME} Management System</p>
     </div>
 </body>
 </html>

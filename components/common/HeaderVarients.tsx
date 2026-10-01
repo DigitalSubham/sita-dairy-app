@@ -32,7 +32,10 @@ type RearrangeHeaderProps = {
 type MilkEntryHeaderProps = {
     entryType: string;
     setEntryType: (type: string) => void;
-    entryData?: MilkEntry[]; // Optional, if you want to pass data for export
+    // Called on export tap to fetch the *complete* filtered result set from
+    // whichever records screen is active — not just whatever page(s) it has
+    // currently loaded on screen (see that screen's own pagination).
+    onExportRequest?: () => Promise<MilkEntry[]>;
     walletAmount?: number | null;
 };
 interface ProfileProps {
@@ -174,7 +177,7 @@ export const MilkEntryHeader = ({ entryType, setEntryType, walletAmount }: MilkE
 }
 
 // Records Header with filter options
-export const RecordsHeader = ({ entryType, setEntryType, entryData }: MilkEntryHeaderProps) => {
+export const RecordsHeader = ({ entryType, setEntryType, onExportRequest }: MilkEntryHeaderProps) => {
     const [loading, setLoading] = useState(false);
     const actions: HeaderAction[] = [
         loading
@@ -190,7 +193,8 @@ export const RecordsHeader = ({ entryType, setEntryType, entryData }: MilkEntryH
                     void (async () => {
                         setLoading(true);
                         try {
-                            await onExportPDF(entryData || []);
+                            const entries = (await onExportRequest?.()) || [];
+                            await onExportPDF(entries);
                         } finally {
                             setLoading(false);
                         }

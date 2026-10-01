@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "@/constants/brand";
 import { LANGUAGE_KEY } from "@/constants/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
@@ -47,7 +48,7 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
                                 style={{ width: 200, height: 200 }}
                             />
                         </View>
-                        <Text style={styles.logoText}>{t("auth.sita_dairy")}</Text>
+                        <Text style={styles.logoText}>{t("auth.sita_dairy", { brandName: BRAND_NAME })}</Text>
                         <Text style={styles.logoSubtext}>{t("auth.management_system")}</Text>
                     </View>
 
@@ -55,7 +56,7 @@ const AuthTemplate: React.FC<AuthTemplateProps> = ({ children }) => {
 
                     <View style={styles.footerContainer}>
                         <Text style={styles.footerText}>
-                            © 2026 {t("auth.sita_dairy_management_system")}
+                            © 2026 {t("auth.sita_dairy_management_system", { brandName: BRAND_NAME })}
                         </Text>
                     </View>
                 </ScrollView>

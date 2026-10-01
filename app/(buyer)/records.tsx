@@ -15,6 +15,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    ActivityIndicator,
     Alert,
     Dimensions,
     FlatList,
@@ -32,6 +33,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
+const PAGE_LIMIT = 20;
 
 export default function EnhancedCustomerMilkRecords() {
     const { t } = useTranslation();
@@ -39,7 +41,11 @@ export default function EnhancedCustomerMilkRecords() {
     const [filteredEntries, setFilteredEntries] = useState<MilkRecord[]>([]);
     const { user } = useAuth()
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [activeFilters, setActiveFilters] = useState<FilterParams>({});
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -94,9 +100,14 @@ export default function EnhancedCustomerMilkRecords() {
         setFilteredEntries(filtered);
     }, [searchQuery, allEntries]);
 
-    // Fetch entries with filters
-    const fetchEntries = async (filters: FilterParams) => {
-        setLoading(true);
+    // Fetch entries with filters — paginated; pass `append: true` to load the
+    // next page onto the end of the list (infinite scroll).
+    const fetchEntries = async (
+        filters: FilterParams,
+        { append = false, page: pageToFetch = 1 }: { append?: boolean; page?: number } = {},
+    ) => {
+        if (append) setLoadingMore(true);
+        else setLoading(true);
         try {
             const storedToken = await AsyncStorage.getItem("token");
             if (!storedToken) {
@@ -114,6 +125,8 @@ export default function EnhancedCustomerMilkRecords() {
             if (user?.id) queryParams.append("userId", user?.id || "");
             if (filters.shift) queryParams.append("shift", filters.shift);
             queryParams.append("entryType", "Sell");
+            queryParams.append("page", String(pageToFetch));
+            queryParams.append("limit", String(PAGE_LIMIT));
             const response = await fetch(`${api.getRecords}?${queryParams}`, {
                 method: "GET",
                 headers: {
@@ -121,17 +134,25 @@ export default function EnhancedCustomerMilkRecords() {
                 },
             });
             const data = await response.json();
-            const recordsData = data.data || [];
+            const recordsData: MilkRecord[] = data.data || [];
 
-            setAllEntries(recordsData);
-            setFilteredEntries(recordsData);
+            setAllEntries((prev) => (append ? [...prev, ...recordsData] : recordsData));
+            setPage(pageToFetch);
+            setHasMore(pageToFetch * (data.limit || PAGE_LIMIT) < (data.totalCount || 0));
+            setActiveFilters(filters);
         } catch (error) {
             console.error("Failed to fetch entries:", error);
             Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
         } finally {
             setLoading(false);
+            setLoadingMore(false);
             setRefreshing(false);
         }
+    };
+
+    const loadMoreEntries = () => {
+        if (loading || loadingMore || !hasMore) return;
+        fetchEntries(activeFilters, { append: true, page: page + 1 });
     };
 
 
@@ -346,6 +367,13 @@ export default function EnhancedCustomerMilkRecords() {
                             tintColor="#0ea5e9"
                             colors={["#0ea5e9"]}
                         />
+                    }
+                    onEndReached={loadMoreEntries}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore ? (
+                            <ActivityIndicator style={styles.loadMoreIndicator} size="small" color="#0ea5e9" />
+                        ) : null
                     }
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
@@ -594,6 +622,9 @@ const styles = StyleSheet.create({
     entriesList: {
         paddingHorizontal: 12,
         paddingBottom: 20,
+    },
+    loadMoreIndicator: {
+        paddingVertical: 16,
     },
     entryRow: {
         justifyContent: "space-between",

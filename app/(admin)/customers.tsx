@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
 import type React from "react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
@@ -35,9 +35,20 @@ const ImprovedCustomersList: React.FC = () => {
   const [buyerRateModalVisible, setBuyerRateModalVisible] = useState<Customer | null>(null)
   const { t } = useTranslation()
 
-  // Use the hook with role filter
-  const { customers, loading, refreshing, refresh, token } = useCustomers({
+  // Debounced so typing doesn't fire a request per keystroke — search now
+  // runs server-side (paginating client-side over only the loaded pages would
+  // miss matches that haven't been fetched yet).
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchText.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchText])
+
+  // Use the hook with role filter + server-side search + paginated loading
+  const { customers, loading, refreshing, refresh, token, totalCount, loadingMore, loadMore } = useCustomers({
     role: selectedRole === "All" ? undefined : selectedRole,
+    search: debouncedSearch || undefined,
+    pageSize: 20,
   })
 
   // State for managing role changes and saving
@@ -45,30 +56,6 @@ const ImprovedCustomersList: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const router = useRouter();
-
-  // Filter customers based on search text
-  const filteredCustomers = useMemo(() => {
-    if (!Array.isArray(customers)) return [];
-
-    const trimmedSearch = searchText?.trim()?.toLowerCase();
-    if (!trimmedSearch) return customers;
-
-    return customers.filter((customer) => {
-      if (!customer) return false;
-
-      const name = customer.name?.toLowerCase() || "";
-      const mobile = String(customer.mobile || "").toLowerCase();
-      const dairy = customer.dailryName?.toLowerCase() || "";
-      const id = customer.id?.toLowerCase() || "";
-
-      return (
-        name.includes(trimmedSearch) ||
-        mobile.includes(trimmedSearch) ||
-        dairy.includes(trimmedSearch) ||
-        id.includes(trimmedSearch)
-      );
-    });
-  }, [customers, searchText]);
 
 
   useFocusEffect(
@@ -268,7 +255,7 @@ const ImprovedCustomersList: React.FC = () => {
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="cow" size={14} color="#64748b" />
                 <Text style={styles.infoText} numberOfLines={1}>
-                  {item.dailryName}
+                  {item.dailryName || t("common.not_provided")}
                 </Text>
               </View>
             </View>
@@ -347,13 +334,13 @@ const ImprovedCustomersList: React.FC = () => {
       <View style={styles.resultsInfo}>
         <Text style={styles.resultsText}>
           {searchText
-            ? `${filteredCustomers.length} results for "${searchText}"`
-            : `${filteredCustomers.length} ${selectedRole === "All" ? "users" : selectedRole.toLowerCase() + "s"} found`}
+            ? `${totalCount} results for "${searchText}"`
+            : `${totalCount} ${selectedRole === "All" ? "users" : selectedRole.toLowerCase() + "s"} found`}
         </Text>
       </View>
 
       <FlatList
-        data={filteredCustomers}
+        data={customers}
         renderItem={renderCustomerItem}
         keyExtractor={(item) => item._id}
         contentContainerStyle={[styles.listContainer, hasChanges && styles.listContainerWithHeader]}
@@ -362,6 +349,13 @@ const ImprovedCustomersList: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator style={styles.loadMoreIndicator} size="small" color="#3b82f6" />
+          ) : null
+        }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={48} color="#94a3b8" />
@@ -473,6 +467,9 @@ const styles = StyleSheet.create({
   },
   listContainerWithHeader: {
     paddingTop: 8,
+  },
+  loadMoreIndicator: {
+    paddingVertical: 16,
   },
   separator: {
     height: 12,

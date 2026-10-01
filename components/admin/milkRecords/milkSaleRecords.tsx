@@ -8,9 +8,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
 import { useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    ActivityIndicator,
     Alert,
     FlatList,
     Image,
@@ -37,17 +38,25 @@ interface FilterParams {
     shift?: "Morning" | "Evening";
 }
 
+const PAGE_LIMIT = 20;
+
 type MilkSaleRecordsProps = {
-    onEntriesChange?: (entries: MilkEntry[]) => void;
+    // See the matching prop on MilkBuyRecords — lets the parent's export
+    // button fetch the complete filtered range, bypassing on-screen pagination.
+    registerExportHandler?: (fn: () => Promise<MilkEntry[]>) => void;
 }
 
-export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProps) {
+export default function MilkSaleRecords({ registerExportHandler }: MilkSaleRecordsProps) {
     const { t } = useTranslation();
     const [allEntries, setAllEntries] = useState<MilkEntry[]>([]);
     const [filteredEntries, setFilteredEntries] = useState<MilkEntry[]>([]);
-    const { customers } = useCustomers({ role: "Buyer" });
+    const { customers } = useCustomers({ role: "Buyer", activeOnly: true });
 
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [activeFilters, setActiveFilters] = useState<FilterParams>({});
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -69,6 +78,20 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
 
     // Modal states
     const [showUserModal, setShowUserModal] = useState(false);
+    const [userModalSearch, setUserModalSearch] = useState("");
+    useEffect(() => {
+        if (!showUserModal) setUserModalSearch("");
+    }, [showUserModal]);
+    const visibleBuyers = useMemo(() => {
+        const query = userModalSearch.trim().toLowerCase();
+        if (!query) return customers;
+        return customers.filter((item) => {
+            const name = item.name?.toLowerCase() || "";
+            const mobile = String(item.mobile || "").toLowerCase();
+            const id = item.id?.toLowerCase() || "";
+            return name.includes(query) || mobile.includes(query) || id.includes(query);
+        });
+    }, [customers, userModalSearch]);
     const [showDateModal, setShowDateModal] = useState(false);
     const [showShiftModal, setShowShiftModal] = useState(false);
     const [showDateRangeModal, setShowDateRangeModal] = useState(false);
@@ -115,9 +138,34 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
         setFilteredEntries(filtered);
     }, [searchQuery, allEntries]);
 
-    // Fetch entries with filters
-    const fetchEntries = async (filters: FilterParams) => {
-        setLoading(true);
+    // Builds the query the backend's opt-in pagination understands (see
+    // sita-dairy-backend's getSellMilkEntriesByUser) — omit page/limit to get
+    // everything matching the filter back in one shot (used for export).
+    const buildQueryParams = (
+        filters: FilterParams,
+        pagination?: { page: number; limit: number },
+    ) => {
+        const queryParams = new URLSearchParams();
+        if (filters.startDate) queryParams.append("startDate", filters.startDate);
+        if (filters.endDate) queryParams.append("endDate", filters.endDate);
+        if (filters.date) queryParams.append("date", filters.date);
+        if (filters.userId) queryParams.append("userId", filters.userId);
+        if (filters.shift) queryParams.append("shift", filters.shift);
+        if (pagination) {
+            queryParams.append("page", String(pagination.page));
+            queryParams.append("limit", String(pagination.limit));
+        }
+        return queryParams;
+    };
+
+    // Fetch entries with filters — paginated for on-screen display. Pass
+    // `append: true` to load the next page onto the end of the list.
+    const fetchEntries = async (
+        filters: FilterParams,
+        { append = false, page: pageToFetch = 1 }: { append?: boolean; page?: number } = {},
+    ) => {
+        if (append) setLoadingMore(true);
+        else setLoading(true);
         try {
             const storedToken = await AsyncStorage.getItem("token");
             if (!storedToken) {
@@ -129,12 +177,10 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
             }
 
             const parsedToken = JSON.parse(storedToken);
-            const queryParams = new URLSearchParams();
-            if (filters.startDate) queryParams.append("startDate", filters.startDate);
-            if (filters.endDate) queryParams.append("endDate", filters.endDate);
-            if (filters.date) queryParams.append("date", filters.date);
-            if (filters.userId) queryParams.append("userId", filters.userId);
-            if (filters.shift) queryParams.append("shift", filters.shift);
+            const queryParams = buildQueryParams(filters, {
+                page: pageToFetch,
+                limit: PAGE_LIMIT,
+            });
 
             const response = await fetch(`${api.milkSales}?${queryParams}`, {
                 method: "GET",
@@ -143,15 +189,42 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
                 },
             });
             const data = await response.json();
-            setAllEntries(data.data || []);
-            setFilteredEntries(data.data || []);
-            onEntriesChange?.(data.data || []);
+            const rows: MilkEntry[] = data.data || [];
+            setAllEntries((prev) => (append ? [...prev, ...rows] : rows));
+            setPage(pageToFetch);
+            setHasMore(pageToFetch * (data.limit || PAGE_LIMIT) < (data.totalCount || 0));
+            setActiveFilters(filters);
         } catch {
             Alert.alert(t("common.error"), t("records.failed_fetch_entries"));
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
+
+    const loadMoreEntries = () => {
+        if (loading || loadingMore || !hasMore) return;
+        fetchEntries(activeFilters, { append: true, page: page + 1 });
+    };
+
+    // Bypasses on-screen pagination — the PDF export needs the complete
+    // filtered range, not just the pages scrolled into view.
+    const fetchAllForExport = useCallback(async (): Promise<MilkEntry[]> => {
+        const storedToken = await AsyncStorage.getItem("token");
+        if (!storedToken) return [];
+        const parsedToken = JSON.parse(storedToken);
+        const queryParams = buildQueryParams(activeFilters);
+        const response = await fetch(`${api.milkSales}?${queryParams}`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${parsedToken}` },
+        });
+        const data = await response.json();
+        return data.data || [];
+    }, [activeFilters]);
+
+    useEffect(() => {
+        registerExportHandler?.(fetchAllForExport);
+    }, [registerExportHandler, fetchAllForExport]);
 
     const handleDeleteEntry = async (entryId: string) => {
         setIsDeleting(true);
@@ -437,6 +510,13 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
                     columnWrapperStyle={styles.entryRow}
                     contentContainerStyle={styles.entriesList}
                     showsVerticalScrollIndicator={false}
+                    onEndReached={loadMoreEntries}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore ? (
+                            <ActivityIndicator style={styles.loadMoreIndicator} size="small" color="#0ea5e9" />
+                        ) : null
+                    }
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <MaterialIcons name="inbox" size={48} color="#cbd5e1" />
@@ -458,6 +538,21 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
                                 <MaterialIcons name="close" size={20} color="#64748b" />
                             </TouchableOpacity>
                         </View>
+                        <View style={styles.modalSearchContainer}>
+                            <MaterialIcons name="search" size={18} color="#94a3b8" />
+                            <TextInput
+                                style={styles.modalSearchInput}
+                                placeholder={t("common.search")}
+                                value={userModalSearch}
+                                onChangeText={setUserModalSearch}
+                                placeholderTextColor="#94a3b8"
+                            />
+                            {userModalSearch.length > 0 && (
+                                <TouchableOpacity onPress={() => setUserModalSearch("")}>
+                                    <MaterialIcons name="clear" size={18} color="#94a3b8" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
                         <TouchableOpacity
                             style={[
                                 styles.optionItem,
@@ -471,8 +566,11 @@ export default function MilkSaleRecords({ onEntriesChange }: MilkSaleRecordsProp
                             <Text style={styles.optionText}>{t("records.all_buyers")}</Text>
                         </TouchableOpacity>
                         <FlatList
-                            data={customers}
+                            data={visibleBuyers}
                             keyExtractor={(item) => item._id}
+                            ListEmptyComponent={
+                                <Text style={styles.modalEmptyText}>{t("common.no_results_found")}</Text>
+                            }
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     style={[
@@ -729,6 +827,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingBottom: 20,
     },
+    loadMoreIndicator: {
+        paddingVertical: 16,
+    },
     entryRow: {
         justifyContent: "space-between",
         paddingHorizontal: 4,
@@ -823,6 +924,32 @@ const styles = StyleSheet.create({
     optionText: {
         fontSize: 14,
         color: "#334155",
+    },
+    modalSearchContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginHorizontal: 16,
+        marginTop: 12,
+        marginBottom: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        backgroundColor: "#f8fafc",
+    },
+    modalSearchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: "#334155",
+        padding: 0,
+    },
+    modalEmptyText: {
+        textAlign: "center",
+        color: "#94a3b8",
+        fontSize: 14,
+        paddingVertical: 20,
     },
     dateInput: {
         borderWidth: 1,

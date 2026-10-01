@@ -1,4 +1,5 @@
 import AuthTemplate from "@/components/auth/AuthTemplate";
+import { BRAND_NAME } from "@/constants/brand";
 import { POLICY_LINKS } from "@/constants/policies";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
@@ -89,7 +90,7 @@ export default function Login() {
   return (
     <AuthTemplate>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>{t("auth.login_sita_dairy")}</Text>
+        <Text style={styles.title}>{t("auth.login_sita_dairy", { brandName: BRAND_NAME })}</Text>
         <Text style={styles.subtitle} > {t("auth.join_our_dairy_community")}</Text>
 
         {error && <Text style={styles.errorText}>{error}</Text>}
@@ -154,7 +155,7 @@ export default function Login() {
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.signupButtonText}>{t("auth.login_sita_dairy")}</Text>
+            <Text style={styles.signupButtonText}>{t("auth.login_sita_dairy", { brandName: BRAND_NAME })}</Text>
           )}
         </TouchableOpacity>
 

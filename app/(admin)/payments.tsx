@@ -44,7 +44,7 @@ export default function PaymentRequestsScreen(): React.ReactElement {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { customers, token } = useCustomers({ role: roleFilter });
+  const { customers, token } = useCustomers({ role: roleFilter, activeOnly: true });
 
   const roleLabel = (role: PayableRole): string => {
     switch (role) {

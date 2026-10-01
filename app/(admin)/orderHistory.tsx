@@ -47,7 +47,7 @@ export default function AdminOrderHistoryScreen(): React.ReactElement {
     const [totalCount, setTotalCount] = useState(0);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    const { customers } = useCustomers({});
+    const { customers } = useCustomers({ activeOnly: true });
 
     const buildOrdersUrl = (pageNum: number) => {
         const params = new URLSearchParams({

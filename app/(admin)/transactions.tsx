@@ -48,7 +48,7 @@ export default function TransactionsScreen(): React.ReactElement {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { customers } = useCustomers({});
+  const { customers } = useCustomers({ activeOnly: true });
 
   const buildStatementUrl = (pageNum: number) => {
     const params = new URLSearchParams({
