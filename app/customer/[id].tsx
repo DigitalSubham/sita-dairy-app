@@ -1,3 +1,7 @@
+import EditCustomerModal, {
+  EditableCustomer,
+} from "@/components/admin/users/EditCustomerModal";
+import ResetPasswordModal from "@/components/admin/users/ResetPasswordModal";
 import { CustomHeader } from "@/components/common/CustomHeader";
 import DairyLoadingScreen from "@/components/Loading";
 import { api } from "@/constants/api";
@@ -40,6 +44,8 @@ interface User {
   profilePic: string;
   mobile: string;
   address: string;
+  dailryName?: string;
+  collectionCenter?: string;
   latitude?: number;
   longitude?: number;
   allowNegativeBalance?: boolean;
@@ -56,6 +62,8 @@ export default function CustomerDetailsScreen() {
   const [isSettingLocation, setIsSettingLocation] = useState<boolean>(false);
   const [isTogglingNegativeBalance, setIsTogglingNegativeBalance] = useState<boolean>(false);
   const [isTogglingStatus, setIsTogglingStatus] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState<boolean>(false);
 
   const fetchUserData = useCallback(async () => {
     const storedToken = await AsyncStorage.getItem("token");
@@ -290,6 +298,20 @@ export default function CustomerDetailsScreen() {
         title={t("users.customer_details")}
         showBackButton
         showMenuButton={false}
+        actions={[
+          {
+            icon: "edit",
+            iconFamily: "MaterialIcons",
+            label: t("users.edit_profile"),
+            onPress: () => setShowEditModal(true),
+          },
+          {
+            icon: "vpn-key",
+            iconFamily: "MaterialIcons",
+            label: t("users.reset_password"),
+            onPress: () => setShowResetPasswordModal(true),
+          },
+        ]}
       />
       <ScrollView
         style={styles.container}
@@ -328,7 +350,9 @@ export default function CustomerDetailsScreen() {
 
             <View style={styles.profileInfo}>
               <Text style={styles.name}>{userData.name}</Text>
-              <Text style={styles.fatherName}>{userData.fatherName}</Text>
+              <Text style={styles.fatherName}>
+                {userData.fatherName || t("common.not_provided")}
+              </Text>
               <Text style={styles.mobile}>{userData.mobile}</Text>
 
               <View style={styles.badgeContainer}>
@@ -484,7 +508,9 @@ export default function CustomerDetailsScreen() {
               />
               <Text style={styles.infoLabel}>Address</Text>
             </View>
-            <Text style={styles.infoValue}>{userData.address}</Text>
+            <Text style={styles.infoValue}>
+              {userData.address || t("common.not_provided")}
+            </Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -644,6 +670,18 @@ export default function CustomerDetailsScreen() {
           </Animated.View>
         </View>
       </ScrollView>
+
+      <EditCustomerModal
+        visible={showEditModal ? (userData as EditableCustomer) : null}
+        onClose={() => setShowEditModal(false)}
+        onSaved={(fields) =>
+          setUserData((prev) => (prev ? { ...prev, ...fields } : prev))
+        }
+      />
+      <ResetPasswordModal
+        visible={showResetPasswordModal ? userData : null}
+        onClose={() => setShowResetPasswordModal(false)}
+      />
     </SafeAreaView>
   );
 }

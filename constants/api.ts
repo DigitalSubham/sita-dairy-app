@@ -11,6 +11,9 @@ export const api = {
   milkSales: `${BASE_URL}/milk/sell`,
   getUser: `${BASE_URL}/user/getSingleCustomerDetail`,
   updateUser: `${BASE_URL}/user/update`,
+  // Admin resets another user's password — no old password required (see
+  // updateAdminPassword, which is the self-service "change my own password").
+  adminResetPassword: `${BASE_URL}/user/admin-reset-password`,
 
   getRecords: `${BASE_URL}/milk/get`,
 

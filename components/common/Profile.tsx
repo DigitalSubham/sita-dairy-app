@@ -33,15 +33,15 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
   const { user, updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [editedUser, setEditedUser] = useState({
-    id: user?.id || "82102",
-    name: user?.name || "Good Boy",
-    mobile: user?.mobile || "8210243998",
-    collectionCenter: user?.collectionCenter || "Bad Boy",
-    dailryName: user?.dailryName || "dailryName",
-    fatherName: user?.fatherName || "fatherName",
+    id: user?.id || "",
+    name: user?.name || "",
+    mobile: user?.mobile || "",
+    collectionCenter: user?.collectionCenter || "",
+    dailryName: user?.dailryName || "",
+    fatherName: user?.fatherName || "",
     role: user?.role || "Admin",
     isVerified: user?.isVerified || false,
-    createdAt: user?.createdAt || "2026-05-20T17:07:32.815Z",
+    createdAt: user?.createdAt || "",
     profilePic:
       user?.profilePic ||
       "https://res.cloudinary.com/dskra60sa/image/upload/v1743086699/man_rqv4zk.png",
@@ -60,15 +60,15 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
       // Reset editing state when screen comes into focus
       setIsEditing(false);
       setEditedUser({
-        id: user?.id || "82102",
-        name: user?.name || "Good Boy",
-        mobile: user?.mobile || "8210243998",
-        collectionCenter: user?.collectionCenter || "Bad Boy",
-        dailryName: user?.dailryName || "dailryName",
-        fatherName: user?.fatherName || "fatherName",
+        id: user?.id || "",
+        name: user?.name || "",
+        mobile: user?.mobile || "",
+        collectionCenter: user?.collectionCenter || "",
+        dailryName: user?.dailryName || "",
+        fatherName: user?.fatherName || "",
         role: user?.role || "Admin",
         isVerified: user?.isVerified || false,
-        createdAt: user?.createdAt || "2026-05-20T17:07:32.815Z",
+        createdAt: user?.createdAt || "",
         profilePic:
           user?.profilePic ||
           "https://res.cloudinary.com/dskra60sa/image/upload/v1743086699/man_rqv4zk.png",
@@ -111,7 +111,12 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
       hasErrors = true;
     }
 
-    if (!textRegex.test(editedUser.fatherName)) {
+    // fatherName is optional server-side (customer.modal.js has no `required`
+    // on it) — only validate its format when the user actually entered
+    // something, same pattern as the address check below. It used to always
+    // pass because editedUser.fatherName defaulted to the literal string
+    // "fatherName" rather than "", which masked this ever mattering.
+    if (editedUser.fatherName && !textRegex.test(editedUser.fatherName)) {
       setValidationErrors((prev) => ({
         ...prev,
         fatherName: t("users.enter_valid_fathers_name"),
@@ -208,15 +213,15 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
   const handleCancel = () => {
     // Reset to original values
     setEditedUser({
-      id: user?.id || "82102",
-      name: user?.name || "Good Boy",
-      mobile: user?.mobile || "8210243998",
-      collectionCenter: user?.collectionCenter || "Bad Boy",
-      dailryName: user?.dailryName || "dailryName",
-      fatherName: user?.fatherName || "fatherName",
+      id: user?.id || "",
+      name: user?.name || "",
+      mobile: user?.mobile || "",
+      collectionCenter: user?.collectionCenter || "",
+      dailryName: user?.dailryName || "",
+      fatherName: user?.fatherName || "",
       role: user?.role || "Admin",
       isVerified: user?.isVerified || false,
-      createdAt: user?.createdAt || "2026-05-20T17:07:32.815Z",
+      createdAt: user?.createdAt || "",
       profilePic:
         user?.profilePic ||
         "https://res.cloudinary.com/dskra60sa/image/upload/v1743086699/man_rqv4zk.png",
@@ -265,7 +270,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
   };
 
   function formatDate(createdAt: any) {
+    if (!createdAt) return t("common.not_provided");
     const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return t("common.not_provided");
     const day = String(date.getDate()).padStart(2, "0");
     const monthNames = [
       "January",
@@ -324,7 +331,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             <Text style={styles.userIdLabel}>{t("users.user_id")}</Text>
             <View style={styles.userIdBadge}>
               <FontAwesome name="id-card" size={16} color="#dc2626" />
-              <Text style={styles.userIdText}>#{editedUser.id}</Text>
+              <Text style={styles.userIdText}>
+                {editedUser.id ? `#${editedUser.id}` : t("common.not_provided")}
+              </Text>
             </View>
           </Animated.View>
 
@@ -354,7 +363,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               entering={FadeInUp.duration(300)}
               style={styles.name}
             >
-              {editedUser.name}
+              {editedUser.name || t("common.not_provided")}
             </Animated.Text>
           )}
 
@@ -386,7 +395,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>{t("users.user_id")} ({t("users.non_editable")})</Text>
               <View style={styles.idDisplayContainer}>
-                <Text style={styles.idDisplayText}>#{editedUser.id}</Text>
+                <Text style={styles.idDisplayText}>
+                  {editedUser.id ? `#${editedUser.id}` : t("common.not_provided")}
+                </Text>
                 <View style={styles.lockIcon}>
                   <FontAwesome name="lock" size={12} color="#6b7280" />
                 </View>
@@ -418,7 +429,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                   keyboardType="phone-pad"
                 />
               ) : (
-                <Text style={styles.infoValue}>{editedUser.mobile}</Text>
+                <Text style={styles.infoValue}>
+                  {editedUser.mobile || t("common.not_provided")}
+                </Text>
               )}
               {validationErrors.mobile ? (
                 <Text style={styles.errorText}>{validationErrors.mobile}</Text>
@@ -449,7 +462,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                   placeholderTextColor="#6b7280"
                 />
               ) : (
-                <Text style={styles.infoValue}>{editedUser.fatherName}</Text>
+                <Text style={styles.infoValue}>
+                  {editedUser.fatherName || t("common.not_provided")}
+                </Text>
               )}
               {validationErrors.fatherName ? (
                 <Text style={styles.errorText}>
@@ -487,7 +502,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
                 />
               ) : (
                 <Text style={styles.infoValue}>
-                  {editedUser.address || t("users.data_is_coming")}
+                  {editedUser.address || t("common.not_provided")}
                 </Text>
               )}
               {validationErrors.address ? (
@@ -532,7 +547,9 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>{t("users.dairy_name")} ({t("users.non_editable")})</Text>
               <View style={styles.nonEditableContainer}>
-                <Text style={styles.infoValue}>{editedUser.dailryName}</Text>
+                <Text style={styles.infoValue}>
+                  {editedUser.dailryName || t("common.not_provided")}
+                </Text>
                 <View style={styles.lockIcon}>
                   <FontAwesome name="lock" size={12} color="#6b7280" />
                 </View>
@@ -553,7 +570,7 @@ const ProfileComponent: React.FC<ProfileProps> = ({ isEditing, setIsEditing }) =
               </Text>
               <View style={styles.nonEditableContainer}>
                 <Text style={styles.infoValue}>
-                  {editedUser.collectionCenter}
+                  {editedUser.collectionCenter || t("common.not_provided")}
                 </Text>
                 <View style={styles.lockIcon}>
                   <FontAwesome name="lock" size={12} color="#6b7280" />

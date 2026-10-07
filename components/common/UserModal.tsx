@@ -1,8 +1,8 @@
 import { User } from '@/constants/types';
 import { Feather } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 
 
@@ -19,12 +19,38 @@ type UserModalProps = {
 
 const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSelector, filteredUser, selectedUser, setSelectedUser, updateFormData, weightRef, title }) => {
     const { t } = useTranslation();
+    const [searchText, setSearchText] = useState("");
+
+    // Roster search is client-side: `filteredUser` is already the full active
+    // list for this role (from the dropdown API), not a paginated page, so
+    // there's nothing to round-trip to the server for.
+    useEffect(() => {
+        if (!showUserSelector) setSearchText("");
+    }, [showUserSelector]);
+
+    const visibleUsers = useMemo(() => {
+        const query = searchText.trim().toLowerCase();
+        if (!query) return filteredUser;
+        return filteredUser.filter((item) => {
+            const name = item.name?.toLowerCase() || "";
+            const mobile = String(item.mobile || "").toLowerCase();
+            const id = item.id?.toLowerCase() || "";
+            const collectionCenter = item.collectionCenter?.toLowerCase() || "";
+            return (
+                name.includes(query) ||
+                mobile.includes(query) ||
+                id.includes(query) ||
+                collectionCenter.includes(query)
+            );
+        });
+    }, [filteredUser, searchText]);
+
     return (
         <Modal visible={showUserSelector} animationType="slide" transparent statusBarTranslucent={true}>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{t("records.select_user_count", { title, count: filteredUser.length })}</Text>
+                        <Text style={styles.modalTitle}>{t("records.select_user_count", { title, count: visibleUsers.length })}</Text>
                         <TouchableOpacity onPress={() => {
                             setShowUserSelector(false)
                             setSelectedUser(null)
@@ -32,9 +58,27 @@ const UserModal: React.FC<UserModalProps> = ({ showUserSelector, setShowUserSele
                             <Feather name="x" size={24} color="#64748b" />
                         </TouchableOpacity>
                     </View>
+                    <View style={styles.searchWrapper}>
+                        <Feather name="search" size={16} color="#94a3b8" />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder={t("common.search")}
+                            value={searchText}
+                            onChangeText={setSearchText}
+                            autoCorrect={false}
+                        />
+                        {searchText.length > 0 && (
+                            <TouchableOpacity onPress={() => setSearchText("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Feather name="x-circle" size={16} color="#94a3b8" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                     <FlatList
-                        data={filteredUser}
+                        data={visibleUsers}
                         keyExtractor={(item) => item._id}
+                        ListEmptyComponent={
+                            <Text style={styles.emptyText}>{t("common.no_results_found")}</Text>
+                        }
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 style={[styles.userOption, selectedUser?.id === item.id && styles.userOptionSelected]}
@@ -128,6 +172,32 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
         color: "#0c4a6e",
+    },
+    searchWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginHorizontal: 20,
+        marginTop: 12,
+        marginBottom: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        backgroundColor: "#f8fafc",
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 15,
+        color: "#1f2937",
+        padding: 0,
+    },
+    emptyText: {
+        textAlign: "center",
+        color: "#94a3b8",
+        fontSize: 14,
+        paddingVertical: 24,
     },
     userOption: {
         flexDirection: "row",

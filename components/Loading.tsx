@@ -1,6 +1,7 @@
 // Enhanced Dairy Management Loading Screen Component
 // This is a React Native Expo component with advanced animations and dairy theming
 
+import { BRAND_NAME } from "@/constants/brand";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef } from "react";
@@ -224,7 +225,7 @@ const DairyLoadingScreen: React.FC<DairyLoadingScreenProps> = ({
               },
             ]}
           >
-            Sita Dairy
+            {BRAND_NAME}
           </Animated.Text>
 
           {/* Loading Text */}
